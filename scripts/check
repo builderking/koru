@@ -1,0 +1,6 @@
+#!/bin/zsh
+set -euo pipefail
+swift build
+swift test
+xcodebuild -project Koru.xcodeproj -target Koru -configuration Debug CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project Koru.xcodeproj -target KoruIntegrationHarness -configuration Debug CODE_SIGNING_ALLOWED=NO build

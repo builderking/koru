@@ -1,0 +1,500 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2D50EC03C85731BFF3EBD95A /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27EDC8CDE88D6E92E940A04E /* main.swift */; };
+		485B3FAF9DEA48160CD6E713 /* KoruPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = C212688C36C6A3CF77C92D63 /* KoruPlatform */; };
+		4AB5726CCD7757C753ADDE90 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEB725763507E4898967A3D0 /* Cocoa.framework */; };
+		59AFF39C12B864C02545C73A /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEB725763507E4898967A3D0 /* Cocoa.framework */; };
+		75BE0CF09EF12006082F7698 /* KoruUI in Frameworks */ = {isa = PBXBuildFile; productRef = 9DD39062E2757FF50D3D3267 /* KoruUI */; };
+		B064BABAB866A4698C9D91DB /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C3FABAD8ED83A47C9B9452 /* main.swift */; };
+		C509564659717332BEAD9F9C /* KoruUI in Frameworks */ = {isa = PBXBuildFile; productRef = 29ED82B394E3322CCE79987D /* KoruUI */; };
+		D8D9A86462915DAD4FDC4190 /* KoruPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = F2F59EB413635F93BF91EEBA /* KoruPlatform */; };
+		EA2DABF6C92F84A2B9F967AF /* KoruDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 45D0AEEE540E7F16FE264ED0 /* KoruDomain */; };
+		ED9FFE9E9146A5FA8D226C1F /* KoruDomain in Frameworks */ = {isa = PBXBuildFile; productRef = CA40F008EB0A260944629BFD /* KoruDomain */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		27EDC8CDE88D6E92E940A04E /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = main.swift; path = Harness/main.swift; sourceTree = "<group>"; };
+		5603E390ED945271B7095561 /* Koru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Koru.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BEB725763507E4898967A3D0 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		E0C3FABAD8ED83A47C9B9452 /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = main.swift; path = App/main.swift; sourceTree = "<group>"; };
+		EA5E7652BAF9EB4866BDDD29 /* KoruIntegrationHarness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoruIntegrationHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0253D553A1BA1858C4DE4E6B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4AB5726CCD7757C753ADDE90 /* Cocoa.framework in Frameworks */,
+				EA2DABF6C92F84A2B9F967AF /* KoruDomain in Frameworks */,
+				485B3FAF9DEA48160CD6E713 /* KoruPlatform in Frameworks */,
+				75BE0CF09EF12006082F7698 /* KoruUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6715FF8C7EAAED9EF3D92B87 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				59AFF39C12B864C02545C73A /* Cocoa.framework in Frameworks */,
+				ED9FFE9E9146A5FA8D226C1F /* KoruDomain in Frameworks */,
+				D8D9A86462915DAD4FDC4190 /* KoruPlatform in Frameworks */,
+				C509564659717332BEAD9F9C /* KoruUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		054BE21FE5D9D14BAECC46B4 = {
+			isa = PBXGroup;
+			children = (
+				E4C83B499AC1C49E58863A65 /* Products */,
+				F599663E8C0FA46A36FBD03F /* Frameworks */,
+				DF34D74E224E10550A9D7D8E /* Koru */,
+				32F98F5921B6F8ABE4286E23 /* KoruIntegrationHarness */,
+			);
+			sourceTree = "<group>";
+		};
+		32F98F5921B6F8ABE4286E23 /* KoruIntegrationHarness */ = {
+			isa = PBXGroup;
+			children = (
+				27EDC8CDE88D6E92E940A04E /* main.swift */,
+			);
+			name = KoruIntegrationHarness;
+			sourceTree = "<group>";
+		};
+		C0289A9E2D26906203DF34B9 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				BEB725763507E4898967A3D0 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		DF34D74E224E10550A9D7D8E /* Koru */ = {
+			isa = PBXGroup;
+			children = (
+				E0C3FABAD8ED83A47C9B9452 /* main.swift */,
+			);
+			name = Koru;
+			sourceTree = "<group>";
+		};
+		E4C83B499AC1C49E58863A65 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5603E390ED945271B7095561 /* Koru.app */,
+				EA5E7652BAF9EB4866BDDD29 /* KoruIntegrationHarness.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F599663E8C0FA46A36FBD03F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C0289A9E2D26906203DF34B9 /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		69845AA6037C6A1D8E20474F /* Koru */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 04306A193AEA47D5B47157D4 /* Build configuration list for PBXNativeTarget "Koru" */;
+			buildPhases = (
+				FCD7B534324BAD1E276E2189 /* Sources */,
+				6715FF8C7EAAED9EF3D92B87 /* Frameworks */,
+				BD872B3762D61BFCEE659157 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Koru;
+			packageProductDependencies = (
+				CA40F008EB0A260944629BFD /* KoruDomain */,
+				F2F59EB413635F93BF91EEBA /* KoruPlatform */,
+				29ED82B394E3322CCE79987D /* KoruUI */,
+			);
+			productName = Koru;
+			productReference = 5603E390ED945271B7095561 /* Koru.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EF3A8DADFA75BF393034BC26 /* KoruIntegrationHarness */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 059F7087AAE76AC6BDC70044 /* Build configuration list for PBXNativeTarget "KoruIntegrationHarness" */;
+			buildPhases = (
+				BCFD399700E0CF8A72D84AA4 /* Sources */,
+				0253D553A1BA1858C4DE4E6B /* Frameworks */,
+				44E356E603F56E15A0A21C10 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KoruIntegrationHarness;
+			packageProductDependencies = (
+				45D0AEEE540E7F16FE264ED0 /* KoruDomain */,
+				C212688C36C6A3CF77C92D63 /* KoruPlatform */,
+				9DD39062E2757FF50D3D3267 /* KoruUI */,
+			);
+			productName = KoruIntegrationHarness;
+			productReference = EA5E7652BAF9EB4866BDDD29 /* KoruIntegrationHarness.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E825FC2A0F038F1169170F7B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+			};
+			buildConfigurationList = 86FCF53FC9E9F0B5C85F87C2 /* Build configuration list for PBXProject "Koru" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 054BE21FE5D9D14BAECC46B4;
+			minimizedProjectReferenceProxies = 0;
+			packageReferences = (
+				DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E4C83B499AC1C49E58863A65 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				69845AA6037C6A1D8E20474F /* Koru */,
+				EF3A8DADFA75BF393034BC26 /* KoruIntegrationHarness */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		44E356E603F56E15A0A21C10 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD872B3762D61BFCEE659157 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BCFD399700E0CF8A72D84AA4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2D50EC03C85731BFF3EBD95A /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FCD7B534324BAD1E276E2189 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B064BABAB866A4698C9D91DB /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0E05AA23C4543E6D422F36CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Harness-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru.harness;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		33942575371682D292E20567 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		41A64C231B82431F65EAABBD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Harness-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru.harness;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		43E9E72CE9049517A4B91B1C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		54D555050836DD4E78CF2A89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Koru-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		EFF9A6B4554B94D243E5E09F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Koru-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		04306A193AEA47D5B47157D4 /* Build configuration list for PBXNativeTarget "Koru" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54D555050836DD4E78CF2A89 /* Release */,
+				EFF9A6B4554B94D243E5E09F /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		059F7087AAE76AC6BDC70044 /* Build configuration list for PBXNativeTarget "KoruIntegrationHarness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				41A64C231B82431F65EAABBD /* Release */,
+				0E05AA23C4543E6D422F36CD /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		86FCF53FC9E9F0B5C85F87C2 /* Build configuration list for PBXProject "Koru" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				43E9E72CE9049517A4B91B1C /* Debug */,
+				33942575371682D292E20567 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		29ED82B394E3322CCE79987D /* KoruUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */;
+			productName = KoruUI;
+		};
+		45D0AEEE540E7F16FE264ED0 /* KoruDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */;
+			productName = KoruDomain;
+		};
+		9DD39062E2757FF50D3D3267 /* KoruUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */;
+			productName = KoruUI;
+		};
+		C212688C36C6A3CF77C92D63 /* KoruPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */;
+			productName = KoruPlatform;
+		};
+		CA40F008EB0A260944629BFD /* KoruDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */;
+			productName = KoruDomain;
+		};
+		F2F59EB413635F93BF91EEBA /* KoruPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DAF222BC2103722B7FB760FC /* XCLocalSwiftPackageReference "." */;
+			productName = KoruPlatform;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E825FC2A0F038F1169170F7B /* Project object */;
+}

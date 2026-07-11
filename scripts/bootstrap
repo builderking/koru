@@ -1,0 +1,4 @@
+#!/bin/zsh
+set -euo pipefail
+ruby scripts/generate-xcode-project.rb
+swift package resolve

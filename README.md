@@ -2,7 +2,7 @@
 
 Koru is a free and open-source macOS writing-memory utility: save useful text where you write it, recall it from a fragment you remember, and insert it without leaving the current field.
 
-This repository is currently in the product-definition and engineering-planning stage. No production application or website has been implemented yet.
+This repository now contains the initial native foundation: an unsigned macOS 13+ menu-bar shell, modular Swift packages, canonical domain contracts, adaptive UI tokens, deterministic tests, and a disposable integration harness. It is alpha feasibility work, not a supported release.
 
 ## Product promise
 
@@ -30,8 +30,8 @@ Validate the current repository with:
 ## Project status
 
 - Product definition: in progress
-- Feasibility: researched; implementation spike not started
-- Native app: not started
+- Feasibility: disposable native harness implemented; external application matrix still requires manual execution
+- Native app: initial unsigned shell and packages implemented
 - Marketing website: not started
 - Cloudflare Pages project: not created
 - Public release: not started
@@ -39,6 +39,19 @@ Validate the current repository with:
 ## Open source
 
 Koru is licensed under the Apache License 2.0. See [LICENSE](LICENSE), [CONTRIBUTING.md](CONTRIBUTING.md), [GOVERNANCE.md](GOVERNANCE.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SUPPORT.md](SUPPORT.md), and [SECURITY.md](SECURITY.md).
+
+## Build locally
+
+Koru requires Xcode with the macOS SDK. Signing credentials are not required for contributor builds.
+
+```sh
+./scripts/bootstrap
+./scripts/check
+swift run Koru
+swift run KoruIntegrationHarness
+```
+
+See [docs/native-foundation.md](docs/native-foundation.md) for scope and locked safety boundaries.
 
 ## Repository
 

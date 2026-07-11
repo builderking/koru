@@ -1,6 +1,6 @@
 # Contributing to Koru
 
-Koru is currently a planning-stage open-source project. Contributions are welcome, but the build plan is the source of truth until the first implementation milestone is approved.
+Koru is an early alpha open-source project. Contributions are welcome, and the build plan remains the source of truth.
 
 ## Before contributing
 
@@ -21,6 +21,10 @@ Koru is currently a planning-stage open-source project. Contributions are welcom
 Fork pull requests build without release credentials. Never ask a maintainer to expose signing, notarization, deployment, or environment secrets to a fork. Release candidate and publication workflows are manual, protected, and separate from pull-request CI.
 
 New runtime dependencies require an allowlist update and review of license, maintenance, security, privacy, network behavior, and release impact. Commit `Package.resolved` once Swift dependencies exist. Swift code is expected to pass strict concurrency, formatting, lint, unsigned build, and tests.
+
+## Local verification
+
+Run `./scripts/bootstrap` once to regenerate the Xcode project, then run `./scripts/check` before submitting changes. The check builds the Swift package, runs deterministic tests, and builds the unsigned Koru and integration-harness app targets. Contributor builds require macOS 13+ and Xcode, but never release signing credentials.
 
 ## Product constraints
 
