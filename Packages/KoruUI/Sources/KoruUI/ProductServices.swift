@@ -162,6 +162,7 @@ public struct ProductStorePersistence: Sendable {
     @Published public var pendingDraft: SavedItem?
     private let logger = PrivacySafeLogger()
     private var persistence: ProductStorePersistence?
+    public var onSettingsChanged: ((KoruSettingsSnapshot) -> Void)?
     private var persistenceTasks: [UUID: Task<Void, Never>] = [:]
     public init(items: [SavedItem] = []) {
         self.items = items
@@ -212,7 +213,12 @@ public struct ProductStorePersistence: Sendable {
         items.removeAll { $0.id == id }
         if let persistence { enqueuePersistence("repository.delete_failed") { try await persistence.permanentlyDelete(id) } }
     }
-    public func applySettings(_ value: KoruSettingsSnapshot) { settings = value; diagnosticsSnapshot.eventTap = value.typedMatchingEnabled && !value.isPaused ? .healthy : .stopped; diagnosticsSnapshot.pasteboardMonitor = value.clipboardHistoryEnabled && !value.isPaused ? .healthy : .stopped }
+    public func applySettings(_ value: KoruSettingsSnapshot) { settings = value; onSettingsChanged?(value); diagnosticsSnapshot.eventTap = value.typedMatchingEnabled && !value.isPaused ? .healthy : .stopped; diagnosticsSnapshot.pasteboardMonitor = value.clipboardHistoryEnabled && !value.isPaused ? .healthy : .stopped }
+    public func updateRuntimeHealth(permissions: PermissionSnapshot, eventTap: ServiceHealth, recall: ServiceHealth) {
+        permissionSnapshot = permissions; diagnosticsSnapshot.permissions = permissions
+        diagnosticsSnapshot.eventTap = eventTap
+        diagnosticsSnapshot.accessibilityObserver = recall
+    }
     public func request(_ permission: KoruPermission) { switch permission { case .accessibility: permissionSnapshot.accessibility = .denied; case .inputMonitoring: permissionSnapshot.inputListening = .denied; case .pasteboard: permissionSnapshot.pasteboard = .granted }; diagnosticsSnapshot.permissions = permissionSnapshot }
     public func refreshPermissions() { diagnosticsSnapshot.permissions = permissionSnapshot }
     public func perform(_ action: RecoveryAction) async -> RecoveryOutcome {

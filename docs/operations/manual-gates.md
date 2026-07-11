@@ -3,7 +3,7 @@
 Repository-local scaffolding is complete only when validation passes. The following remain explicitly outside that claim:
 
 - Build an actual macOS app/Xcode project, committed package resolution, tests, strict-concurrency-clean code, diagnostics UI/exporter, watchdogs, encryption, permissions, and recovery actions.
-- Decide exact diagnostics/log retention and close clipboard retention decision D-001.
+- Decide exact diagnostics/log retention. Clipboard decision D-001 is closed by ADR-001.
 - Review final bundle ID, paths, Keychain service, entitlements, archive/export options, DMG layout, and release signing implementation.
 - Configure GitHub teams/CODEOWNERS validity, labels, Discussions, private vulnerability reporting, branch protection, signed/protected tag policy, required checks, and protected environments/reviewers/secrets.
 - Obtain/store Developer ID and App Store Connect notary credentials; perform signing, notarization, stapling, Gatekeeper, universal, quarantine, reproducibility, provenance, clean-download, and clean-room tests.

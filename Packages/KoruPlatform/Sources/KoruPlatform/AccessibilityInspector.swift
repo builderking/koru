@@ -11,6 +11,8 @@ public struct AXTargetSnapshot: Sendable {
     public var valueLength: Int?
     public var selectedRange: CFRange?
     public var bounds: CGRect?
+    public var value: String?
+    public var elementToken: String
 }
 
 public protocol AccessibilityInspecting: Sendable {
@@ -42,7 +44,7 @@ public final class SystemAccessibilityInspector: AccessibilityInspecting, @unche
         let editable = !secure && editableRoles.contains(role ?? "") && isSettable(kAXSelectedTextAttribute, element)
         let rangeBounds: CGRect?
         if let range { rangeBounds = bounds(for: range, element: element) } else { rangeBounds = nil }
-        return .success(.init(processIdentifier: pid, role: role, subrole: subrole, isEditable: editable, isSecure: secure, valueLength: value?.utf16.count, selectedRange: range, bounds: rangeBounds))
+        return .success(.init(processIdentifier: pid, role: role, subrole: subrole, isEditable: editable, isSecure: secure, valueLength: value?.utf16.count, selectedRange: range, bounds: rangeBounds, value: value, elementToken: "\(pid):\(CFHash(element))"))
     }
 
     private func stringAttribute(_ name: String, _ element: AXUIElement) -> String? {

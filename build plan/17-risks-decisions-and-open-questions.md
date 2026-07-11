@@ -98,11 +98,11 @@ These are binding implementation choices in the current supporting plans. Change
 | A-012 | No CLA or DCO enforcement at initial public contribution. | 11; avoids unnecessary contribution friction, subject to later governance review. |
 | A-013 | Manual global commands use a dedicated `GlobalHotKeyRegistrar` backed by the public `RegisterEventHotKey` path; the Core Graphics event tap is limited to typed matching and automatic-panel navigation. | 07, 08, and 16; shortcut registration receives discrete command IDs without Input Monitoring, while Accessibility remains capability-specific. See Apple's archived [Carbon Event Manager Reference](https://developer.apple.com/library/archive/documentation/Carbon/Reference/Carbon_Event_Manager_Ref/Reference/reference.html). |
 
-## 5. Required reconciliation decision
+## 5. Closed reconciliation decision
 
 ### D-001 — Clipboard default limits
 
-09-data-security-and-privacy.md currently describes the following values as “proposed defaults”:
+Accepted on 2026-07-11 by `docs/architecture/adr-001-v1-clipboard-retention.md`:
 
 - 500 logical clipboard events;
 - seven-day expiry;
@@ -110,12 +110,7 @@ These are binding implementation choices in the current supporting plans. Change
 - 25 MB per retained image;
 - files and videos stored as references.
 
-The architecture, tests, onboarding copy, and marketing truth need one stable policy. Before Phase 30 implementation begins, the product and security owners must either:
-
-1. adopt these exact defaults and promote them into 00-index.md; or
-2. record replacement values with privacy, disk, performance, and migration rationale.
-
-Until D-001 is closed, no public retention claim should state exact numbers.
+These are the locked V1 defaults. Clipboard remains opt-in, the first reached boundary evicts oldest temporary events, and changes require a replacement ADR.
 
 ## 6. Open-question register
 

@@ -30,7 +30,7 @@ Clipboard history starts disabled. `PasteboardMonitor` polls `changeCount`, chec
 
 Deduplication uses HMAC-SHA256 under the vault key. Koru-originated change counts can be suppressed. RTF/HTML is retained as encrypted data and is never rendered in a WebView. File/video URLs are encrypted reference data, not commands.
 
-The values in `RetentionPolicy.candidate`—7 days, 500 events, 256 MiB total encrypted Clipboard storage, and 25 MiB per image—remain build-plan D-001 candidate fixtures, not public promises. Count, age, byte, and enabled-state limits remove only temporary Clipboard rows. Saving a Clipboard entry creates a separate Saved item. Clear History does not remove Saved items, and disabling capture takes effect immediately.
+The locked `RetentionPolicy.v1Defaults` values are 7 days, 500 events, 256 MiB total encrypted Clipboard storage, and 25 MiB per image. Count, age, byte, and enabled-state limits remove only temporary Clipboard rows. Saving a Clipboard entry creates a separate Saved item. Clear History does not remove Saved items, and disabling capture takes effect immediately. See [ADR-001](architecture/adr-001-v1-clipboard-retention.md).
 
 Typed `clp` requires the verified fresh-empty-input state supplied by the input-session layer and preserves its original `0..<3` replacement span when panel search receives focus. The dedicated manual Clipboard recall API has no dependency on Input Monitoring.
 

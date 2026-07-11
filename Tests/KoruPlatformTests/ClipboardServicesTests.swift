@@ -11,7 +11,7 @@ final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
 
 @Test func pasteboardMonitorRequiresOptInGroupsMixedTypesAndDeduplicates() async throws {
     let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
-    let fake = FakePasteboard(); let exclusions = ExclusionPolicy(); var policy = RetentionPolicy.candidate; policy.clipboardHistoryEnabled = true
+    let fake = FakePasteboard(); let exclusions = ExclusionPolicy(); var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
     let monitor = PasteboardMonitor(source: fake, repository: vault.repository, assets: vault.assets, keys: vault.keys, exclusions: exclusions, policy: policy)
     fake.groups = [[.init(contentType: .plainText, value: .data(Data("hello".utf8))), .init(contentType: .fileReference, value: .reference("file:///tmp/reference"), displayMetadata: "reference")]]
     await #expect(throws: PasteboardDecodeError.disabled) { try await monitor.poll(frontmostBundleID: "com.example.editor") }
@@ -24,7 +24,7 @@ final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
 
 @Test func pasteboardDeniedExcludedAndOversizedFailWithoutPersistence() async throws {
     let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
-    let fake = FakePasteboard(); var policy = RetentionPolicy.candidate; policy.clipboardHistoryEnabled = true
+    let fake = FakePasteboard(); var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
     let monitor = PasteboardMonitor(source: fake, repository: vault.repository, assets: vault.assets, keys: vault.keys, exclusions: ExclusionPolicy(), policy: policy)
     await monitor.setEnabled(true); fake.state = .denied; fake.count = 1
     await #expect(throws: PasteboardDecodeError.denied) { try await monitor.poll(frontmostBundleID: "com.example.editor") }
@@ -44,7 +44,7 @@ final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
 
 @Test func clipboardControlsClearOnlyHistoryAndSaveCreatesSeparatePermanentItem() async throws {
     let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
-    let fake = FakePasteboard(); let exclusions = ExclusionPolicy(); let search = InMemorySearchIndex(); var policy = RetentionPolicy.candidate; policy.clipboardHistoryEnabled = true
+    let fake = FakePasteboard(); let exclusions = ExclusionPolicy(); let search = InMemorySearchIndex(); var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
     let monitor = PasteboardMonitor(source: fake, repository: vault.repository, assets: vault.assets, keys: vault.keys, exclusions: exclusions, policy: policy)
     let controller = ClipboardHistoryController(monitor: monitor, repository: vault.repository, search: search, exclusions: exclusions, policy: policy)
     let event = ClipboardEvent(expiresAt: .now.addingTimeInterval(100), representations: [.init(contentType: .plainText)])

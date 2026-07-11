@@ -5,26 +5,30 @@ public enum TypedInputMessage: Equatable, Sendable { case character(String), nav
 public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable {
     private var tap: CFMachPort?; private var source: CFRunLoopSource?; private let queue = DispatchQueue(label: "dev.builderking.koru.typed-event-tap")
     private let permission: @Sendable () -> Bool
-    private let receive: @Sendable (TypedInputMessage) -> Void
+    private let enabled: @Sendable () -> Bool
+    private let receive: @Sendable (TypedInputMessage) -> Bool
     public private(set) var health: EventTapHealth = .stopped
-    public init(permission: @escaping @Sendable () -> Bool = { CGPreflightListenEventAccess() }, receive: @escaping @Sendable (TypedInputMessage) -> Void) { self.permission = permission; self.receive = receive }
+    public init(permission: @escaping @Sendable () -> Bool = { CGPreflightListenEventAccess() }, enabled: @escaping @Sendable () -> Bool = { true }, receive: @escaping @Sendable (TypedInputMessage) -> Bool) { self.permission = permission; self.enabled = enabled; self.receive = receive }
     public func start() {
-        guard tap == nil, permission() else { health = .unavailable; return }
+        guard tap == nil else { return }
+        guard enabled() else { health = .stopped; return }
+        guard permission() else { health = .unavailable; return }
         queue.async { [weak self] in self?.run() }
     }
     private func run() {
         let mask = CGEventMask(1 << CGEventType.keyDown.rawValue) | CGEventMask(1 << CGEventType.leftMouseDown.rawValue) | CGEventMask(1 << CGEventType.rightMouseDown.rawValue)
         let context = Unmanaged.passUnretained(self).toOpaque()
-        guard let port = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .listenOnly, eventsOfInterest: mask, callback: koruTypedEventCallback, userInfo: context) else { health = .unavailable; return }
+        guard let port = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: koruTypedEventCallback, userInfo: context) else { health = .unavailable; return }
         tap = port; source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0); CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes); health = .running; CFRunLoopRun()
     }
-    fileprivate func handle(type: CGEventType, event: CGEvent) {
+    fileprivate func handle(type: CGEventType, event: CGEvent) -> Bool {
         if type == .tapDisabledByTimeout { health = .disabledByTimeout; if permission(), let tap { CGEvent.tapEnable(tap: tap, enable: true) } }
         else if type == .tapDisabledByUserInput { health = .disabledByUserInput }
-        else if type == .leftMouseDown || type == .rightMouseDown { receive(.reset) }
-        else if let message = Self.message(event) { receive(message) }
+        else if type == .leftMouseDown || type == .rightMouseDown { _ = receive(.reset) }
+        else if let message = Self.message(event) { return receive(message) }
+        return false
     }
-    private static func message(_ event: CGEvent) -> TypedInputMessage? {
+    static func message(_ event: CGEvent) -> TypedInputMessage? {
         let code = event.getIntegerValueField(.keyboardEventKeycode)
         switch code { case 53: return .dismiss; case 36: return .confirm; case 48: return .tabTransfer; case 125: return .navigation(1); case 126: return .navigation(-1); case 123, 124, 115, 119, 116, 121: return .reset; default: break }
         guard event.flags.intersection([.maskCommand, .maskControl]).isEmpty else { return .reset }
@@ -37,6 +41,5 @@ public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable
 
 private func koruTypedEventCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent, context: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
     guard let context else { return Unmanaged.passUnretained(event) }
-    Unmanaged<TypedEventTapService>.fromOpaque(context).takeUnretainedValue().handle(type: type, event: event)
-    return Unmanaged.passUnretained(event)
+    return Unmanaged<TypedEventTapService>.fromOpaque(context).takeUnretainedValue().handle(type: type, event: event) ? nil : Unmanaged.passUnretained(event)
 }

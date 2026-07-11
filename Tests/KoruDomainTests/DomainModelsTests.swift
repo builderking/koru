@@ -9,8 +9,8 @@ import Testing
 }
 
 @Test func retentionDefaultsKeepClipboardDisabled() {
-    #expect(RetentionPolicy.candidate.clipboardHistoryEnabled == false)
-    #expect(RetentionPolicy.candidate.maximumEvents == 500)
+    #expect(RetentionPolicy.v1Defaults.clipboardHistoryEnabled == false)
+    #expect(RetentionPolicy.v1Defaults.maximumEvents == 500)
 }
 
 @Test func canonicalBehaviorsAreLocked() { #expect(Set(SavedItemBehavior.allCases) == [.savedText, .quickReplacement, .template]) }

@@ -97,7 +97,7 @@ final actor StopRecorder: VaultIntegrationStopper { private(set) var stopped = f
     let old = Date(timeIntervalSince1970: 1_000)
     let event = ClipboardEvent(capturedAt: old, expiresAt: old, representations: [])
     try await vault.repository.saveClipboard(.init(event: event, keyedContentDigest: Data([1])))
-    var policy = RetentionPolicy.candidate; policy.clipboardHistoryEnabled = true
+    var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
     let service = VaultMaintenanceService(repository: vault.repository, assets: vault.assets, keys: vault.keys, search: index, stopper: stopper)
     let report = try await service.run(policy: policy, now: Date(timeIntervalSince1970: 10_000_000))
     #expect(report.expiredClipboardCount == 1); #expect(report.orphanAssetCount == 1)

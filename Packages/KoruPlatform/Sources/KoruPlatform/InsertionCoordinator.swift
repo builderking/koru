@@ -14,18 +14,26 @@ public final class InsertionCoordinator: @unchecked Sendable {
     public init(target: InsertionTargetAccessing, pasteboard: NSPasteboard = .general, postPaste: @escaping @Sendable () -> Bool = InsertionCoordinator.systemPaste) { self.target = target; self.pasteboard = pasteboard; self.postPaste = postPaste }
     public func insert(_ text: String, transaction: InsertionTransaction, capability: CompatibilityCapability) -> InsertionOutcome {
         guard transaction.explicitlyConfirmed else { return .cancelledUnconfirmed }
-        guard target.currentSnapshot() == transaction.target else { return .cancelledTargetChanged }
+        guard matches(target.currentSnapshot(), transaction.target, invocation: transaction.invocation) else { return .cancelledTargetChanged }
         let range = NSRange(location: transaction.target.replacementLocation, length: transaction.target.replacementLength)
         switch capability {
-        case .full: return target.replace(range: range, with: text) ? .inserted(.directAccessibility) : copy(text)
+        case .full:
+            if target.replace(range: range, with: text) { return .inserted(.directAccessibility) }
+            return pasteOrCopy(text, range: range, expected: transaction.target)
         case .paste:
-            guard target.select(range: range), target.currentSnapshot() == transaction.target else { return copy(text) }
-            guard write(text), postPaste() else { return .copied }; return .inserted(.pasteboardAndPaste)
+            return pasteOrCopy(text, range: range, expected: transaction.target)
         case .copyOnly, .paletteOnly: return copy(text)
         case .blocked: return .failedSafely
         }
     }
     private func copy(_ text: String) -> InsertionOutcome { write(text) ? .copied : .failedSafely }
+    private func pasteOrCopy(_ text: String, range: NSRange, expected: TargetSnapshot) -> InsertionOutcome { guard target.select(range: range), matchesSelected(target.currentSnapshot(), expected), write(text), postPaste() else { return copy(text) }; return .inserted(.pasteboardAndPaste) }
     private func write(_ text: String) -> Bool { pasteboard.prepareForNewContents(with: .currentHostOnly); pasteboard.setString("dev.builderking.koru", forType: .init("dev.builderking.koru.origin")); return pasteboard.setString(text, forType: .string) }
+    private func matches(_ current: TargetSnapshot?, _ expected: TargetSnapshot, invocation: InvocationMode) -> Bool {
+        guard let current, current.processIdentifier == expected.processIdentifier, current.elementToken == expected.elementToken, current.expectedValueDigest == expected.expectedValueDigest else { return false }
+        if invocation == .manualRecall { return current.replacementLocation == expected.replacementLocation && current.replacementLength == expected.replacementLength }
+        return (current.replacementLocation == expected.replacementLocation + expected.replacementLength && current.replacementLength == 0) || (current.replacementLocation == expected.replacementLocation && current.replacementLength == expected.replacementLength)
+    }
+    private func matchesSelected(_ current: TargetSnapshot?, _ expected: TargetSnapshot) -> Bool { guard let current else { return false }; return current.processIdentifier == expected.processIdentifier && current.elementToken == expected.elementToken && current.replacementLocation == expected.replacementLocation && current.replacementLength == expected.replacementLength && current.expectedValueDigest == expected.expectedValueDigest }
     public static func systemPaste() -> Bool { guard CGPreflightPostEventAccess(), let source = CGEventSource(stateID: .hidSystemState) else { return false }; let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true); let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false); down?.flags = .maskCommand; up?.flags = .maskCommand; down?.post(tap: .cghidEventTap); up?.post(tap: .cghidEventTap); return down != nil && up != nil }
 }

@@ -44,7 +44,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 **Scope:**
 
 - Clipboard history off by default.
-- D-001 candidate retention to accept or replace: 7 days, 500 events, 256 MB encrypted asset cap, 25 MB per retained image.
+- D-001-approved V1 retention: 7 days, 500 events, 256 MiB encrypted asset cap, 25 MiB per retained image.
 - File/video references only in temporary history; saving creates a separate permanent saved-item reference and does not duplicate the full binary in V1.
 - Saved items do not expire automatically.
 - No cloud sync, content telemetry, remote exclusion rules, or AI processing.
@@ -53,7 +53,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 **Complete when:**
 
 - Values are approved in the main index and represented by one policy type used by UI, repository, diagnostics, tests, and docs.
-- No exact retention number appears as a public claim before this decision closes.
+- ADR-001, policy code, tests, settings, privacy docs, and public copy use the same exact limits.
 
 ### TASK-003 — Lock compatibility and fallback contract
 
@@ -958,7 +958,7 @@ Work on UI, repository, permission onboarding, harness, Services, and release in
 - No automatic insertion.
 - clp is the reserved clipboard-recall command.
 - Selection icon is optional; Services and global hotkey are supported fallbacks.
-- Clipboard history defaults off. D-001 must approve or replace the candidate 7-day/500-event/256-MB/25-MB-per-image limits before implementation and public claims.
+- Clipboard history defaults off. ADR-001 locks V1 limits to 7 days, 500 events, 256 MiB total encrypted assets, and 25 MiB per retained image.
 - Files and videos remain references in V1; Save creates a permanent saved-item reference without silently extending the temporary entry's retention.
 - Encrypted local repository and Keychain-held, nonsynchronizable key.
 - No cloud sync, content telemetry, background network request, or automatic updater in the initial release.

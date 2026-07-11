@@ -44,14 +44,15 @@ public actor InMemorySearchIndex {
         let old = learning[key]; learning[key] = ((old?.count ?? 0) + 1, date)
     }
 
-    public func search(_ query: String, scope: SearchScope, appBundleID: String? = nil, limit: Int = 8) -> [SearchResult] {
-        let q = normalize(query); guard !q.isEmpty, limit > 0 else { return [] }
+    public func search(_ query: String, scope: SearchScope, appBundleID: String? = nil, limit: Int = 8, includeAllWhenEmpty: Bool = false) -> [SearchResult] {
+        let q = normalize(query); guard limit > 0, !q.isEmpty || includeAllWhenEmpty else { return [] }
         switch scope {
         case .saved:
             return saved.values.compactMap { document -> SearchResult? in
-                let item = document.item; var score = 0; var reason = "Fuzzy match"
+                let item = document.item; var score = 0; var reason = q.isEmpty ? "Recently saved" : "Fuzzy match"
                 let learned = learning[LearningKey(query: q, id: item.id, app: appBundleID)] ?? learning[LearningKey(query: q, id: item.id, app: nil)]
-                if document.terms.contains(q) { score += 10_000; reason = "Exact match term" }
+                if q.isEmpty { score = Int(item.updatedAt.timeIntervalSince1970 / 86_400) }
+                else if document.terms.contains(q) { score += 10_000; reason = "Exact match term" }
                 else if document.terms.contains(where: { $0.hasPrefix(q) }) { score += 8_000; reason = "Match term" }
                 else if document.normalizedTitle == q { score += 7_000; reason = "Matched title" }
                 else if document.normalizedTitle.split(separator: " ").contains(where: { $0.hasPrefix(q) }) { score += 6_000; reason = "Matched title" }
@@ -69,7 +70,8 @@ public actor InMemorySearchIndex {
         case .clipboard:
             return clipboard.values.compactMap { document in
                 let score: Int
-                if document.normalizedText.hasPrefix(q) { score = 5_000 }
+                if q.isEmpty { score = 0 }
+                else if document.normalizedText.hasPrefix(q) { score = 5_000 }
                 else if document.normalizedText.contains(q) { score = 3_000 }
                 else if boundedLevenshtein(q, String(document.normalizedText.prefix(max(q.count, 1))), maximum: 2) != nil { score = 1_000 }
                 else { return nil }

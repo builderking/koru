@@ -9,13 +9,13 @@ Koru is designed to keep reusable writing on the Mac. The initial release requir
 | Data | Default | Intended protection |
 |---|---|---|
 | Saved items, titles, tags, triggers, templates | Kept until user deletion | AES-GCM encrypted; Keychain-protected key |
-| Clipboard history | Off | If enabled, encrypted and bounded by approved count/age/bytes policy |
+| Clipboard history | Off | If enabled: 7 days, 500 events, 256 MiB total encrypted assets, 25 MiB per retained image |
 | Selection being saved | Memory only until Save | Purged on cancel/failure |
 | Active typed prefix | Short-lived memory only | Never persisted or used for dismissed-query analytics |
 | Explicit recall learning signal | After explicit selection only | Encrypted and independently resettable |
 | Operational diagnostics | Bounded local retention | Content-free enums, counters, buckets, timings |
 
-The candidate clipboard limits (500 events, 7 days, 256 MB total, 25 MB per image) are not a public promise until decision D-001 is closed.
+These locked V1 limits are defined by [ADR-001](architecture/adr-001-v1-clipboard-retention.md). The first reached boundary removes the oldest temporary events and never removes Saved items.
 
 ## Koru must never collect or log
 

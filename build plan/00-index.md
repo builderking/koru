@@ -24,6 +24,7 @@ These decisions remain fixed unless an explicit decision record replaces them:
 10. Raw keystrokes are never persisted, secure fields are ignored, clipboard capture is opt-in, and sensitive apps can be excluded.
 11. The first supported release is distributed directly as a signed and notarized macOS app. Mac App Store distribution is not a V1 requirement.
 12. The marketing site is a static Astro site in `website/`, published from `main` through Cloudflare Pages with preview deployments for eligible same-repository pull requests; fork previews are not guaranteed.
+13. V1 Clipboard history remains opt-in and defaults to 7 days, 500 logical events, 256 MiB total encrypted assets, and 25 MiB per retained image; files and videos remain references. D-001 is closed by `docs/architecture/adr-001-v1-clipboard-retention.md`.
 
 ## 3. Plan map
 

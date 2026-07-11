@@ -144,11 +144,11 @@ If the retained collection grows beyond the memory budget, change the product li
 
 ## 5. Clipboard privacy
 
-### 5.1 Proposed default retention policy
+### 5.1 Locked V1 default retention policy
 
 Clipboard history is off until explicitly enabled.
 
-When enabled, the D-001 candidate defaults are:
+When enabled, the D-001-approved V1 defaults are:
 
 - Retain the newest **500 logical clipboard events**.
 - Expire temporary clipboard events after **7 days**.
@@ -159,7 +159,7 @@ When enabled, the D-001 candidate defaults are:
 
 Apply all limits together; whichever limit is reached first triggers removal of the oldest temporary clipboard entries.
 
-These values remain proposed until D-001 is closed. Product and security owners must either adopt them or record replacement values before retention implementation begins. Only the approved values should appear as public product claims or as locked policy in the main build-plan index.
+These values are locked by `docs/architecture/adr-001-v1-clipboard-retention.md`. Changing them requires a replacement ADR and migration, privacy, disk, and performance review.
 
 ### 5.2 Capture rules
 
@@ -382,7 +382,7 @@ Apple's notary service scans Developer ID software for malicious content and sig
 6. Secure fields and protected-content controls produce no typed session, selection icon, selection read, or insertion attempt.
 7. Default sensitive apps produce no typed observation and no retained clipboard event.
 8. Clipboard history remains off until explicit opt-in.
-9. The D-001-approved age, count, total-byte, and per-image limits apply transactionally to temporary clipboard history and never remove permanent saved items; until approval, the 7-day, 500-entry, 256-MB, and 25-MB candidate policy is the boundary-test fixture, not a public claim.
+9. The D-001-approved 7-day, 500-entry, 256-MiB, and 25-MiB-per-image limits apply transactionally to temporary clipboard history and never remove permanent saved items.
 10. Full file and video bytes are not retained automatically.
 11. Koru-originated pasteboard insertion uses current-host-only content where supported and is not recaptured as a duplicate.
 12. Malformed, oversized, and unknown pasteboard data is rejected without crash or uncontrolled allocation.

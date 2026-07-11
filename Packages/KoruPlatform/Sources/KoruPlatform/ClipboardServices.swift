@@ -108,7 +108,7 @@ public actor PasteboardMonitor {
     private var suppressedChangeCounts: Set<Int> = []
     private var policy: RetentionPolicy
 
-    public init(source: any PasteboardSnapshotSource = GeneralPasteboardSource(), repository: EncryptedSQLiteRepository, assets: EncryptedAssetStore, keys: VaultKeyManager, exclusions: ExclusionPolicy, policy: RetentionPolicy = .candidate, limits: PasteboardLimits = .init()) {
+    public init(source: any PasteboardSnapshotSource = GeneralPasteboardSource(), repository: EncryptedSQLiteRepository, assets: EncryptedAssetStore, keys: VaultKeyManager, exclusions: ExclusionPolicy, policy: RetentionPolicy = .v1Defaults, limits: PasteboardLimits = .init()) {
         self.source = source; self.repository = repository; self.assets = assets; self.keys = keys; self.exclusions = exclusions; self.policy = policy; self.limits = limits
         lastChangeCount = source.changeCount()
     }
@@ -183,7 +183,7 @@ public actor ClipboardHistoryController {
     private let search: InMemorySearchIndex
     private let exclusions: ExclusionPolicy
     private var policy: RetentionPolicy
-    public init(monitor: PasteboardMonitor, repository: EncryptedSQLiteRepository, search: InMemorySearchIndex, exclusions: ExclusionPolicy, policy: RetentionPolicy = .candidate) { self.monitor = monitor; self.repository = repository; self.search = search; self.exclusions = exclusions; self.policy = policy }
+    public init(monitor: PasteboardMonitor, repository: EncryptedSQLiteRepository, search: InMemorySearchIndex, exclusions: ExclusionPolicy, policy: RetentionPolicy = .v1Defaults) { self.monitor = monitor; self.repository = repository; self.search = search; self.exclusions = exclusions; self.policy = policy }
     public func setEnabled(_ value: Bool) async { policy.clipboardHistoryEnabled = value; await monitor.updatePolicy(policy) }
     public func updateRetention(_ newPolicy: RetentionPolicy) async throws { policy = newPolicy; await monitor.updatePolicy(policy); for id in try await repository.applyRetention(policy) { await search.remove(clipboardEventID: id) } }
     public func clearHistory() async throws { try await repository.clearClipboard(); let active = try await repository.savedItems(states: [.active]); await search.rebuild(savedItems: active, clipboardEvents: []) }

@@ -137,7 +137,8 @@ public struct AppExclusion: Hashable, Codable, Sendable {
 }
 
 public struct RetentionPolicy: Hashable, Codable, Sendable {
-    public static let candidate = RetentionPolicy(maximumAge: 7 * 24 * 60 * 60, maximumEvents: 500, maximumAssetBytes: 256 * 1024 * 1024, maximumImageBytes: 25 * 1024 * 1024)
+    /// Locked V1 defaults from ADR-001. Clipboard capture remains opt-in.
+    public static let v1Defaults = RetentionPolicy(maximumAge: 7 * 24 * 60 * 60, maximumEvents: 500, maximumAssetBytes: 256 * 1024 * 1024, maximumImageBytes: 25 * 1024 * 1024)
     public var maximumAge: TimeInterval
     public var maximumEvents: Int
     public var maximumAssetBytes: Int

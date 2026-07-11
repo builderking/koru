@@ -11,7 +11,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <p>Saved-item bodies, titles, tags, match terms, templates, and enabled clipboard history are treated as sensitive. They are designed to be encrypted at rest using AES-GCM. A randomly generated master key is designed to live in the macOS data-protection Keychain without iCloud synchronization.</p>
     <p>Raw keyboard events, window titles, browser URLs, and document names are prohibited from persistent storage. Typed matching may hold only the bounded current prefix in memory during a verified eligible session.</p>
     <h2>Clipboard and retention</h2>
-    <p>Clipboard history is planned as a separate temporary layer. Proposed limits are 500 logical events, seven days, 256 MB total encrypted assets, and 25 MB per retained image—but these values remain an open release decision and are not a shipped promise.</p>
+    <p>Clipboard history is planned as a separate, opt-in temporary layer. V1 defaults are locked to 500 logical events, seven days, 256 MiB total encrypted assets, and 25 MiB per retained image. The first reached limit removes the oldest temporary entries.</p>
     <p>Saving a clipboard entry creates a separate permanent saved item. It does not silently extend the temporary entry.</p>
     <h2>Network behavior</h2>
     <p>The initial release is designed to make no background network request: no analytics SDK, crash uploader, remote configuration, cloud AI, cloud sync, or automatic updater. “Check for Updates” is planned to open the official release page only after an explicit click.</p>

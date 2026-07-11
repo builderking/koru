@@ -19,7 +19,7 @@ These templates are not evidence that a release or website exists.
 ## 7-day review
 
 - [ ] Review Critical/High status, unwanted-surface and insertion-failure evidence, migration/recovery outcomes, app/OS matrix gaps, dependency alerts, and support response health.
-- [ ] Confirm public copy still describes only shipped behavior and candidate policies were not presented as locked defaults.
+- [ ] Confirm public copy still describes only shipped behavior and matches ADR-001's locked Clipboard defaults.
 - [ ] Test app and website rollback readiness again.
 
 ## 30-day review
