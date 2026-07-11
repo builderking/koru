@@ -19,6 +19,7 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     private var results: [SearchResult] = []
     private var query = ""
     private var generation = 0
+    private var isAwaitingTypedCommit = false
     private var contextTimer: Timer?
     public private(set) var health: RecallRuntimeHealth = .stopped
 
@@ -50,7 +51,11 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     }
 
     public func openManual(scope: SearchScope = .saved) {
-        guard health == .ready, prepareTarget(invocation: .manualRecall, requireEmpty: false) else { return }
+        if health != .ready || !prepareTarget(invocation: .manualRecall, requireEmpty: false) {
+            reset()
+            invocation = .manualRecall
+            trackedTarget = nil
+        }
         query = ""; search(scope: scope, showEmpty: true)
     }
 
@@ -60,16 +65,17 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             guard prepareTarget(invocation: .initialTypedMatch, requireEmpty: true) else { return }
         }
         guard invocation == .initialTypedMatch || invocation == .clipboardCommand else { return }
-        generation += 1; let currentGeneration = generation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
+        query.append(character)
+        session.handle(.committedCharacter(character, hasQualifyingMatch: query == KoruPolicy.reservedClipboardCommand))
+        generation += 1; let currentGeneration = generation; let expected = query
+        isAwaitingTypedCommit = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             guard let self, self.generation == currentGeneration, let snapshot = self.target.currentSnapshot(), let tracked = self.trackedTarget,
                   snapshot.processIdentifier == tracked.processIdentifier, snapshot.elementToken == tracked.elementToken else { self?.reset(); return }
-            let expected = self.query + String(character)
             guard snapshot.replacementLocation == expected.utf16.count, snapshot.replacementLength == 0 else { self.reset(); return }
-            self.query = expected
+            self.isAwaitingTypedCommit = false
             let clipboard = expected == KoruPolicy.reservedClipboardCommand
             if clipboard { self.invocation = .clipboardCommand }
-            self.session.handle(.committedCharacter(character, hasQualifyingMatch: clipboard))
             self.search(scope: clipboard ? .clipboard : .saved, showEmpty: false)
         }
     }
@@ -102,7 +108,8 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     }
 
     private func select(id: String) {
-        guard let result = results.first(where: { Self.id($0.source) == id }), let original = trackedTarget, let invocation else { reset(); return }
+        guard let result = results.first(where: { Self.id($0.source) == id }), let invocation else { reset(); return }
+        let original = trackedTarget
         Task { [weak self] in
             guard let self else { return }
             let text: String?
@@ -112,6 +119,12 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             case let .clipboard(id): text = try? await repository.clipboardEvents().first(where: { $0.event.id == id })?.searchableText; itemID = nil
             }
             guard let text else { self.reset(); return }
+            guard let original else {
+                NSPasteboard.general.clearContents()
+                _ = NSPasteboard.general.setString(text, forType: .string)
+                self.reset()
+                return
+            }
             var insertionTarget = original
             if invocation == .manualRecall, let current = target.currentSnapshot() { insertionTarget = current }
             var transaction = InsertionTransaction(invocation: invocation, target: insertionTarget, selectedItemID: itemID, requestedTier: .directAccessibility, explicitlyConfirmed: true)
@@ -127,11 +140,13 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     private static func id(_ source: SearchResult.Source) -> String { switch source { case let .saved(id): "saved:\(id)"; case let .clipboard(id): "clipboard:\(id)" } }
     private func validateContext() {
         guard invocation != nil else { return }
+        if isAwaitingTypedCommit { return }
+        if invocation == .manualRecall, trackedTarget == nil { return }
         guard permission(), let current = target.currentSnapshot(), let trackedTarget, current.processIdentifier == trackedTarget.processIdentifier, current.elementToken == trackedTarget.elementToken else { reset(); health = permission() ? .degraded : .permissionDenied; return }
         if invocation == .manualRecall { guard current.replacementLocation == trackedTarget.replacementLocation, current.replacementLength == trackedTarget.replacementLength else { reset(); return } }
         else { guard current.replacementLocation == query.utf16.count, current.replacementLength == 0, current.expectedValueDigest == SystemInsertionTarget.digest(query) else { reset(); return } }
     }
-    private func reset() { generation += 1; session = FreshInputSession(); invocation = nil; trackedTarget = nil; results = []; query.removeAll(keepingCapacity: false); panel.dismiss() }
+    private func reset() { generation += 1; isAwaitingTypedCommit = false; session = FreshInputSession(); invocation = nil; trackedTarget = nil; results = []; query.removeAll(keepingCapacity: false); panel.dismiss() }
 }
 
 @MainActor private final class RecallPanelController {

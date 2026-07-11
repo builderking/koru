@@ -36,9 +36,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "text.bubble", accessibilityDescription: "Koru")
         let menu = NSMenu()
-        menu.addItem(item("Open Recall", #selector(openRecall), "r"))
-        menu.addItem(item("Save Selection", #selector(saveSelectionFromMenu), "s"))
-        menu.addItem(item("Open Clipboard", #selector(openClipboardRecall)))
+        menu.addItem(item("Open Recall", #selector(openRecall), "r", modifiers: [.command, .control]))
+        menu.addItem(item("Save Selection", #selector(saveSelectionFromMenu), "s", modifiers: [.command, .control]))
+        menu.addItem(item("Open Clipboard", #selector(openClipboardRecall), "v", modifiers: [.command, .control]))
         pauseItem = item("Pause Koru", #selector(togglePause)); menu.addItem(pauseItem!)
         menu.addItem(.separator())
         menu.addItem(item("Library", #selector(openLibrary)))
@@ -64,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         }
     }
     func applicationWillTerminate(_ notification: Notification) { permissionTimer?.invalidate(); lifecycle?.transition(.shuttingDown); hotKeys?.unregisterAll() }
-    private func item(_ title: String, _ action: Selector, _ equivalent: String = "") -> NSMenuItem { let item = NSMenuItem(title: title, action: action, keyEquivalent: equivalent); item.target = self; return item }
+    private func item(_ title: String, _ action: Selector, _ equivalent: String = "", modifiers: NSEvent.ModifierFlags = [.command]) -> NSMenuItem { let item = NSMenuItem(title: title, action: action, keyEquivalent: equivalent); item.keyEquivalentModifierMask = equivalent.isEmpty ? [] : modifiers; item.target = self; return item }
     @objc private func openLibrary() { show("library", title: "Koru Library", size: .init(width: 940, height: 620), view: AnyView(LibraryView().environmentObject(productStore))) }
     @objc private func openRecall() { recallRuntime?.openManual(scope: .saved) }
     @objc private func openSettings() { show("settings", title: "Koru Settings", size: .init(width: 680, height: 520), view: AnyView(SettingsView(clipboard: clipboardSettings).environmentObject(productStore))) }
@@ -167,7 +167,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         productStore.onPermissionRefreshRequested = { [weak self] in self?.refreshRuntimePermissions() }
         lifecycle = IntegrationLifecycle(integrations: [runtime, events]); lifecycle?.install(); lifecycle?.transition(.active)
         if let data = UserDefaults.standard.data(forKey: "settings"),
-           let settings = try? JSONDecoder().decode(KoruSettingsSnapshot.self, from: data) {
+           var settings = try? JSONDecoder().decode(KoruSettingsSnapshot.self, from: data) {
+            if settings.shortcuts == ["Recall": "⌥Space", "Clipboard": "⌥⇧Space", "Save Selection": "⌥⇧S"] {
+                settings.shortcuts = KoruSettingsSnapshot().shortcuts
+            }
             retentionPolicy.clipboardHistoryEnabled = settings.clipboardHistoryEnabled
             retentionPolicy.maximumAge = Double(settings.retentionDays * 86_400)
             retentionPolicy.maximumEvents = settings.maximumEvents
@@ -177,9 +180,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in DispatchQueue.main.async { self?.refreshRuntimePermissions() } }
         productStore.configurePersistence(.init(
             load: { try await repository.savedItems(states: [.active, .archived, .recentlyDeleted]) },
-            save: { try await repository.save($0) },
-            move: { try await repository.move(id: $0, to: $1) },
-            permanentlyDelete: { try await repository.permanentlyDelete(id: $0) },
+            save: { item in try await repository.save(item); await search.upsert(item) },
+            move: { id, collection in
+                try await repository.move(id: id, to: collection)
+                if collection == .active, let item = try await repository.item(id: id) { await search.upsert(item) }
+                else { await search.remove(savedItemID: id) }
+            },
+            permanentlyDelete: { id in try await repository.permanentlyDelete(id: id); await search.remove(savedItemID: id) },
             reset: {
                 try await repository.destroyFiles()
                 try await assets.removeAll()

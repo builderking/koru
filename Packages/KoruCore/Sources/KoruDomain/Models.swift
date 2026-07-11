@@ -228,7 +228,7 @@ public struct KoruSettingsSnapshot: Hashable, Codable, Sendable {
     public var retentionDays = 7
     public var maximumEvents = 500
     public var maximumAssetMegabytes = 256
-    public var shortcuts: [String: String] = ["Recall": "⌥Space", "Clipboard": "⌥⇧Space", "Save Selection": "⌥⇧S"]
+    public var shortcuts: [String: String] = ["Recall": "⌃⌘R", "Clipboard": "⌃⌘V", "Save Selection": "⌃⌘S"]
     public var neverObserve: [String] = []
     public var neverSaveClipboardFrom: [String] = []
     public init() {}
