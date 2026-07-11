@@ -2,18 +2,32 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { site } from '../content/site';
 ---
-<BaseLayout title="Security — Koru" description="Koru security model, supported-version status, and private vulnerability reporting." canonicalPath="/security/">
-  <header class="page-hero text-shell"><p class="eyebrow">Security</p><h1>Report sensitive problems privately.</h1><p class="lede">Koru will operate near keyboard input, selections, accessibility APIs, and clipboard content. Reports must never expose real private writing.</p></header>
+<BaseLayout
+  title="Security — Koru"
+  description="Koru's security model and how to report vulnerabilities privately."
+  canonicalPath="/security/"
+>
+  <header class="page-hero text-shell">
+    <p class="eyebrow">Security</p>
+    <h1>Report sensitive problems privately.</h1>
+    <p class="lede">Koru operates near keyboard input, selections, accessibility APIs, and clipboard content. We treat reports in that territory seriously — and privately.</p>
+  </header>
   <article class="prose text-shell">
-    <div class="notice"><strong>Supported versions:</strong> none. Koru has no public application release yet.</div>
     <h2>Report a vulnerability</h2>
-    <p>Do not open a public issue for a suspected vulnerability or any report containing private content. Use <a href={site.securityReporting}>GitHub private vulnerability reporting</a>.</p>
-    <p>Include the affected commit, macOS version, target application, reproducible steps using synthetic text, expected and actual behavior, impact, and any known workaround. Never include real passwords, tokens, prompts, client data, clipboard contents, Keychain exports, or a Koru vault database.</p>
-    <h2>Required baseline</h2>
-    <ul><li>Encrypted content at rest and a non-synchronizing Keychain key.</li><li>Secure-field suppression and application exclusions.</li><li>No raw-keystroke persistence or content-bearing diagnostics.</li><li>Bounded, opt-in clipboard retention.</li><li>Explicit insertion and selection saving.</li><li>Signed, notarized release artifacts with checksums and provenance.</li><li>Private security intake before the first public release.</li></ul>
-    <h2>Release evidence</h2>
-    <p>A public build will not be called supported until the tagged source, signed and notarized artifact, SHA-256 checksum, dependency notices, SBOM, compatibility matrix, privacy tests, and known limitations are published together.</p>
-    <h2>Public policy</h2>
-    <p>Read the repository's canonical <a href="https://github.com/builderking/koru/blob/main/SECURITY.md">SECURITY.md</a> and <a href="/privacy/">website privacy model</a>.</p>
+    <p>Email <a href={`mailto:${site.securityEmail}`}>{site.securityEmail}</a>. Please don't post suspected vulnerabilities publicly before we've had a chance to respond.</p>
+    <p>Include the app version, macOS version, target application, reproducible steps using synthetic text, expected and actual behavior, impact, and any known workaround. Never include real passwords, tokens, prompts, client data, clipboard contents, Keychain exports, or a Koru vault database.</p>
+    <h2>The security baseline</h2>
+    <ul>
+      <li>Content encrypted at rest with a non-synchronizing Keychain key.</li>
+      <li>Secure-field suppression and per-app exclusions that fail closed.</li>
+      <li>No raw-keystroke persistence and no content-bearing diagnostics.</li>
+      <li>Bounded, opt-in clipboard retention.</li>
+      <li>Explicit insertion and explicit selection saving — nothing automatic.</li>
+      <li>Signed and notarized release artifacts.</li>
+    </ul>
+    <h2>Diagnostics without your content</h2>
+    <p>Support bundles are created only after an explicit action, previewed locally, and editable before you share them. They contain version, permission, and health information — never saved content, clipboard payloads, queries, file paths, or keys. Nothing is ever uploaded automatically.</p>
+    <h2>Related reading</h2>
+    <p>See the <a href="/privacy/">privacy model</a> for data boundaries, retention, and deletion behavior.</p>
   </article>
 </BaseLayout>

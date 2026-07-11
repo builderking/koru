@@ -1,6 +1,6 @@
 # Koru website
 
-Static Astro website for Koru. It is designed for Cloudflare Pages with no server runtime, functions, environment variables, analytics, or client-side JavaScript.
+Static Astro marketing website for Koru, the free writing-memory app for macOS. It is designed for Cloudflare Pages with no server runtime, functions, environment variables, analytics, or client-side JavaScript.
 
 ## Local verification
 
@@ -13,21 +13,32 @@ npm test
 
 The production output is written to `dist/`. `npm test` checks Astro diagnostics, copy-truth rules, internal links, accessibility basics, metadata, JSON-LD, required assets, security headers, redirects, and generated routes.
 
-## Release-dependent updates
+## Positioning rules
 
-Before a public release:
+The site presents Koru as a free, downloadable, local-first macOS app. Two rules are enforced by `scripts/check-source.mjs`:
 
-1. Replace the pre-release action and status copy only after a signed, notarized, checksum-verified GitHub Release exists.
-2. Add the verified version, macOS range, compatibility matrix, installation details, and release URL from the release record.
-3. Replace the concept product loop with reviewed product captures and accessible transcript content.
-4. Confirm or change `https://koru.pages.dev` in `astro.config.mjs`, `src/content/site.ts`, and `public/robots.txt` after the Cloudflare project or a custom domain is explicitly approved.
-5. Replace the neutral wordmark/glyph only after trademark and Māori cultural review is complete.
-6. Update privacy, security, NOTICE, and third-party attribution content from the shipped implementation and dependency audit.
+1. No open-source, repository, or license positioning — Koru is not open source.
+2. No absolute privacy overclaims ("100% private", "never lose anything").
 
-Do not add a download claim, compatibility claim, analytics, remote asset, or third-party script without updating the public privacy and release contracts.
+## Wiring the real download
+
+Download buttons currently point at `/download/`, and the button on that page uses a placeholder link. When a signed, notarized artifact exists:
+
+1. Set `download.artifactUrl` in `src/content/site.ts` to the real artifact URL.
+2. Add the verified version, macOS range, and release notes to `/download/`.
+3. Confirm or change `https://koru.pages.dev` in `astro.config.mjs`, `src/content/site.ts`, and `public/robots.txt` once the production domain is final.
+
+## Assets
+
+Icons and the social image are generated placeholders. Regenerate them after editing `scripts/generate-icons.swift`:
+
+```sh
+swift scripts/generate-icons.swift public
+```
+
+Replace these with final brand assets when brand review is complete. The support and security email addresses in `src/content/site.ts` are placeholders to confirm before launch.
 
 ## Hosting files
 
 - `public/_headers` contains the Cloudflare Pages security and cache policy.
 - `public/_redirects` contains stable short links and legacy route redirects.
-- Preview deployment indexing remains a Cloudflare setting/header to verify during the separately authorized Pages setup; this repository does not create or configure remote resources.

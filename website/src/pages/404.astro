@@ -2,5 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout title="Page not found — Koru" description="The requested Koru page could not be found." canonicalPath="/404/" noindex={true}>
-  <header class="page-hero text-shell"><p class="eyebrow">404</p><h1>That page is not in memory.</h1><p class="lede">The link may be old, or the page may not exist yet.</p><div class="actions"><a class="button button-primary" href="/">Return home</a><a class="button button-secondary" href="/docs/">Browse documentation</a></div></header>
+  <header class="page-hero text-shell">
+    <p class="eyebrow">404</p>
+    <h1>That page is not in memory.</h1>
+    <p class="lede">The link may be old, or the page may have moved.</p>
+    <div class="actions">
+      <a class="button button-primary" href="/">Return home</a>
+      <a class="button button-secondary" href="/download/">Download Koru</a>
+    </div>
+  </header>
 </BaseLayout>

@@ -1,5 +1,4 @@
 ---
-import { site } from '../content/site';
 interface Props { currentPath?: string }
 const { currentPath = '/' } = Astro.props;
 const isCurrent = (href: string) => href === '/' ? currentPath === '/' : currentPath.startsWith(href);
@@ -12,9 +11,10 @@ const isCurrent = (href: string) => href === '/' ? currentPath === '/' : current
     </a>
     <div class="nav-links">
       <a class="desktop-link" href="/#how-it-works">How it works</a>
+      <a class="desktop-link" href="/#features">Features</a>
+      <a class="desktop-link" href="/privacy/" aria-current={isCurrent('/privacy/') ? 'page' : undefined}>Privacy</a>
       <a class="desktop-link" href="/docs/" aria-current={isCurrent('/docs/') ? 'page' : undefined}>Docs</a>
-      <a href={site.repository}>GitHub</a>
-      <a class="button button-primary" href="/download/" aria-current={isCurrent('/download/') ? 'page' : undefined}>Release status</a>
+      <a class="button button-primary" href="/download/" aria-current={isCurrent('/download/') ? 'page' : undefined}>Download</a>
     </div>
   </nav>
 </header>

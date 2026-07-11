@@ -5,7 +5,7 @@ const root = new URL('../dist/', import.meta.url).pathname;
 const requiredFiles = [
   'index.html', 'privacy/index.html', 'security/index.html', 'download/index.html',
   'docs/index.html', 'docs/getting-started/index.html', 'faq/index.html',
-  'open-source/index.html', '404.html', 'robots.txt', 'sitemap-index.xml',
+  '404.html', 'robots.txt', 'sitemap-index.xml',
   '_headers', '_redirects', 'og.png', 'icons/favicon-32.png',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
 ];

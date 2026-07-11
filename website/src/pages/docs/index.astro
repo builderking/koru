@@ -1,16 +1,25 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { site } from '../../content/site';
 ---
-<BaseLayout title="Documentation — Koru" description="Koru product, privacy, security, release, and contributor documentation." canonicalPath="/docs/">
-  <header class="page-hero text-shell"><p class="eyebrow">Documentation</p><h1>Read the contract before the app ships.</h1><p class="lede">Koru's public plan defines the intended behavior, privacy boundaries, fallbacks, and release evidence. User documentation will grow alongside verified native implementation.</p></header>
+<BaseLayout
+  title="Documentation — Koru"
+  description="Koru documentation: getting started, permissions, privacy, security, and support."
+  canonicalPath="/docs/"
+>
+  <header class="page-hero text-shell">
+    <p class="eyebrow">Documentation</p>
+    <h1>Everything you need to get going.</h1>
+    <p class="lede">Set up Koru in minutes, understand its permissions, and see exactly how it treats your data.</p>
+  </header>
   <section class="prose text-shell">
     <div class="doc-grid">
-      <a class="doc-card" href="/docs/getting-started/"><h3>Getting started</h3><p>Understand the pre-release state and what the eventual installation path must include.</p></a>
-      <a class="doc-card" href="/privacy/"><h3>Privacy model</h3><p>See planned storage, network, clipboard, retention, export, and deletion behavior.</p></a>
-      <a class="doc-card" href="/security/"><h3>Security</h3><p>Report vulnerabilities privately and review the required release baseline.</p></a>
-      <a class="doc-card" href="/faq/"><h3>FAQ</h3><p>Answers about permissions, compatibility, local storage, and positioning.</p></a>
-      <a class="doc-card" href="https://github.com/builderking/koru/tree/main/build%20plan"><h3>Complete build plan</h3><p>Read the product, engineering, accessibility, testing, launch, and operations source of truth.</p></a>
-      <a class="doc-card" href="https://github.com/builderking/koru/blob/main/CONTRIBUTING.md"><h3>Contribution guide</h3><p>Learn how to contribute without exposing private content or changing locked behavior casually.</p></a>
+      <a class="doc-card" href="/docs/getting-started/"><h3>Getting started</h3><p>Install Koru, choose a mode, save your first item, and recall it from a fragment.</p></a>
+      <a class="doc-card" href="/privacy/"><h3>Privacy model</h3><p>What the app stores, how it's encrypted, and the retention, export, and deletion controls.</p></a>
+      <a class="doc-card" href="/security/"><h3>Security</h3><p>The security baseline and how to report vulnerabilities privately.</p></a>
+      <a class="doc-card" href="/faq/"><h3>FAQ</h3><p>Answers about permissions, compatibility, local storage, and how recall works.</p></a>
+      <a class="doc-card" href="/download/"><h3>Download</h3><p>Get the latest Koru for macOS 13 or later, free.</p></a>
+      <a class="doc-card" href={`mailto:${site.supportEmail}`}><h3>Support</h3><p>Stuck on something? Email {site.supportEmail} and we'll help.</p></a>
     </div>
   </section>
 </BaseLayout>

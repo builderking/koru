@@ -1,16 +1,62 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { releaseStatus, site } from '../content/site';
+import DownloadButton from '../components/DownloadButton.astro';
+import { site, download } from '../content/site';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Koru',
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'macOS 13.0 or later',
+  description: site.description,
+  url: new URL('/download/', site.url).href,
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
 ---
-<BaseLayout title="Download status — Koru" description="Koru has no supported download yet. Follow the public repository for signed and notarized release updates." canonicalPath="/download/">
-  <header class="page-hero text-shell"><p class="eyebrow">{releaseStatus.label}</p><h1>{releaseStatus.heading}</h1><p class="lede">{releaseStatus.body}</p></header>
+<BaseLayout
+  title="Download Koru — Free writing memory for macOS"
+  description="Download Koru free for macOS 13 or later. Universal for Apple Silicon and Intel. No account, no subscription — your writing memory stays on your Mac."
+  canonicalPath="/download/"
+  structuredData={structuredData}
+>
+  <header class="page-hero text-shell">
+    <p class="eyebrow">Download</p>
+    <h1>Get Koru for your Mac.</h1>
+    <p class="lede">Free to download and use. Install it in under a minute and give your writing a memory.</p>
+    <div class="actions">
+      <DownloadButton large direct />
+    </div>
+    <ul class="download-meta">
+      <li>{download.price}</li>
+      <li>{download.requirement}</li>
+      <li>{download.architectures}</li>
+      <li>No account required</li>
+    </ul>
+  </header>
   <article class="prose text-shell">
-    <div class="notice"><strong>No download is available.</strong> The repository does not currently publish a signed and notarized Koru application. Avoid binaries shared through unofficial links.</div>
-    <h2>When a public test is ready</h2>
-    <p>The official route will point to a versioned GitHub Release containing a Developer ID-signed and notarized macOS disk image, SHA-256 checksum, release notes, dependency notices, SBOM, supported macOS range, compatibility matrix, and known limitations.</p>
-    <h2>Follow progress</h2>
-    <div class="actions"><a class="button button-primary" href={site.repository}>Watch the repository</a><a class="button button-secondary" href={site.releases}>Check releases</a><a class="button button-secondary" href={site.discussions}>Join discussions</a></div>
-    <h2>Planned requirements</h2>
-    <ul><li>Direct distribution for macOS 13 or later is the current target, subject to native feasibility results.</li><li>Universal Apple Silicon and Intel support is required before stable release.</li><li>No account or cloud service is required for the core app.</li><li>The first supported artifact must be signed, notarized, stapled, checksum-verified, and smoke-tested from the public path.</li></ul>
+    <h2>Install in three steps</h2>
+    <ol>
+      <li>Open the downloaded disk image and drag <strong>Koru</strong> to your Applications folder.</li>
+      <li>Launch Koru from Applications. It appears in your menu bar — there's no dock icon to manage.</li>
+      <li>Follow the short onboarding to pick Full mode or Hotkey-only mode, then save your first item.</li>
+    </ol>
+    <h2>Permissions, explained up front</h2>
+    <p>Koru asks for the smallest set of permissions for the features you turn on — and explains each one before macOS shows a prompt.</p>
+    <ul>
+      <li><strong>Accessibility</strong> lets Koru place its panel at your caret, capture selections you save, and insert text where you're writing.</li>
+      <li><strong>Input Monitoring</strong> is needed only if you enable typed matching. Skip it and use the global hotkey instead.</li>
+      <li><strong>Clipboard history</strong> is a separate opt-in inside the app, off by default.</li>
+    </ul>
+    <h2>System requirements</h2>
+    <ul>
+      <li>{download.requirement}</li>
+      <li>Universal app — native on {download.architectures}</li>
+      <li>Works offline. Koru makes no background network requests.</li>
+    </ul>
+    <div class="notice"><strong>One safe source.</strong> Download Koru only from this page. Avoid builds shared through unofficial links or mirrors.</div>
+    <h2>Need a hand?</h2>
+    <p>Read the <a href="/docs/getting-started/">getting started guide</a> or email <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.</p>
   </article>
 </BaseLayout>

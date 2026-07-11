@@ -13,11 +13,13 @@ async function walk(path) {
 await walk(join(root.pathname, 'src'));
 const source = (await Promise.all(files.map((file) => readFile(file, 'utf8')))).join('\n');
 
-const forbidden = [/100% private/i, /never lose anything/i, /Download for macOS/i];
+// Koru is distributed as a free app; it is not open source and has no public repository.
+// Also forbid absolute privacy overclaims the product cannot guarantee.
+const forbidden = [/open[ -]?source/i, /github\.com/i, /apache/i, /100% private/i, /never lose anything/i, /unhackable/i];
 for (const pattern of forbidden) {
   if (pattern.test(source)) throw new Error(`Copy-truth check failed: ${pattern}`);
 }
-for (const required of ['no supported app download', 'pre-release', 'explicit', 'open source']) {
+for (const required of ['free', 'download for macos', 'local', 'privacy', 'explicit']) {
   if (!source.toLowerCase().includes(required)) throw new Error(`Missing required truth marker: ${required}`);
 }
 console.log(`Source checks passed across ${files.length} files.`);

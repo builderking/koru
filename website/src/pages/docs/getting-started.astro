@@ -1,17 +1,52 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { site, download } from '../../content/site';
 ---
-<BaseLayout title="Getting started — Koru documentation" description="Current pre-release guidance and the planned Koru installation and first-use path." canonicalPath="/docs/getting-started/">
-  <header class="page-hero text-shell"><p class="eyebrow">Getting started</p><h1>There is nothing to install yet.</h1><p class="lede">Koru is in product-definition and native-feasibility work. This guide separates what is available now from the planned first-release path.</p></header>
+<BaseLayout
+  title="Getting started — Koru documentation"
+  description="Install Koru on your Mac, choose Full or Hotkey-only mode, save your first item, and recall it from a fragment."
+  canonicalPath="/docs/getting-started/"
+>
+  <header class="page-hero text-shell">
+    <p class="eyebrow">Getting started</p>
+    <h1>From download to first recall.</h1>
+    <p class="lede">Koru takes a few minutes to set up. Here's the whole path — install, permissions, first save, first recall.</p>
+  </header>
   <article class="prose text-shell">
-    <div class="notice"><strong>Do not install unofficial builds.</strong> There is no supported binary, version, compatibility list, or app download today.</div>
-    <h2>What you can do now</h2>
-    <ol><li>Read the <a href="https://github.com/builderking/koru/tree/main/build%20plan">public build plan</a>.</li><li>Watch <a href="https://github.com/builderking/koru">builderking/koru</a> for implementation work.</li><li>Use <a href="https://github.com/builderking/koru/discussions">GitHub Discussions</a> for questions with synthetic examples only.</li><li>Review <a href="/privacy/">privacy</a>, <a href="/security/">security</a>, and <a href="/open-source/">open-source governance</a>.</li></ol>
-    <h2>The planned release path</h2>
-    <ol><li>Download the notarized disk image from the official GitHub Release or this site's verified release link.</li><li>Verify its published checksum, then move Koru to Applications.</li><li>Choose Full mode or Hotkey-only mode before broad permissions are requested.</li><li>Enable clipboard history separately and choose retention.</li><li>Complete a local save, fragment recall, explicit insertion, and undo exercise.</li></ol>
-    <h2>Permissions</h2>
-    <p>Accessibility is planned for supported caret, selection, and direct-insertion behavior. Input Monitoring is planned only for typed matching. Registered global hotkeys must remain available without Input Monitoring; downstream placement or insertion may still use capability-specific fallbacks.</p>
-    <h2>Compatibility</h2>
-    <p>The first public test must publish a versioned application matrix. Native fields, browsers, web editors, Electron apps, IDEs, and terminals may expose different levels of caret placement, selection, and insertion support. Koru will document tested behavior rather than claim universal support.</p>
+    <h2>1. Install</h2>
+    <ol>
+      <li><a href="/download/">Download Koru</a> — it's free, for {download.requirement}.</li>
+      <li>Open the disk image and drag Koru to your Applications folder.</li>
+      <li>Launch Koru. It lives in your menu bar, not your dock.</li>
+    </ol>
+    <h2>2. Choose your mode</h2>
+    <p>Onboarding shows you Koru working before it asks for anything. Then you pick how much integration you want:</p>
+    <ul>
+      <li><strong>Full mode</strong> enables caret-side recall, selection saving, and typed matching. It uses Accessibility, and Input Monitoring if you turn typed matching on.</li>
+      <li><strong>Hotkey-only mode</strong> keeps everything behind a global shortcut with no extra permissions. You can upgrade to Full mode anytime in Settings.</li>
+    </ul>
+    <p>Each permission is explained inside the app before macOS shows its prompt, and Koru rechecks the state after you return from System Settings.</p>
+    <h2>3. Save your first item</h2>
+    <ol>
+      <li>Select any text you'd want again — a reply you're proud of, a command, a prompt.</li>
+      <li>Press the save shortcut. Koru opens a small editor without leaving your app.</li>
+      <li>Give it a title (or keep the suggestion), optionally add tags or match terms, and save.</li>
+    </ol>
+    <h2>4. Recall it</h2>
+    <ol>
+      <li>Click into any fresh, empty text field and type a fragment you remember — or press the recall hotkey anywhere.</li>
+      <li>Matching items appear beside the caret. Arrow to the one you want.</li>
+      <li>Press Return to insert it exactly where you were typing. Nothing is inserted until you choose.</li>
+    </ol>
+    <h2>5. Optional: clipboard history</h2>
+    <p>Clipboard history is off by default. Turn it on in Settings, pick a retention window, then type <code>clp</code> at the start of a fresh field (or use the hotkey) to browse recent copies. Keeping one permanently is an explicit save.</p>
+    <h2>Good to know</h2>
+    <ul>
+      <li>Password fields are always ignored, and you can exclude any app in Settings.</li>
+      <li>Everything is stored locally and encrypted; see the <a href="/privacy/">privacy model</a>.</li>
+      <li>Where an app limits direct insertion, Koru falls back to the hotkey panel or copy-to-clipboard.</li>
+    </ul>
+    <h2>Need help?</h2>
+    <p>Email <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a> — include your macOS version and the app you were writing in, and never real private content.</p>
   </article>
 </BaseLayout>

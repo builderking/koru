@@ -1,8 +1,31 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FaqList from '../components/FaqList.astro';
+import FaqList, { questions } from '../components/FaqList.astro';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: questions.map(([question, answer]) => ({
+    '@type': 'Question',
+    name: question,
+    acceptedAnswer: { '@type': 'Answer', text: answer },
+  })),
+};
 ---
-<BaseLayout title="FAQ — Koru" description="Questions about Koru's pre-release status, privacy, permissions, compatibility, and open-source model." canonicalPath="/faq/">
-  <header class="page-hero text-shell"><p class="eyebrow">FAQ</p><h1>What Koru is—and what has not shipped.</h1><p class="lede">Answers are deliberately written for the current pre-release state. Verified release documentation will replace planned-language claims when the native app passes its gates.</p></header>
-  <section class="prose text-shell"><FaqList /></section>
+<BaseLayout
+  title="FAQ — Koru"
+  description="Answers about Koru: what it stores, how recall works, privacy, permissions, app compatibility, and exporting or deleting your data."
+  canonicalPath="/faq/"
+  structuredData={structuredData}
+>
+  <header class="page-hero text-shell">
+    <p class="eyebrow">FAQ</p>
+    <h1>Questions, answered.</h1>
+    <p class="lede">What Koru stores, where it works, and how it keeps your writing yours.</p>
+  </header>
+  <section class="prose text-shell">
+    <FaqList />
+    <h2>Still curious?</h2>
+    <p>Read the <a href="/privacy/">privacy model</a>, browse the <a href="/docs/">documentation</a>, or <a href="/download/">download Koru</a> and try it yourself — it's free.</p>
+  </section>
 </BaseLayout>
