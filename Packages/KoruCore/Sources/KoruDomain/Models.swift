@@ -83,6 +83,7 @@ public struct SavedItem: Identifiable, Hashable, Codable, Sendable {
 
 public enum ContentType: String, Codable, CaseIterable, Sendable { case plainText, richText, url, image, fileReference, mediaReference, unsupported }
 public enum ClipboardAvailability: String, Codable, Sendable { case available, expired, missingSourceFile, unsupported, skipped }
+public enum SavedItemLifecycle: String, Codable, CaseIterable, Sendable { case active, archived, recentlyDeleted }
 
 public struct ClipboardRepresentation: Hashable, Codable, Sendable {
     public var contentType: ContentType
@@ -105,6 +106,17 @@ public struct ClipboardEvent: Identifiable, Hashable, Codable, Sendable {
     public init(id: ClipboardEventID = .init(), capturedAt: Date = .now, expiresAt: Date, representations: [ClipboardRepresentation], encryptedSourceContext: Data? = nil, availability: ClipboardAvailability = .available) {
         self.id = id; self.capturedAt = capturedAt; self.expiresAt = expiresAt; self.representations = representations
         self.encryptedSourceContext = encryptedSourceContext; self.availability = availability
+    }
+}
+
+public struct ClipboardPayload: Hashable, Codable, Sendable {
+    public var event: ClipboardEvent
+    public var searchableText: String?
+    public var sourceBundleIdentifier: String?
+    public var keyedContentDigest: Data
+    public init(event: ClipboardEvent, searchableText: String? = nil, sourceBundleIdentifier: String? = nil, keyedContentDigest: Data) {
+        self.event = event; self.searchableText = searchableText
+        self.sourceBundleIdentifier = sourceBundleIdentifier; self.keyedContentDigest = keyedContentDigest
     }
 }
 
@@ -134,6 +146,14 @@ public struct RetentionPolicy: Hashable, Codable, Sendable {
     public init(maximumAge: TimeInterval, maximumEvents: Int, maximumAssetBytes: Int, maximumImageBytes: Int, clipboardHistoryEnabled: Bool = false) {
         self.maximumAge = maximumAge; self.maximumEvents = maximumEvents; self.maximumAssetBytes = maximumAssetBytes
         self.maximumImageBytes = maximumImageBytes; self.clipboardHistoryEnabled = clipboardHistoryEnabled
+    }
+}
+
+public struct ClipboardStorageSummary: Hashable, Codable, Sendable {
+    public var retainedCount: Int
+    public var encryptedBytes: Int
+    public init(retainedCount: Int, encryptedBytes: Int) {
+        self.retainedCount = retainedCount; self.encryptedBytes = encryptedBytes
     }
 }
 

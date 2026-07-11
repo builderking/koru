@@ -1,5 +1,7 @@
 # Architecture
 
+The encrypted repository, bounded search index, vault maintenance, and Clipboard service details are documented in [Data, search, and Clipboard implementation](data-security-search-clipboard.md).
+
 Status: design contract; the production app is not implemented.
 
 Koru is a local-first macOS menu-bar application. Core capture, recall, clipboard history, search, and insertion must work without an account or network connection. The intended deployment is a universal macOS 13+ app distributed directly as a Developer ID-signed and notarized DMG.
