@@ -7,6 +7,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiving {
+    private static let onboardingCompletedKey = "onboardingCompleted"
     private var statusItem: NSStatusItem!
     private var windows: [String: NSWindow] = [:]
     private let productStore = ProductStore()
@@ -30,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     private var typedEvents: TypedEventTapService?
     private var retentionPolicy = RetentionPolicy.v1Defaults
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if activateExistingInstanceAndTerminate() { return }
         NSApp.setActivationPolicy(.accessory)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "text.bubble", accessibilityDescription: "Koru")
@@ -57,6 +59,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         center.addObserver(self, selector: #selector(lockVaultSession), name: NSWorkspace.sessionDidResignActiveNotification, object: nil)
         center.addObserver(self, selector: #selector(unlockVaultSession), name: NSWorkspace.didWakeNotification, object: nil)
         center.addObserver(self, selector: #selector(unlockVaultSession), name: NSWorkspace.sessionDidBecomeActiveNotification, object: nil)
+        if !UserDefaults.standard.bool(forKey: Self.onboardingCompletedKey) {
+            DispatchQueue.main.async { [weak self] in self?.openOnboarding() }
+        }
     }
     func applicationWillTerminate(_ notification: Notification) { permissionTimer?.invalidate(); lifecycle?.transition(.shuttingDown); hotKeys?.unregisterAll() }
     private func item(_ title: String, _ action: Selector, _ equivalent: String = "") -> NSMenuItem { let item = NSMenuItem(title: title, action: action, keyEquivalent: equivalent); item.target = self; return item }
@@ -65,7 +70,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     @objc private func openSettings() { show("settings", title: "Koru Settings", size: .init(width: 680, height: 520), view: AnyView(SettingsView(clipboard: clipboardSettings).environmentObject(productStore))) }
     @objc private func openClipboardRecall() { recallRuntime?.openManual(scope: .clipboard) }
     @objc private func saveSelectionFromMenu() { captureSelection() }
-    @objc private func openOnboarding() { show("onboarding", title: "Welcome to Koru", size: .init(width: 600, height: 440), view: AnyView(OnboardingView().environmentObject(productStore))) }
+    @objc private func openOnboarding() {
+        let onboarding = OnboardingView { [weak self] fullMode in
+            guard let self else { return }
+            var settings = self.productStore.settings
+            settings.typedMatchingEnabled = fullMode
+            self.productStore.applySettings(settings)
+            UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+        }
+        show("onboarding", title: "Welcome to Koru", size: .init(width: 600, height: 440), view: AnyView(onboarding.environmentObject(productStore)))
+    }
     @objc private func openDiagnostics() { show("diagnostics", title: "Koru Diagnostics", size: .init(width: 820, height: 560), view: AnyView(DiagnosticsView().environmentObject(productStore))) }
     @objc private func togglePause() { lifecycle?.togglePause(); let paused = lifecycle?.state == .paused; pauseItem?.title = paused ? "Resume Koru" : "Pause Koru"; if paused { lockVaultSession() } else { unlockVaultSession() } }
     private func registerDefaultHotKeys() {
@@ -82,6 +96,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         }
     }
     private func show(_ key: String, title: String, size: NSSize, view: AnyView) { let window = windows[key] ?? { let w = NSWindow(contentRect: .init(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false); w.title = title; w.contentView = NSHostingView(rootView: view); w.center(); windows[key] = w; return w }(); NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil) }
+    private func activateExistingInstanceAndTerminate() -> Bool {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return false }
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        guard let existing = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+            .first(where: { $0.processIdentifier != currentPID && !$0.isTerminated }) else { return false }
+        existing.activate(options: [.activateIgnoringOtherApps])
+        NSApp.terminate(nil)
+        return true
+    }
     @objc func saveSelection(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         if let message = serviceProcessor?.process(pasteboard) { error.pointee = message as NSString }
     }

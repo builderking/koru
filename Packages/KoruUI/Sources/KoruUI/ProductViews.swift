@@ -15,7 +15,8 @@ public struct OnboardingView: View {
     @EnvironmentObject private var store: ProductStore
     @State private var step = 0
     @State private var mode = 0
-    public init() {}
+    private let onComplete: (Bool) -> Void
+    public init(onComplete: @escaping (Bool) -> Void = { _ in }) { self.onComplete = onComplete }
     public var body: some View {
         VStack(spacing: KoruSpacing.section) {
             HStack { Text("Welcome to Koru").font(.title2.bold()); Spacer(); Text("\(step + 1) of 4").foregroundStyle(.secondary) }
@@ -25,7 +26,7 @@ public struct OnboardingView: View {
                 else if step == 2 { permissionChoice }
                 else { finish }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
-            HStack { if step > 0 { Button("Back") { step -= 1 } }; Spacer(); if step < 3 { Button("Continue") { step += 1 }.keyboardShortcut(.defaultAction) } else { Button("Done") { NSApp.keyWindow?.close() }.keyboardShortcut(.defaultAction) } }
+            HStack { if step > 0 { Button("Back") { step -= 1 } }; Spacer(); if step < 3 { Button("Continue") { step += 1 }.keyboardShortcut(.defaultAction) } else { Button("Done") { onComplete(mode == 1); NSApp.keyWindow?.close() }.keyboardShortcut(.defaultAction) } }
         }.padding(28).frame(minWidth: 560, idealWidth: 600, minHeight: 390)
     }
     private var valueDemo: some View { VStack(spacing: 14) { Image(systemName: "text.bubble").font(.system(size: 42)); Text("Remember a fragment. Find the right writing.").font(.title3); Text("Your Library works immediately—without permissions, an account, or a network connection.").foregroundStyle(.secondary); HStack { Text("pus").font(.system(.body, design: .monospaced)); Image(systemName: "arrow.right"); Label("Push changes and open a pull request", systemImage: "text.quote") }.padding().koruAdaptiveSurface() }.multilineTextAlignment(.center).accessibilityElement(children: .combine) }
