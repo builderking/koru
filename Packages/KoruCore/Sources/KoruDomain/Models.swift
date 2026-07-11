@@ -22,6 +22,8 @@ public enum SavedItemBehavior: String, Codable, CaseIterable, Sendable {
     case template
 }
 
+public enum SavedItemCollection: String, Codable, CaseIterable, Sendable { case active, archived, recentlyDeleted }
+
 public struct MatchTerm: Hashable, Codable, Sendable {
     public var value: String
     public var isPreferredInitialTerm: Bool
@@ -63,6 +65,7 @@ public struct SavedItem: Identifiable, Hashable, Codable, Sendable {
     public var templateFields: [TemplateField]
     public var isPinned: Bool
     public var archivedAt: Date?
+    public var deletedAt: Date?
     public var createdAt: Date
     public var updatedAt: Date
     public var lastUsedAt: Date?
@@ -70,10 +73,10 @@ public struct SavedItem: Identifiable, Hashable, Codable, Sendable {
     public var sourceContext: String?
     public var keyedContentDigest: Data?
 
-    public init(id: SavedItemID = .init(), schemaVersion: Int = currentSchemaVersion, title: String, behavior: SavedItemBehavior, plainContent: String, matchTerms: [MatchTerm] = [], tags: [String] = [], templateFields: [TemplateField] = [], isPinned: Bool = false, archivedAt: Date? = nil, createdAt: Date = .now, updatedAt: Date = .now, lastUsedAt: Date? = nil, useCount: Int = 0, sourceContext: String? = nil, keyedContentDigest: Data? = nil) {
+    public init(id: SavedItemID = .init(), schemaVersion: Int = currentSchemaVersion, title: String, behavior: SavedItemBehavior, plainContent: String, matchTerms: [MatchTerm] = [], tags: [String] = [], templateFields: [TemplateField] = [], isPinned: Bool = false, archivedAt: Date? = nil, deletedAt: Date? = nil, createdAt: Date = .now, updatedAt: Date = .now, lastUsedAt: Date? = nil, useCount: Int = 0, sourceContext: String? = nil, keyedContentDigest: Data? = nil) {
         self.id = id; self.schemaVersion = schemaVersion; self.title = title; self.behavior = behavior
         self.plainContent = plainContent; self.matchTerms = matchTerms; self.tags = tags; self.templateFields = templateFields
-        self.isPinned = isPinned; self.archivedAt = archivedAt; self.createdAt = createdAt; self.updatedAt = updatedAt
+        self.isPinned = isPinned; self.archivedAt = archivedAt; self.deletedAt = deletedAt; self.createdAt = createdAt; self.updatedAt = updatedAt
         self.lastUsedAt = lastUsedAt; self.useCount = useCount; self.sourceContext = sourceContext; self.keyedContentDigest = keyedContentDigest
     }
 }
@@ -164,6 +167,7 @@ public struct InsertionTransaction: Identifiable, Hashable, Codable, Sendable {
 }
 
 public enum PermissionState: String, Codable, Sendable { case unknown, unavailable, denied, granted, revoked }
+public enum KoruPermission: String, Codable, CaseIterable, Sendable { case accessibility, inputMonitoring, pasteboard }
 public enum HotKeyState: String, Codable, Sendable { case registered, disabled, conflict, reservedOrUnsupported, failed }
 public struct PermissionSnapshot: Hashable, Codable, Sendable {
     public var accessibility: PermissionState
@@ -172,6 +176,10 @@ public struct PermissionSnapshot: Hashable, Codable, Sendable {
     public var pasteboard: PermissionState
     public var loginItem: PermissionState
     public var hotKeys: [String: HotKeyState]
+    public init(accessibility: PermissionState, inputListening: PermissionState, eventPosting: PermissionState, pasteboard: PermissionState, loginItem: PermissionState, hotKeys: [String: HotKeyState]) {
+        self.accessibility = accessibility; self.inputListening = inputListening; self.eventPosting = eventPosting
+        self.pasteboard = pasteboard; self.loginItem = loginItem; self.hotKeys = hotKeys
+    }
 }
 
 public struct DiagnosticEvent: Identifiable, Hashable, Codable, Sendable {
@@ -187,4 +195,50 @@ public struct DiagnosticEvent: Identifiable, Hashable, Codable, Sendable {
         self.id = id; self.code = code; self.severity = severity; self.timestamp = timestamp; self.result = result
         self.durationMilliseconds = durationMilliseconds; self.aggregateCount = aggregateCount
     }
+}
+
+
+public struct KoruSettingsSnapshot: Hashable, Codable, Sendable {
+    public var typedMatchingEnabled = false
+    public var selectionIconEnabled = false
+    public var clipboardHistoryEnabled = false
+    public var launchAtLogin = false
+    public var isPaused = false
+    public var retentionDays = 7
+    public var maximumEvents = 500
+    public var maximumAssetMegabytes = 256
+    public var shortcuts: [String: String] = ["Recall": "⌥Space", "Clipboard": "⌥⇧Space", "Save Selection": "⌥⇧S"]
+    public var neverObserve: [String] = []
+    public var neverSaveClipboardFrom: [String] = []
+    public init() {}
+}
+
+public enum ServiceHealth: String, Codable, Sendable { case healthy, stopped, degraded, unavailable }
+public struct DiagnosticsSnapshot: Hashable, Codable, Sendable {
+    public var appVersion: String
+    public var osVersion: String
+    public var architecture: String
+    public var permissions: PermissionSnapshot
+    public var eventTap: ServiceHealth
+    public var accessibilityObserver: ServiceHealth
+    public var pasteboardMonitor: ServiceHealth
+    public var repository: ServiceHealth
+    public var registeredHotKeys: [String: HotKeyState]
+    public var retainedClipboardCount: Int
+    public var lastCompatibilityOutcome: CompatibilityCapability?
+    public init(appVersion: String, osVersion: String, architecture: String, permissions: PermissionSnapshot, eventTap: ServiceHealth, accessibilityObserver: ServiceHealth, pasteboardMonitor: ServiceHealth, repository: ServiceHealth, registeredHotKeys: [String: HotKeyState], retainedClipboardCount: Int, lastCompatibilityOutcome: CompatibilityCapability? = nil) {
+        self.appVersion = appVersion; self.osVersion = osVersion; self.architecture = architecture; self.permissions = permissions
+        self.eventTap = eventTap; self.accessibilityObserver = accessibilityObserver; self.pasteboardMonitor = pasteboardMonitor
+        self.repository = repository; self.registeredHotKeys = registeredHotKeys; self.retainedClipboardCount = retainedClipboardCount
+        self.lastCompatibilityOutcome = lastCompatibilityOutcome
+    }
+}
+
+public enum RecoveryAction: String, Codable, CaseIterable, Sendable { case retryServices, rebuildAccessibilityObserver, resumePasteboardMonitor, integrityCheck, clearClipboardHistory, restoreEncryptedBackup, resetVault }
+public struct RecoveryOutcome: Hashable, Codable, Sendable {
+    public var action: RecoveryAction
+    public var succeeded: Bool
+    public var reasonCode: String
+    public var timestamp: Date
+    public init(action: RecoveryAction, succeeded: Bool, reasonCode: String, timestamp: Date = .now) { self.action = action; self.succeeded = succeeded; self.reasonCode = reasonCode; self.timestamp = timestamp }
 }

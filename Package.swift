@@ -19,5 +19,6 @@ let package = Package(
         .executableTarget(name: "KoruIntegrationHarness", dependencies: ["KoruDomain", "KoruPlatform", "KoruUI"], path: "Harness"),
         .testTarget(name: "KoruDomainTests", dependencies: ["KoruDomain"], path: "Tests/KoruDomainTests"),
         .testTarget(name: "KoruPlatformTests", dependencies: ["KoruPlatform", "KoruDomain"], path: "Tests/KoruPlatformTests"),
+        .testTarget(name: "KoruUITests", dependencies: ["KoruUI", "KoruDomain"], path: "Tests/KoruUITests"),
     ]
 )

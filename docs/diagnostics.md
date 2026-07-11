@@ -1,6 +1,8 @@
 # Privacy-safe diagnostics and recovery
 
-Status: specification for TASK-080 through TASK-082; no Diagnostics screen or app watchdog exists yet.
+Status: TASK-080 through TASK-082 product UI and protocol-backed development implementation are present. Platform services still supply production health, backoff, repository recovery, and permission state through the documented adapters.
+
+The Diagnostics window now previews a content-free JSON support bundle before an explicit local export. Recovery controls require confirmation for destructive actions and record only reason-coded outcomes. See [Product surfaces and integration contract](product-surfaces.md) for the platform handoff.
 
 ## Structured logging contract
 

@@ -6,6 +6,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var windows: [String: NSWindow] = [:]
+    private let productStore = ProductStore()
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -24,10 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.servicesProvider = self
     }
     private func item(_ title: String, _ action: Selector, _ equivalent: String = "") -> NSMenuItem { let item = NSMenuItem(title: title, action: action, keyEquivalent: equivalent); item.target = self; return item }
-    @objc private func openLibrary() { show("library", title: "Koru Library", size: .init(width: 820, height: 560), view: AnyView(LibraryView())) }
-    @objc private func openSettings() { show("settings", title: "Koru Settings", size: .init(width: 480, height: 300), view: AnyView(SettingsView())) }
-    @objc private func openOnboarding() { show("onboarding", title: "Welcome to Koru", size: .init(width: 520, height: 320), view: AnyView(OnboardingView())) }
-    @objc private func openDiagnostics() { show("diagnostics", title: "Koru Diagnostics", size: .init(width: 480, height: 260), view: AnyView(DiagnosticsView())) }
+    @objc private func openLibrary() { show("library", title: "Koru Library", size: .init(width: 940, height: 620), view: AnyView(LibraryView().environmentObject(productStore))) }
+    @objc private func openSettings() { show("settings", title: "Koru Settings", size: .init(width: 680, height: 520), view: AnyView(SettingsView().environmentObject(productStore))) }
+    @objc private func openOnboarding() { show("onboarding", title: "Welcome to Koru", size: .init(width: 600, height: 440), view: AnyView(OnboardingView().environmentObject(productStore))) }
+    @objc private func openDiagnostics() { show("diagnostics", title: "Koru Diagnostics", size: .init(width: 820, height: 560), view: AnyView(DiagnosticsView().environmentObject(productStore))) }
     private func show(_ key: String, title: String, size: NSSize, view: AnyView) { let window = windows[key] ?? { let w = NSWindow(contentRect: .init(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false); w.title = title; w.contentView = NSHostingView(rootView: view); w.center(); windows[key] = w; return w }(); NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil) }
     @objc func saveSelection(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         guard pasteboard.string(forType: .string) != nil else { error.pointee = "Koru received no supported text."; return }
