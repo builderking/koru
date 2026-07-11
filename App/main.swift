@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     private var pendingSave: SaveConfirmationInput?
     private var pauseItem: NSMenuItem?
     private let hotKeyStore = HotKeyConfigurationStore()
+    private let loginItem = LoginItemService()
     private let clipboardSettings = ClipboardSettingsModel()
     private var repository: EncryptedSQLiteRepository?
     private var keyManager: VaultKeyManager?
@@ -34,7 +35,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         statusItem.button?.image = NSImage(systemSymbolName: "text.bubble", accessibilityDescription: "Koru")
         let menu = NSMenu()
         menu.addItem(item("Open Recall", #selector(openRecall), "r"))
-        menu.addItem(item("Save Selection", #selector(openLibrary), "s"))
+        menu.addItem(item("Save Selection", #selector(saveSelectionFromMenu), "s"))
+        menu.addItem(item("Open Clipboard", #selector(openClipboardRecall)))
         pauseItem = item("Pause Koru", #selector(togglePause)); menu.addItem(pauseItem!)
         menu.addItem(.separator())
         menu.addItem(item("Library", #selector(openLibrary)))
@@ -61,7 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     @objc private func openLibrary() { show("library", title: "Koru Library", size: .init(width: 940, height: 620), view: AnyView(LibraryView().environmentObject(productStore))) }
     @objc private func openRecall() { recallRuntime?.openManual(scope: .saved) }
     @objc private func openSettings() { show("settings", title: "Koru Settings", size: .init(width: 680, height: 520), view: AnyView(SettingsView(clipboard: clipboardSettings).environmentObject(productStore))) }
-    @objc private func openClipboardRecall() { openLibrary() }
+    @objc private func openClipboardRecall() { recallRuntime?.openManual(scope: .clipboard) }
+    @objc private func saveSelectionFromMenu() { captureSelection() }
     @objc private func openOnboarding() { show("onboarding", title: "Welcome to Koru", size: .init(width: 600, height: 440), view: AnyView(OnboardingView().environmentObject(productStore))) }
     @objc private func openDiagnostics() { show("diagnostics", title: "Koru Diagnostics", size: .init(width: 820, height: 560), view: AnyView(DiagnosticsView().environmentObject(productStore))) }
     @objc private func togglePause() { lifecycle?.togglePause(); let paused = lifecycle?.state == .paused; pauseItem?.title = paused ? "Resume Koru" : "Pause Koru"; if paused { lockVaultSession() } else { unlockVaultSession() } }
@@ -118,13 +121,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         }
         recallRuntime = runtime; typedEvents = events
         productStore.onSettingsChanged = { [weak self] settings in
+            if let data = try? JSONEncoder().encode(settings) { UserDefaults.standard.set(data, forKey: "settings") }
             UserDefaults.standard.set(settings.typedMatchingEnabled, forKey: "typedMatchingEnabled")
             UserDefaults.standard.set(settings.neverObserve, forKey: "neverObserve")
             guard let self else { return }
+            if (self.loginItem.state == .granted) != settings.launchAtLogin { try? self.loginItem.setEnabled(settings.launchAtLogin) }
             if settings.isPaused != (self.lifecycle?.isUserPaused == true) { self.togglePause() }
             if settings.typedMatchingEnabled && !settings.isPaused { self.typedEvents?.start() } else { self.typedEvents?.stopAndPurge() }
         }
+        productStore.onPermissionRequested = { [weak self] permission in
+            guard let self else { return }
+            switch permission {
+            case .accessibility: self.permissions.requestAccessibility()
+            case .inputMonitoring: self.permissions.requestInputListening()
+            case .pasteboard: break
+            }
+            self.refreshRuntimePermissions()
+        }
+        productStore.onPermissionRefreshRequested = { [weak self] in self?.refreshRuntimePermissions() }
         lifecycle = IntegrationLifecycle(integrations: [runtime, events]); lifecycle?.install(); lifecycle?.transition(.active)
+        if let data = UserDefaults.standard.data(forKey: "settings"),
+           let settings = try? JSONDecoder().decode(KoruSettingsSnapshot.self, from: data) {
+            retentionPolicy.clipboardHistoryEnabled = settings.clipboardHistoryEnabled
+            retentionPolicy.maximumAge = Double(settings.retentionDays * 86_400)
+            retentionPolicy.maximumEvents = settings.maximumEvents
+            retentionPolicy.maximumAssetBytes = settings.maximumAssetMegabytes * 1_024 * 1_024
+            productStore.applySettings(settings)
+        }
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in DispatchQueue.main.async { self?.refreshRuntimePermissions() } }
         productStore.configurePersistence(.init(
             load: { try await repository.savedItems(states: [.active, .archived, .recentlyDeleted]) },

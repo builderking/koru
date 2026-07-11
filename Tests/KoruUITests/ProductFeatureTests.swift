@@ -57,6 +57,21 @@ final class ProductFeatureTests: XCTestCase {
         XCTAssertThrowsError(try store.save(invalid))
     }
 
+    @MainActor func testPermissionControlsDelegateToPlatformWithoutInventingState() {
+        let store = ProductStore()
+        var requested: KoruPermission?
+        var refreshed = false
+        store.onPermissionRequested = { requested = $0 }
+        store.onPermissionRefreshRequested = { refreshed = true }
+
+        store.request(.accessibility)
+        XCTAssertEqual(requested, .accessibility)
+        XCTAssertEqual(store.permissionSnapshot.accessibility, .unknown)
+
+        store.refreshPermissions()
+        XCTAssertTrue(refreshed)
+    }
+
     func testSupportBundleContainsNoSavedOrClipboardContentFields() throws {
         let permission = PermissionSnapshot(accessibility: .denied, inputListening: .denied, eventPosting: .denied, pasteboard: .granted, loginItem: .unknown, hotKeys: [:])
         let snapshot = DiagnosticsSnapshot(appVersion: "1", osVersion: "test", architecture: "arm64", permissions: permission, eventTap: .stopped, accessibilityObserver: .stopped, pasteboardMonitor: .healthy, repository: .healthy, registeredHotKeys: [:], retainedClipboardCount: 2)

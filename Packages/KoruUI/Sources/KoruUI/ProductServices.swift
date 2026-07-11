@@ -163,6 +163,8 @@ public struct ProductStorePersistence: Sendable {
     private let logger = PrivacySafeLogger()
     private var persistence: ProductStorePersistence?
     public var onSettingsChanged: ((KoruSettingsSnapshot) -> Void)?
+    public var onPermissionRequested: ((KoruPermission) -> Void)?
+    public var onPermissionRefreshRequested: (() -> Void)?
     private var persistenceTasks: [UUID: Task<Void, Never>] = [:]
     public init(items: [SavedItem] = []) {
         self.items = items
@@ -219,8 +221,8 @@ public struct ProductStorePersistence: Sendable {
         diagnosticsSnapshot.eventTap = eventTap
         diagnosticsSnapshot.accessibilityObserver = recall
     }
-    public func request(_ permission: KoruPermission) { switch permission { case .accessibility: permissionSnapshot.accessibility = .denied; case .inputMonitoring: permissionSnapshot.inputListening = .denied; case .pasteboard: permissionSnapshot.pasteboard = .granted }; diagnosticsSnapshot.permissions = permissionSnapshot }
-    public func refreshPermissions() { diagnosticsSnapshot.permissions = permissionSnapshot }
+    public func request(_ permission: KoruPermission) { onPermissionRequested?(permission) }
+    public func refreshPermissions() { onPermissionRefreshRequested?() }
     public func perform(_ action: RecoveryAction) async -> RecoveryOutcome {
         if action == .resetVault {
             do { try await persistence?.reset(); items.removeAll() }

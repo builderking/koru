@@ -1,5 +1,7 @@
 # 19. Definition of done
 
+Local implementation evidence is tracked in [`../docs/release/local-completion-audit.md`](../docs/release/local-completion-audit.md). That audit does not mark this release checklist complete: human compatibility/accessibility work, signing, notarization, remote configuration, beta evidence, publication, and final approval remain required.
+
 Koru reaches 100% only when the product, native implementation, privacy model, open-source repository, website, distribution, and operating model are all release-ready. A working demo alone is not completion.
 
 ## 19.1 Product definition
