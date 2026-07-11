@@ -135,18 +135,54 @@ public actor PrivacySafeLogger {
     func perform(_ action: RecoveryAction) async -> RecoveryOutcome
 }
 
+public struct ProductStorePersistence: Sendable {
+    public var load: @Sendable () async throws -> [SavedItem]
+    public var save: @Sendable (SavedItem) async throws -> Void
+    public var move: @Sendable (SavedItemID, SavedItemCollection) async throws -> Void
+    public var permanentlyDelete: @Sendable (SavedItemID) async throws -> Void
+    public var reset: @Sendable () async throws -> Void
+    public init(
+        load: @escaping @Sendable () async throws -> [SavedItem],
+        save: @escaping @Sendable (SavedItem) async throws -> Void,
+        move: @escaping @Sendable (SavedItemID, SavedItemCollection) async throws -> Void,
+        permanentlyDelete: @escaping @Sendable (SavedItemID) async throws -> Void,
+        reset: @escaping @Sendable () async throws -> Void
+    ) {
+        self.load = load; self.save = save; self.move = move
+        self.permanentlyDelete = permanentlyDelete; self.reset = reset
+    }
+}
+
 @MainActor public final class ProductStore: ObservableObject, ProductStoreProtocol {
     @Published public private(set) var items: [SavedItem]
     @Published public private(set) var settings = KoruSettingsSnapshot()
     @Published public private(set) var permissionSnapshot: PermissionSnapshot
     @Published public private(set) var diagnosticsSnapshot: DiagnosticsSnapshot
     @Published public private(set) var diagnosticEvents: [DiagnosticEvent] = []
+    @Published public var pendingDraft: SavedItem?
     private let logger = PrivacySafeLogger()
+    private var persistence: ProductStorePersistence?
+    private var persistenceTasks: [UUID: Task<Void, Never>] = [:]
     public init(items: [SavedItem] = []) {
         self.items = items
         let permissions = PermissionSnapshot(accessibility: .unknown, inputListening: .unknown, eventPosting: .unknown, pasteboard: .unknown, loginItem: .unknown, hotKeys: [:])
         permissionSnapshot = permissions
         diagnosticsSnapshot = DiagnosticsSnapshot(appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Development", osVersion: ProcessInfo.processInfo.operatingSystemVersionString, architecture: Self.architecture, permissions: permissions, eventTap: .stopped, accessibilityObserver: .stopped, pasteboardMonitor: .stopped, repository: .healthy, registeredHotKeys: [:], retainedClipboardCount: 0)
+    }
+    public func configurePersistence(_ persistence: ProductStorePersistence) {
+        self.persistence = persistence
+        Task { await reloadFromPersistence() }
+    }
+    public func presentDraft(_ item: SavedItem) { pendingDraft = item }
+    public func reloadFromPersistence() async {
+        guard let persistence else { return }
+        do {
+            items = try await persistence.load()
+            diagnosticsSnapshot.repository = .healthy
+        } catch {
+            diagnosticsSnapshot.repository = .degraded
+            await recordPersistenceFailure("repository.load_failed")
+        }
     }
     private static var architecture: String {
         #if arch(arm64)
@@ -164,18 +200,26 @@ public actor PrivacySafeLogger {
         if normalized.contains(KoruPolicy.reservedClipboardCommand) { throw ProductValidationError.reservedMatchTerm }
         if Set(normalized).count != normalized.count { throw ProductValidationError.duplicateMatchTerm }
         if let index = items.firstIndex(where: { $0.id == item.id }) { items[index] = item } else { items.append(item) }
+        if let persistence { enqueuePersistence("repository.save_failed") { try await persistence.save(item) } }
     }
     public func move(_ id: SavedItemID, to collection: SavedItemCollection) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         switch collection { case .active: items[index].archivedAt = nil; items[index].deletedAt = nil; case .archived: items[index].archivedAt = .now; items[index].deletedAt = nil; case .recentlyDeleted: items[index].deletedAt = .now }
         items[index].updatedAt = .now
+        if let persistence { enqueuePersistence("repository.move_failed") { try await persistence.move(id, collection) } }
     }
-    public func permanentlyDelete(_ id: SavedItemID) { items.removeAll { $0.id == id } }
+    public func permanentlyDelete(_ id: SavedItemID) {
+        items.removeAll { $0.id == id }
+        if let persistence { enqueuePersistence("repository.delete_failed") { try await persistence.permanentlyDelete(id) } }
+    }
     public func applySettings(_ value: KoruSettingsSnapshot) { settings = value; diagnosticsSnapshot.eventTap = value.typedMatchingEnabled && !value.isPaused ? .healthy : .stopped; diagnosticsSnapshot.pasteboardMonitor = value.clipboardHistoryEnabled && !value.isPaused ? .healthy : .stopped }
     public func request(_ permission: KoruPermission) { switch permission { case .accessibility: permissionSnapshot.accessibility = .denied; case .inputMonitoring: permissionSnapshot.inputListening = .denied; case .pasteboard: permissionSnapshot.pasteboard = .granted }; diagnosticsSnapshot.permissions = permissionSnapshot }
     public func refreshPermissions() { diagnosticsSnapshot.permissions = permissionSnapshot }
     public func perform(_ action: RecoveryAction) async -> RecoveryOutcome {
-        if action == .resetVault { items.removeAll() }
+        if action == .resetVault {
+            do { try await persistence?.reset(); items.removeAll() }
+            catch { await recordPersistenceFailure("repository.reset_failed"); return .init(action: action, succeeded: false, reasonCode: "repository.reset_failed") }
+        }
         if action == .clearClipboardHistory { diagnosticsSnapshot.retainedClipboardCount = 0 }
         if action == .retryServices { diagnosticsSnapshot.eventTap = settings.typedMatchingEnabled ? .healthy : .stopped }
         if action == .rebuildAccessibilityObserver { diagnosticsSnapshot.accessibilityObserver = .healthy }
@@ -184,6 +228,22 @@ public actor PrivacySafeLogger {
         diagnosticEvents.append(.init(code: outcome.reasonCode, severity: .notice, result: action.rawValue))
         await logger.record(.init(category: "recovery", code: outcome.reasonCode, values: ["success": .boolean(true)]))
         return outcome
+    }
+    private func recordPersistenceFailure(_ code: String) async {
+        diagnosticsSnapshot.repository = .degraded
+        diagnosticEvents.append(.init(code: code, severity: .error, result: "failed"))
+        await logger.record(.init(category: "repository", code: code, values: ["success": .boolean(false)]))
+    }
+    private func enqueuePersistence(_ failureCode: String, operation: @escaping @Sendable () async throws -> Void) {
+        let id = UUID()
+        persistenceTasks[id] = Task {
+            do { try await operation() }
+            catch { await self.recordPersistenceFailure(failureCode) }
+            self.persistenceTasks.removeValue(forKey: id)
+        }
+    }
+    public func flushPersistence() async {
+        for task in Array(persistenceTasks.values) { await task.value }
     }
 }
 

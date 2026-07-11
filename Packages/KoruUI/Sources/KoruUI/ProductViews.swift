@@ -96,6 +96,10 @@ public struct LibraryView: View {
             else { Text("No saved item selected").foregroundStyle(.secondary) }
         }
         .sheet(item: $editor) { SavedItemEditor(item: $0).environmentObject(store) }
+        .onReceive(store.$pendingDraft.compactMap { $0 }) { draft in
+            editor = draft
+            store.pendingDraft = nil
+        }
         .alert("Permanently delete this item?", isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } })) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { if let item = confirmDelete { store.permanentlyDelete(item.id) } }

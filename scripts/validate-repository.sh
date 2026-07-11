@@ -9,7 +9,7 @@ required=(
   .github/pull_request_template.md
   .github/workflows/ci.yml
   .github/workflows/release.yml
-  config/dependencies-allowlist.json
+  Config/dependencies-allowlist.json
   docs/architecture.md
   docs/privacy.md
   docs/security/threat-model.md
@@ -24,7 +24,7 @@ for path in "${required[@]}"; do
   [[ -s "$path" ]] || { echo "missing required file: $path" >&2; exit 1; }
 done
 
-python3 -m json.tool config/dependencies-allowlist.json >/dev/null
+python3 -m json.tool Config/dependencies-allowlist.json >/dev/null
 python3 -m json.tool docs/support-bundle.schema.json >/dev/null
 python3 -m json.tool docs/support-bundle.example.json >/dev/null
 python3 - <<'PY'
@@ -46,7 +46,7 @@ else:
 
 missing_links = []
 for document in pathlib.Path(".").rglob("*.md"):
-    if ".git" in document.parts or "build plan" in document.parts:
+    if any(part in {".git", ".build", "build", "dist", "node_modules"} for part in document.parts) or "build plan" in document.parts:
         continue
     text = document.read_text()
     for target in re.findall(r"(?<!!)\[[^]]+\]\(([^)]+)\)", text):

@@ -4,6 +4,8 @@ Release: `v________`  Commit: `________`  Owner: `________`  Date: `________`
 
 Unchecked items are gates, not optional documentation.
 
+The latest repository-local qualification evidence is recorded in [local qualification](local-qualification.md). That record does not waive the external and human gates below.
+
 ## Source and quality
 
 - [ ] Protected signed tag resolves to reviewed commit; checkout is clean.

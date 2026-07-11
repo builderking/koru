@@ -4,6 +4,7 @@ require "xcodeproj"
 project = Xcodeproj::Project.new("Koru.xcodeproj")
 project.root_object.attributes["LastSwiftUpdateCheck"] = "2660"
 project.root_object.attributes["LastUpgradeCheck"] = "2660"
+project.root_object.attributes["BuildIndependentTargetsInParallel"] = "YES"
 
 package = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)
 package.relative_path = "."
@@ -32,7 +33,7 @@ def add_app(project, package, name, sources, products, plist, bundle_id)
     config.build_settings["SWIFT_STRICT_CONCURRENCY"] = "complete"
     config.build_settings["CODE_SIGNING_ALLOWED"] = "NO"
     config.build_settings["ARCHS"] = "arm64 x86_64"
-    config.build_settings["ONLY_ACTIVE_ARCH"] = config.name == "Debug" ? "YES" : "NO"
+    config.build_settings["ONLY_ACTIVE_ARCH"] = "NO"
     config.build_settings["MACOSX_DEPLOYMENT_TARGET"] = "13.0"
   end
   target

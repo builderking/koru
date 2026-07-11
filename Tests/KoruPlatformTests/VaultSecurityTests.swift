@@ -51,8 +51,10 @@ struct TestVault {
     #expect(try await vault.repository.item(id: item.id)?.title == marker)
     try await vault.repository.setLifecycle(id: item.id, .recentlyDeleted)
     #expect(try await vault.repository.savedItems(states: [.active]).isEmpty)
+    #expect(try await vault.repository.items(in: .recentlyDeleted).first?.deletedAt != nil)
     try await vault.repository.setLifecycle(id: item.id, .active)
     #expect(try await vault.repository.savedItems(states: [.active]).count == 1)
+    #expect(try await vault.repository.item(id: item.id)?.deletedAt == nil)
     try await vault.repository.createEncryptedBackup()
     await vault.repository.close()
     let files = (try? FileManager.default.subpathsOfDirectory(atPath: vault.root.path)) ?? []

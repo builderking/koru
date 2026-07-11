@@ -7,6 +7,7 @@
     "dev": "astro dev",
     "build": "astro check && astro build",
     "check": "astro check && node scripts/check-source.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
     "test": "npm run check && npm run build && node scripts/check-dist.mjs",
     "preview": "astro preview"
   },

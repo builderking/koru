@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     private let hotKeyStore = HotKeyConfigurationStore()
     private let clipboardSettings = ClipboardSettingsModel()
     private var repository: EncryptedSQLiteRepository?
+    private var keyManager: VaultKeyManager?
     private var searchIndex: InMemorySearchIndex?
     private var clipboardController: ClipboardHistoryController?
     private var clipboardMonitor: PasteboardMonitor?
@@ -66,16 +67,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         let defaults: [(HotKeyCommand, HotKeyBinding)] = [(.openKoru, .init(keyCode: UInt32(kVK_ANSI_R), modifiers: UInt32(cmdKey | controlKey))), (.openClipboard, .init(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | controlKey))), (.saveSelection, .init(keyCode: UInt32(kVK_ANSI_S), modifiers: UInt32(cmdKey | controlKey)))]
         defaults.forEach { command, fallback in let binding = hotKeyStore.binding(for: command, fallback: fallback); let state = hotKeys?.register(command, binding: binding) ?? .failed; permissions.setHotKeyState(state, command: String(describing: command)) }
     }
-    private func dispatch(_ command: HotKeyCommand) { guard lifecycle?.state == .active else { return }; switch command { case .openKoru: openLibrary(); case .openClipboard: openClipboardRecall(); case .saveSelection: openLibrary(); case .pauseResume: togglePause() } }
+    private func dispatch(_ command: HotKeyCommand) {
+        guard lifecycle?.state == .active else { return }
+        switch command {
+        case .openKoru: openLibrary()
+        case .openClipboard: openClipboardRecall()
+        case .saveSelection: captureSelection()
+        case .pauseResume: togglePause()
+        }
+    }
     private func show(_ key: String, title: String, size: NSSize, view: AnyView) { let window = windows[key] ?? { let w = NSWindow(contentRect: .init(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false); w.title = title; w.contentView = NSHostingView(rootView: view); w.center(); windows[key] = w; return w }(); NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil) }
     @objc func saveSelection(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         if let message = serviceProcessor?.process(pasteboard) { error.pointee = message as NSString }
     }
-    func receive(_ input: SaveConfirmationInput) { pendingSave = input; openLibrary() }
+    func receive(_ input: SaveConfirmationInput) {
+        pendingSave = input
+        productStore.presentDraft(.init(title: String(input.plainText.prefix(48)), behavior: .savedText, plainContent: input.plainText))
+        pendingSave = nil
+        openLibrary()
+    }
+
+    private func captureSelection() {
+        let inspector = SystemAccessibilityInspector()
+        guard case let .success(snapshot) = inspector.focusedTarget() else { openLibrary(); return }
+        let bundleID = NSRunningApplication(processIdentifier: snapshot.processIdentifier)?.bundleIdentifier
+        let context = SecurityContext(bundleIdentifier: bundleID, role: snapshot.role, subrole: snapshot.subrole, protectedContent: snapshot.isSecure, editable: snapshot.isEditable)
+        let shortcut = SaveSelectionShortcut(reader: SystemSelectedTextReader(), receiver: self)
+        if shortcut.invoke(context: SecurityContextClassifier().classify(context)) != .opened { openLibrary() }
+    }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         clipboardTimer?.invalidate()
-        Task { if let clipboardMonitor { await clipboardMonitor.suspend() }; if let searchIndex { await searchIndex.purge() }; if let repository { await repository.close() }; sender.reply(toApplicationShouldTerminate: true) }
+        Task { await productStore.flushPersistence(); if let clipboardMonitor { await clipboardMonitor.suspend() }; if let searchIndex { await searchIndex.purge() }; if let repository { await repository.close() }; sender.reply(toApplicationShouldTerminate: true) }
         return .terminateLater
     }
     private func configureVaultServices() {
@@ -84,7 +107,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         let assets = EncryptedAssetStore(directory: root.appendingPathComponent("Assets"), keyManager: keys); let search = InMemorySearchIndex(); let exclusions = ExclusionPolicy()
         let monitor = PasteboardMonitor(repository: repository, assets: assets, keys: keys, exclusions: exclusions)
         let controller = ClipboardHistoryController(monitor: monitor, repository: repository, search: search, exclusions: exclusions)
-        self.repository = repository; searchIndex = search; clipboardController = controller; clipboardMonitor = monitor
+        self.repository = repository; keyManager = keys; searchIndex = search; clipboardController = controller; clipboardMonitor = monitor
+        productStore.configurePersistence(.init(
+            load: { try await repository.savedItems(states: [.active, .archived, .recentlyDeleted]) },
+            save: { try await repository.save($0) },
+            move: { try await repository.move(id: $0, to: $1) },
+            permanentlyDelete: { try await repository.permanentlyDelete(id: $0) },
+            reset: {
+                try await repository.destroyFiles()
+                try await assets.removeAll()
+                try await keys.removeKey()
+                try await repository.open()
+            }
+        ))
         clipboardSettings.onEnableChanged = { [weak self] enabled in Task { await self?.setClipboardEnabled(enabled) } }
         clipboardSettings.onRetentionChanged = { [weak self] days, count in Task { await self?.setRetention(days: days, count: count) } }
         clipboardSettings.onClear = { [weak self] in Task { await self?.clearClipboard() } }

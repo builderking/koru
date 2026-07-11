@@ -65,7 +65,10 @@ public actor EncryptedSQLiteRepository: SavedItemRepository {
         await keyManager.purgeSession()
     }
 
-    public func save(_ item: SavedItem) async throws { try await save(item, lifecycle: item.archivedAt == nil ? .active : .archived) }
+    public func save(_ item: SavedItem) async throws {
+        let lifecycle: SavedItemLifecycle = item.deletedAt != nil ? .recentlyDeleted : (item.archivedAt != nil ? .archived : .active)
+        try await save(item, lifecycle: lifecycle)
+    }
 
     public func save(_ item: SavedItem, lifecycle: SavedItemLifecycle) async throws {
         let plaintext = try encoder.encode(item)
@@ -109,6 +112,7 @@ public actor EncryptedSQLiteRepository: SavedItemRepository {
         guard var item = try await item(id: id) else { return }
         item.updatedAt = date
         item.archivedAt = lifecycle == .archived ? date : nil
+        item.deletedAt = lifecycle == .recentlyDeleted ? date : nil
         try await save(item, lifecycle: lifecycle)
     }
 

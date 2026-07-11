@@ -45,7 +45,7 @@ public final class PermissionCoordinator: @unchecked Sendable {
         snapshot = .init(accessibility: .unknown, inputListening: .unknown, eventPosting: .unknown, pasteboard: .unknown, loginItem: .unknown, hotKeys: [:])
     }
     @discardableResult public func observe(_ observer: @escaping Observer) -> UUID { let id = UUID(); lock.withLock { observers[id] = observer }; observer(snapshot); return id }
-    public func removeObserver(_ id: UUID) { lock.withLock { observers.removeValue(forKey: id) } }
+    public func removeObserver(_ id: UUID) { lock.withLock { _ = observers.removeValue(forKey: id) } }
     public func setHotKeyState(_ state: HotKeyState, command: String) { lock.withLock { snapshot.hotKeys[command] = state }; publish() }
     @discardableResult public func refresh() -> PermissionSnapshot {
         let old = lock.withLock { snapshot }
