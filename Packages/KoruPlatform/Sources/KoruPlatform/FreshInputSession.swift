@@ -5,7 +5,8 @@ public enum FreshInputState: Equatable, Sendable { case unknown, eligibleEmptySt
 public enum FreshInputEvent: Equatable, Sendable {
     case focus(value: String?, selectionLocation: Int?, selectionLength: Int?, editable: Bool, secure: Bool, excluded: Bool)
     case committedCharacter(Character, hasQualifyingMatch: Bool)
-    case paste, caretMoved, selectionChanged, compositionBegan, focusLost, dismiss, explicitlyInserted
+    case validate(value: String?, caretLocation: Int?, selectionLength: Int?)
+    case paste, caretMoved, selectionChanged, compositionBegan, focusLost, dismiss, explicitlyInserted, tabTransfer
 }
 
 public struct FreshInputSession: Sendable {
@@ -23,6 +24,12 @@ public struct FreshInputSession: Sendable {
         case .focusLost: state = .unknown
         case .dismiss, .explicitlyInserted: state = .completedOrDismissed
         case .paste, .caretMoved, .selectionChanged, .compositionBegan: state = .ineligibleUntilFocusChanges
+        case let .validate(value, caret, length):
+            let prefix: String?
+            switch state { case let .trackingPrefix(value), let .panelVisible(value): prefix = value; default: prefix = nil }
+            guard let prefix, value == prefix, caret == prefix.utf16.count, length == 0 else { state = .ineligibleUntilFocusChanges; return }
+        case .tabTransfer:
+            break // The tracked target prefix is frozen; panel search owns subsequent input.
         }
     }
 }

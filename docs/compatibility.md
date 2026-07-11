@@ -1,6 +1,6 @@
 # Compatibility policy and matrix
 
-Status: untested template. No app or host result is currently certified.
+Status: deterministic integration tests pass locally; external host and signed-permission testing is not yet certified.
 
 Koru targets a universal arm64/x86_64 app for macOS 13 and later. Release-blocking validation covers macOS 13 latest patch, macOS 15 latest patch, and current stable macOS, including Apple Silicon and supported Intel combinations defined in the quality plan.
 
