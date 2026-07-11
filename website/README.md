@@ -1,6 +1,6 @@
 # Koru website
 
-Static Astro marketing website for Koru, the free writing-memory app for macOS. It is designed for Cloudflare Pages with no server runtime, functions, environment variables, analytics, or client-side JavaScript.
+Static Astro marketing website for Koru, the free writing-memory app for macOS. It is designed for Cloudflare Pages with no server runtime, functions, environment variables, analytics, or third-party scripts. The only client-side JavaScript is a small self-hosted animation for the homepage product demo; the dist check rejects any other script.
 
 ## Local verification
 

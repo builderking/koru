@@ -1,7 +1,11 @@
+---
+const longText =
+  'Hi Maia — great talking today. Recapping what we agreed: we start with a two-week pilot, your team keeps full access to the data, and pricing locks in for a year once we go live. I will send the agreement over tomorrow — if you need anything before then, just reply here.';
+---
 <section class="hero-demo" aria-label="Product preview">
   <div class="shell">
     <div class="demo-stage">
-      <figure style="margin:0" aria-labelledby="demo-caption">
+      <figure style="margin:0" aria-labelledby="demo-caption" id="hero-demo">
         <div class="app-window" aria-hidden="true">
           <div class="window-bar">
             <span></span><span></span><span></span>
@@ -10,31 +14,206 @@
           <div class="window-body">
             <div class="ghost-line"></div>
             <div class="ghost-line short"></div>
-            <div class="typed-row"><span>foll</span><span class="caret"></span></div>
+            <div class="insert-slot">
+              <div class="typed-row"><span class="typed-text">foll</span><span class="caret"></span></div>
+              <p class="inserted-text">
+                <span class="sizer">{longText}</span>
+                <span class="live-wrap"><span class="live-text"></span><span class="caret"></span></span>
+              </p>
+              <div class="inserted-image">
+                <div class="fake-shot">
+                  <svg viewBox="0 0 120 56" fill="none" aria-hidden="true">
+                    <rect x="10" y="30" width="12" height="18" rx="2" fill="currentColor" opacity="0.35" />
+                    <rect x="30" y="22" width="12" height="26" rx="2" fill="currentColor" opacity="0.55" />
+                    <rect x="50" y="26" width="12" height="22" rx="2" fill="currentColor" opacity="0.45" />
+                    <rect x="70" y="14" width="12" height="34" rx="2" fill="currentColor" opacity="0.75" />
+                    <rect x="90" y="6" width="12" height="42" rx="2" fill="currentColor" />
+                    <path d="M10 26 L36 16 L62 20 L88 8 L110 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="shot-label">Screenshot · inserted from clipboard</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="recall-panel" aria-hidden="true">
-          <div class="search-row"><span>⌕&nbsp; “foll”</span><span class="count">3 matches</span></div>
-          <div class="result selected">
-            <span class="result-icon">S</span>
-            <span><strong>Follow-up after intro call</strong><small>Saved text</small></span>
-            <span class="key">↵</span>
+        <div class="panel-slot" aria-hidden="true">
+          <div class="recall-panel panel-saved visible">
+            <div class="search-row"><span>⌕&nbsp; “foll”</span><span class="count">3 matches</span></div>
+            <div class="result selected">
+              <span class="result-icon">S</span>
+              <span><strong>Follow-up after intro call</strong><small>Saved text</small></span>
+              <span class="key" data-key="↵">↵</span>
+            </div>
+            <div class="result">
+              <span class="result-icon">T</span>
+              <span><strong>Client follow-up template</strong><small>Template · 3 fields</small></span>
+              <span class="key" data-key="2">2</span>
+            </div>
+            <div class="result">
+              <span class="result-icon">C</span>
+              <span><strong>Recent clipboard</strong><small>Type clp to browse copies</small></span>
+              <span class="key" data-key="3">3</span>
+            </div>
           </div>
-          <div class="result">
-            <span class="result-icon">T</span>
-            <span><strong>Client follow-up template</strong><small>Template · 3 fields</small></span>
-            <span class="key">2</span>
-          </div>
-          <div class="result">
-            <span class="result-icon">C</span>
-            <span><strong>Recent clipboard</strong><small>Type clp to browse copies</small></span>
-            <span class="key">3</span>
+          <div class="recall-panel panel-clip">
+            <div class="search-row"><span>⌕&nbsp; clp</span><span class="count">Recent clipboard</span></div>
+            <div class="result selected">
+              <span class="result-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
+              </span>
+              <span><strong>Q3 numbers summary</strong><small>Copied text · 2 min ago</small></span>
+              <span class="key" data-key="↵">↵</span>
+            </div>
+            <div class="result">
+              <span class="result-icon thumb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m5 18 5-5 3 3 3.5-3.5L21 17" /></svg>
+              </span>
+              <span><strong>Screenshot</strong><small>Image · 5 min ago</small></span>
+              <span class="key" data-key="2">2</span>
+            </div>
+            <div class="result">
+              <span class="result-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.6l-1.2 1.2" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.6l1.2-1.2" /></svg>
+              </span>
+              <span><strong>Copied link</strong><small>Link · 14 min ago</small></span>
+              <span class="key" data-key="3">3</span>
+            </div>
           </div>
         </div>
         <figcaption class="demo-caption" id="demo-caption">
-          Type a fragment you remember. Koru shows matching saved items beside the caret — nothing is inserted until you choose.
+          Type a fragment you remember — or <code>clp</code> for recent copies. Koru shows matches beside the caret; nothing is inserted until you choose.
         </figcaption>
       </figure>
     </div>
   </div>
 </section>
+
+<script>
+  // Looping product-demo animation. Purely decorative: the demo is aria-hidden,
+  // skipped entirely under prefers-reduced-motion, and paused while off-screen.
+  const demo = document.getElementById('hero-demo');
+  const typedRow = demo?.querySelector<HTMLElement>('.typed-row');
+  const typedText = demo?.querySelector<HTMLElement>('.typed-text');
+  const panelSaved = demo?.querySelector<HTMLElement>('.panel-saved');
+  const panelClip = demo?.querySelector<HTMLElement>('.panel-clip');
+  const insertedText = demo?.querySelector<HTMLElement>('.inserted-text');
+  const liveText = demo?.querySelector<HTMLElement>('.live-text');
+  const insertedImage = demo?.querySelector<HTMLElement>('.inserted-image');
+  const longText = demo?.querySelector<HTMLElement>('.sizer')?.textContent ?? '';
+
+  if (
+    demo && typedRow && typedText && panelSaved && panelClip &&
+    insertedText && liveText && insertedImage && longText &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    let isVisible = false;
+    let notifyVisible = () => {};
+    new IntersectionObserver((entries) => {
+      isVisible = entries.some((entry) => entry.isIntersecting);
+      if (isVisible) notifyVisible();
+    }, { threshold: 0.3 }).observe(demo);
+    const whenVisible = () =>
+      isVisible ? Promise.resolve() : new Promise<void>((resolve) => { notifyVisible = resolve; });
+
+    const select = (panel: HTMLElement, next: HTMLElement) => {
+      const current = panel.querySelector<HTMLElement>('.result.selected');
+      if (!current || current === next) return;
+      const currentKey = current.querySelector<HTMLElement>('.key');
+      if (currentKey) currentKey.textContent = currentKey.dataset.key ?? '';
+      current.classList.remove('selected');
+      next.classList.add('selected');
+      const nextKey = next.querySelector<HTMLElement>('.key');
+      if (nextKey) nextKey.textContent = '↵';
+    };
+
+    const pressEnter = async (panel: HTMLElement) => {
+      const key = panel.querySelector<HTMLElement>('.result.selected .key');
+      key?.classList.add('pressed');
+      await wait(240);
+      key?.classList.remove('pressed');
+    };
+
+    const type = async (text: string) => {
+      let buffer = '';
+      for (const char of text) {
+        buffer += char;
+        typedText.textContent = buffer;
+        await wait(150);
+      }
+    };
+
+    const streamLongText = async () => {
+      const words = longText.split(' ');
+      for (let i = 1; i <= words.length; i++) {
+        liveText.textContent = words.slice(0, i).join(' ');
+        await wait(30);
+      }
+    };
+
+    const clearField = () => {
+      typedText.textContent = '';
+      typedRow.classList.remove('hidden');
+    };
+
+    const reset = () => {
+      clearField();
+      panelSaved.classList.remove('visible');
+      panelClip.classList.remove('visible');
+      insertedText.classList.remove('visible');
+      insertedImage.classList.remove('visible');
+      liveText.textContent = '';
+      const firstClipRow = panelClip.querySelector<HTMLElement>('.result');
+      if (firstClipRow) select(panelClip, firstClipRow);
+    };
+
+    const sceneSavedText = async () => {
+      await type('foll');
+      await wait(280);
+      panelSaved.classList.add('visible');
+      await wait(1200);
+      await pressEnter(panelSaved);
+      panelSaved.classList.remove('visible');
+      typedRow.classList.add('hidden');
+      await wait(180);
+      insertedText.classList.add('visible');
+      await streamLongText();
+      await wait(2400);
+      insertedText.classList.remove('visible');
+      await wait(400);
+    };
+
+    const sceneClipboardImage = async () => {
+      clearField();
+      await wait(500);
+      await type('clp');
+      await wait(280);
+      panelClip.classList.add('visible');
+      await wait(1000);
+      const imageRow = panelClip.querySelectorAll<HTMLElement>('.result')[1];
+      if (imageRow) select(panelClip, imageRow);
+      await wait(750);
+      await pressEnter(panelClip);
+      panelClip.classList.remove('visible');
+      typedRow.classList.add('hidden');
+      await wait(180);
+      insertedImage.classList.add('visible');
+      await wait(2400);
+      insertedImage.classList.remove('visible');
+      await wait(400);
+    };
+
+    const run = async () => {
+      for (;;) {
+        await whenVisible();
+        reset();
+        await wait(700);
+        await sceneSavedText();
+        await whenVisible();
+        await sceneClipboardImage();
+      }
+    };
+    void run();
+  }
+</script>

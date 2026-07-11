@@ -40,6 +40,12 @@ for (const file of htmlFiles) {
   if (!html.includes('rel="canonical"')) throw new Error(`${relative}: missing canonical`);
   if (!html.includes('property="og:image"')) throw new Error(`${relative}: missing social image metadata`);
   if (/<img(?![^>]*\salt=)[^>]*>/i.test(html)) throw new Error(`${relative}: image without alt text`);
+  // Only JSON-LD and self-hosted bundled modules may ship; inline or third-party scripts may not.
+  for (const tag of html.match(/<script[^>]*>/gi) ?? []) {
+    const isJsonLd = tag.includes('type="application/ld+json"');
+    const isSelfModule = tag.includes('type="module"') && /src="\/_astro\/[^"]+\.js"/.test(tag);
+    if (!isJsonLd && !isSelfModule) throw new Error(`${relative}: unexpected script tag ${tag}`);
+  }
   const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
   for (const href of hrefs) {
     if (!href.startsWith('/') || href.startsWith('//') || href.startsWith('/_astro/') || href.includes('#')) continue;
@@ -51,7 +57,6 @@ for (const file of htmlFiles) {
 
 const home = await readFile(join(root, 'index.html'), 'utf8');
 if (!home.includes('application/ld+json')) throw new Error('Homepage is missing JSON-LD.');
-if (/<script(?!(?:[^>]*type="application\/ld\+json"))[^>]*>/i.test(home)) throw new Error('Unexpected client-side JavaScript found.');
 const headers = await readFile(join(root, '_headers'), 'utf8');
 for (const header of ['Content-Security-Policy', 'Permissions-Policy', 'Referrer-Policy', 'X-Content-Type-Options']) {
   if (!headers.includes(header)) throw new Error(`Missing security header: ${header}`);

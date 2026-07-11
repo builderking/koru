@@ -6,4 +6,7 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   integrations: [sitemap()],
+  // Keep component scripts as external /_astro/ files (never inlined) so the
+  // dist check can enforce that only self-hosted bundled modules ship.
+  vite: { build: { assetsInlineLimit: 0 } },
 });
