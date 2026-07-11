@@ -84,6 +84,20 @@ public actor EncryptedSQLiteRepository: SavedItemRepository {
         return try await decrypt(row, as: SavedItem.self)
     }
 
+    public func items(in collection: SavedItemCollection) async throws -> [SavedItem] {
+        let lifecycle = SavedItemLifecycle(rawValue: collection.rawValue) ?? .active
+        return try await savedItems(states: [lifecycle])
+    }
+
+    public func move(id: SavedItemID, to collection: SavedItemCollection) async throws {
+        let lifecycle = SavedItemLifecycle(rawValue: collection.rawValue) ?? .active
+        try await setLifecycle(id: id, lifecycle)
+    }
+
+    public func permanentlyDelete(id: SavedItemID) async throws {
+        try permanentlyPurgeSavedItem(id: id)
+    }
+
     public func savedItems(states: Set<SavedItemLifecycle> = [.active]) async throws -> [SavedItem] {
         let rows = try records(kind: 1).filter { states.contains(lifecycle($0.state)) }
         var result: [SavedItem] = []
