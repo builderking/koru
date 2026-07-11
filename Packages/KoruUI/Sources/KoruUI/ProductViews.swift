@@ -31,7 +31,38 @@ public struct OnboardingView: View {
     }
     private var valueDemo: some View { VStack(spacing: 14) { Image(systemName: "text.bubble").font(.system(size: 42)); Text("Remember a fragment. Find the right writing.").font(.title3); Text("Your Library works immediately—without permissions, an account, or a network connection.").foregroundStyle(.secondary); HStack { Text("pus").font(.system(.body, design: .monospaced)); Image(systemName: "arrow.right"); Label("Push changes and open a pull request", systemImage: "text.quote") }.padding().koruAdaptiveSurface() }.multilineTextAlignment(.center).accessibilityElement(children: .combine) }
     private var modeChoice: some View { VStack(alignment: .leading, spacing: 12) { Text("Choose how Koru appears").font(.headline); Picker("Mode", selection: $mode) { Text("Hotkey-only").tag(0); Text("Full").tag(1) }.pickerStyle(.segmented); GroupBox { VStack(alignment: .leading, spacing: 8) { Label(mode == 0 ? "Open recall with a shortcut" : "Also match fragments at the start of a fresh empty field", systemImage: "keyboard"); Text(mode == 0 ? "No Input Monitoring needed. You can enable more later." : "Full mode needs Accessibility and Input Monitoring. Koru ignores secure fields and configured apps.").foregroundStyle(.secondary) }.frame(maxWidth: .infinity, alignment: .leading) } }.frame(maxWidth: 460) }
-    private var permissionChoice: some View { VStack(alignment: .leading, spacing: 12) { Text("Enable only what you want").font(.headline); PermissionRow(title: "Typed Matching", detail: "Accessibility identifies a safe editable field. Input Monitoring sees only the small live prefix needed to match; Koru never stores raw keystrokes.", state: store.permissionSnapshot.inputListening) { store.request(.accessibility); store.request(.inputMonitoring) }; PermissionRow(title: "Clipboard History", detail: "Off by default. When enabled, recent copies stay encrypted on this Mac and expire using your retention settings.", state: store.permissionSnapshot.pasteboard) { store.request(.pasteboard) }; Button("Retry after System Settings") { store.refreshPermissions() }.accessibilityHint("Refreshes current permission status") }.frame(maxWidth: 500) }
+    private var permissionChoice: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Enable only what you want").font(.headline)
+            if mode == 1 {
+                PermissionRow(
+                    title: "Accessibility",
+                    detail: "Lets Koru verify a safe editable field and insert only after you choose a result.",
+                    state: store.permissionSnapshot.accessibility
+                ) { store.request(.accessibility) }
+                PermissionRow(
+                    title: "Input Monitoring",
+                    detail: "Lets Koru see only the small live prefix needed for typed matching. Raw keystrokes are never stored.",
+                    state: store.permissionSnapshot.inputListening
+                ) { store.request(.inputMonitoring) }
+                if store.permissionSnapshot.inputListening != .granted {
+                    Text("If Input Monitoring is enabled in System Settings but still shows Denied, quit and reopen Koru after changing the toggle.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                Label("Hotkey-only mode does not require Input Monitoring. Accessibility is requested only when Koru needs to insert into another app.", systemImage: "keyboard")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            Toggle("Enable Clipboard History", isOn: Binding(
+                get: { store.settings.clipboardHistoryEnabled },
+                set: { enabled in var settings = store.settings; settings.clipboardHistoryEnabled = enabled; store.applySettings(settings) }
+            ))
+            Text("Clipboard History is not a macOS permission. It is off by default; when enabled, recent copies are encrypted locally and expire automatically.")
+                .font(.caption).foregroundStyle(.secondary)
+            Button("Refresh Permission Status") { store.refreshPermissions() }
+                .accessibilityHint("Checks current macOS permission status again")
+        }.frame(maxWidth: 500)
+    }
     private var finish: some View { VStack(spacing: 14) { Image(systemName: "checkmark.circle").font(.system(size: 40)).foregroundStyle(.green); Text("Koru is ready").font(.title3); Text("Declined permissions never block the Library. Use the recall hotkey now and revisit Settings whenever you want.").foregroundStyle(.secondary).multilineTextAlignment(.center); Label("Content stays local. Secure contexts are ignored.", systemImage: "lock.shield") } }
 }
 

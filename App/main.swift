@@ -151,6 +151,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
             if (self.loginItem.state == .granted) != settings.launchAtLogin { try? self.loginItem.setEnabled(settings.launchAtLogin) }
             if settings.isPaused != (self.lifecycle?.isUserPaused == true) { self.togglePause() }
             if settings.typedMatchingEnabled && !settings.isPaused { self.typedEvents?.start() } else { self.typedEvents?.stopAndPurge() }
+            if settings.clipboardHistoryEnabled != self.retentionPolicy.clipboardHistoryEnabled {
+                Task { await self.setClipboardEnabled(settings.clipboardHistoryEnabled) }
+            }
         }
         productStore.onPermissionRequested = { [weak self] permission in
             guard let self else { return }
