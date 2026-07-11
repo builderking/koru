@@ -26,7 +26,7 @@ Download buttons currently point at `/download/`, and the button on that page us
 
 1. Set `download.artifactUrl` in `src/content/site.ts` to the real artifact URL.
 2. Add the verified version, macOS range, and release notes to `/download/`.
-3. Confirm or change `https://koru.pages.dev` in `astro.config.mjs`, `src/content/site.ts`, and `public/robots.txt` once the production domain is final.
+3. Confirm or change `https://koru-dc8.pages.dev` in `astro.config.mjs`, `src/content/site.ts`, and `public/robots.txt` once a custom production domain is attached.
 
 ## Assets
 

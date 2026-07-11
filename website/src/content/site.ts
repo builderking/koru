@@ -3,7 +3,7 @@ export const site = {
   title: 'Koru — Writing memory for your Mac',
   description:
     'Koru is a free macOS app that remembers the text you choose to keep — replies, snippets, prompts, templates — and brings it back right where you are typing. Local and private.',
-  url: 'https://koru.pages.dev',
+  url: 'https://koru-dc8.pages.dev',
   company: 'BuilderKing',
   companyUrl: 'https://builderking.io',
   supportEmail: 'support@builderking.io',

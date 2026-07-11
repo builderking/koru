@@ -43,7 +43,7 @@ for (const file of htmlFiles) {
   const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
   for (const href of hrefs) {
     if (!href.startsWith('/') || href.startsWith('//') || href.startsWith('/_astro/') || href.includes('#')) continue;
-    const path = new URL(href, 'https://koru.pages.dev').pathname;
+    const path = new URL(href, 'https://koru-dc8.pages.dev').pathname;
     if (/\.(png|ico|xml|txt)$/.test(path)) continue;
     if (!knownRoutes.has(path)) throw new Error(`${relative}: broken internal link ${href}`);
   }
