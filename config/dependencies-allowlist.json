@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "policy": "New runtime dependencies require security, privacy, license, maintenance, and network-behavior review in the pull request.",
+  "allowedRuntimeDependencies": [],
+  "allowedDevelopmentDependencies": [],
+  "systemFrameworks": [
+    "Accessibility",
+    "AppKit",
+    "ApplicationServices",
+    "CryptoKit",
+    "Foundation",
+    "OSLog",
+    "Security",
+    "ServiceManagement",
+    "SQLite3",
+    "SwiftUI",
+    "UniformTypeIdentifiers"
+  ]
+}

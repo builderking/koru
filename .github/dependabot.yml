@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [dependencies, ci]
+  - package-ecosystem: swift
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      swift-dependencies:
+        patterns: ["*"]
+    labels: [dependencies, swift]
+    # Enabled once Package.swift exists; Dependabot treats its current absence
+    # as a skipped ecosystem rather than a repository failure.

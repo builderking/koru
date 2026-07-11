@@ -1,0 +1,13 @@
+# Default review ownership. Replace the placeholder team with a real GitHub team
+# before branch protection makes CODEOWNERS reviews mandatory.
+* @builderking/koru-maintainers
+
+# Trust boundaries require maintainer review.
+/.github/ @builderking/koru-maintainers
+/scripts/ @builderking/koru-maintainers
+/docs/security/ @builderking/koru-maintainers
+/SECURITY.md @builderking/koru-maintainers
+/Privacy.md @builderking/koru-maintainers
+/Koru*.entitlements @builderking/koru-maintainers
+/Package.resolved @builderking/koru-maintainers
+/wrangler.toml @builderking/koru-maintainers

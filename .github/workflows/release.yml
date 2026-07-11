@@ -1,0 +1,87 @@
+name: Protected release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing signed v* tag pointing at this commit
+        required: true
+        type: string
+      publish_draft:
+        description: Create a draft GitHub Release after verification
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: macos-15
+    outputs:
+      commit: ${{ steps.ref.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - id: ref
+        env: {RELEASE_TAG: "${{ inputs.tag }}"}
+        run: |
+          ./scripts/release-preflight.sh "$RELEASE_TAG"
+          echo "commit=$(git rev-list -n 1 "$RELEASE_TAG")" >> "$GITHUB_OUTPUT"
+
+  sign-notarize:
+    needs: preflight
+    # Configure required reviewers and all secrets on this environment. GitHub
+    # does not expose environment secrets until approval, and fork PRs cannot
+    # invoke this workflow with their code.
+    environment: macos-release
+    runs-on: macos-15
+    permissions: {contents: read}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.commit }}
+          persist-credentials: false
+      - name: Validate required release configuration
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+          APPLE_NOTARY_PRIVATE_KEY: ${{ secrets.APPLE_NOTARY_PRIVATE_KEY }}
+        run: ./scripts/sign-and-notarize.sh --check-config
+      - name: Build, sign, notarize, and verify
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+          APPLE_NOTARY_PRIVATE_KEY: ${{ secrets.APPLE_NOTARY_PRIVATE_KEY }}
+        run: ./scripts/sign-and-notarize.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-${{ inputs.tag }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  draft-release:
+    if: inputs.publish_draft
+    needs: [preflight, sign-notarize]
+    environment: release-publication
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: "release-candidate-${{ inputs.tag }}", path: dist}
+      - name: Create draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: gh release create "$RELEASE_TAG" dist/* --draft --verify-tag --generate-notes

@@ -19,6 +19,14 @@ Koru is not an AI assistant, prompt marketplace, automation platform, or cloud a
 
 The complete zero-to-release plan is in [`build plan/00-index.md`](build%20plan/00-index.md).
 
+Repository-local CI, release, governance, diagnostics, security, support, and operations scaffolding is present. It is deliberately fail-closed where a real app, credentials, protected GitHub settings, or a Cloudflare project is required. Start with [Architecture](docs/architecture.md), [Privacy](docs/privacy.md), [Threat model](docs/security/threat-model.md), [Diagnostics](docs/diagnostics.md), and [manual gates](docs/operations/manual-gates.md).
+
+Validate the current repository with:
+
+```sh
+./scripts/validate-repository.sh
+```
+
 ## Project status
 
 - Product definition: in progress

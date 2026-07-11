@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://koru.example/schemas/support-bundle-v1.json",
+  "title": "Koru privacy-safe support bundle manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "consent", "app", "system", "permissions", "integrations", "repository", "compatibility", "eventsIncluded"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "consent": {"const": "explicit-local-export"},
+    "app": {
+      "type": "object", "additionalProperties": false, "required": ["version", "build"],
+      "properties": {"version": {"type": "string", "maxLength": 32}, "build": {"type": "string", "maxLength": 32}}
+    },
+    "system": {
+      "type": "object", "additionalProperties": false, "required": ["macOS", "architecture"],
+      "properties": {"macOS": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"}, "architecture": {"enum": ["arm64", "x86_64", "unknown"]}}
+    },
+    "permissions": {"$ref": "#/$defs/stringEnums"},
+    "integrations": {"$ref": "#/$defs/stringEnums"},
+    "repository": {"$ref": "#/$defs/stringEnums"},
+    "compatibility": {"type": "array", "maxItems": 50, "items": {"enum": ["Full", "Paste", "Copy-only", "Palette-only", "Blocked"]}},
+    "eventsIncluded": {"type": "integer", "minimum": 0, "maximum": 10000}
+  },
+  "$defs": {
+    "stringEnums": {
+      "type": "object", "maxProperties": 32, "additionalProperties": {"type": "string", "pattern": "^[a-z0-9.-]{1,64}$"}
+    }
+  }
+}

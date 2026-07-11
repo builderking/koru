@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-11T12:00:00Z",
+  "consent": "explicit-local-export",
+  "app": {"version": "0.0.0", "build": "development"},
+  "system": {"macOS": "15.5", "architecture": "arm64"},
+  "permissions": {"accessibility": "denied", "input-monitoring": "never-requested", "pasteboard": "available"},
+  "integrations": {"event-tap": "disabled", "ax-observer": "degraded", "pasteboard-monitor": "off"},
+  "repository": {"vault": "unavailable", "migration": "not-started", "integrity": "unknown"},
+  "compatibility": ["Palette-only", "Copy-only"],
+  "eventsIncluded": 0
+}

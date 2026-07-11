@@ -1,0 +1,23 @@
+strict: true
+reporter: xcode
+excluded:
+  - .build
+  - DerivedData
+line_length:
+  warning: 120
+  error: 160
+identifier_name:
+  min_length: 2
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - contains_over_filter_count
+  - empty_count
+  - explicit_init
+  - fatal_error_message
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - modifier_order
+  - sorted_imports
+  - unowned_variable_capture

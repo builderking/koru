@@ -10,3 +10,5 @@ When implementation begins:
 - do not include real prompts, clipboard contents, credentials, client information, or other private writing in any public report.
 
 A versioned support and compatibility policy will be published before the first public beta.
+
+Repository support procedures, safe diagnostic fields, and recovery boundaries are documented in [docs/support.md](docs/support.md), [docs/diagnostics.md](docs/diagnostics.md), and [docs/troubleshooting.md](docs/troubleshooting.md). Those documents are specifications until an app release exists.

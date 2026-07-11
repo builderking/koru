@@ -1,0 +1,8 @@
+# Local/reference configuration for the future static website. Cloudflare Pages
+# Git integration owns production builds; do not run `wrangler deploy` from CI.
+name = "koru"
+pages_build_output_dir = "website/dist"
+compatibility_date = "2026-07-11"
+
+[vars]
+KORU_ENVIRONMENT = "production"

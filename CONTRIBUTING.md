@@ -16,6 +16,11 @@ Koru is currently a planning-stage open-source project. Contributions are welcom
 3. Add or update tests with implementation changes.
 4. Keep commits small and explain behavior changes in the pull request.
 5. Confirm that no private clipboard content, prompts, credentials, logs, or signing material are included.
+6. Run `./scripts/validate-repository.sh` and complete the pull-request trust review.
+
+Fork pull requests build without release credentials. Never ask a maintainer to expose signing, notarization, deployment, or environment secrets to a fork. Release candidate and publication workflows are manual, protected, and separate from pull-request CI.
+
+New runtime dependencies require an allowlist update and review of license, maintenance, security, privacy, network behavior, and release impact. Commit `Package.resolved` once Swift dependencies exist. Swift code is expected to pass strict concurrency, formatting, lint, unsigned build, and tests.
 
 ## Product constraints
 
@@ -32,6 +37,8 @@ Contributions must preserve these principles:
 ## Licensing
 
 By submitting a contribution, you agree that it is licensed under the repository's Apache License 2.0.
+
+See [Architecture](docs/architecture.md), [Privacy](docs/privacy.md), [Compatibility](docs/compatibility.md), and the [executable threat model](docs/security/threat-model.md) for implementation contracts.
 
 ## Community conduct
 

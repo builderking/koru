@@ -1,0 +1,10 @@
+title = "Koru secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic documentation placeholders"
+paths = ['''docs/.*''', '''\.github/.*''']
+regexTarget = "match"
+regexes = ['''KORU_TEST_[A-Z_]+''', '''REPLACE_ME''', '''example\.com''']

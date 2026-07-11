@@ -1,0 +1,22 @@
+name: Feature proposal
+description: Propose a focused, testable change consistent with Koru's principles.
+title: "[Proposal]: "
+labels: [proposal, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes: {label: User problem, description: "Describe the problem without private examples."}
+    validations: {required: true}
+  - type: textarea
+    id: outcome
+    attributes: {label: Testable outcome and fallback}
+    validations: {required: true}
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Product boundaries
+      options:
+        - label: The proposal preserves local-first use and explicit insertion.
+          required: true
+        - label: The proposal does not require collecting user content or raw keystrokes.
+          required: true
