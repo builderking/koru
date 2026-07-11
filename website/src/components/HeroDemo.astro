@@ -109,11 +109,21 @@ const longText =
     const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
     let isVisible = false;
+    let observerReported = false;
     let notifyVisible = () => {};
     new IntersectionObserver((entries) => {
+      observerReported = true;
       isVisible = entries.some((entry) => entry.isIntersecting);
       if (isVisible) notifyVisible();
     }, { threshold: 0.3 }).observe(demo);
+    // Some embedded webviews never deliver observer callbacks; animating
+    // off-screen is harmless, so fall back to running unconditionally.
+    setTimeout(() => {
+      if (!observerReported) {
+        isVisible = true;
+        notifyVisible();
+      }
+    }, 1500);
     const whenVisible = () =>
       isVisible ? Promise.resolve() : new Promise<void>((resolve) => { notifyVisible = resolve; });
 
