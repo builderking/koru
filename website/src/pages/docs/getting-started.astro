@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Getting started — Koru documentation" description="Current pre-release guidance and the planned Koru installation and first-use path." canonicalPath="/docs/getting-started/">
+  <header class="page-hero text-shell"><p class="eyebrow">Getting started</p><h1>There is nothing to install yet.</h1><p class="lede">Koru is in product-definition and native-feasibility work. This guide separates what is available now from the planned first-release path.</p></header>
+  <article class="prose text-shell">
+    <div class="notice"><strong>Do not install unofficial builds.</strong> There is no supported binary, version, compatibility list, or app download today.</div>
+    <h2>What you can do now</h2>
+    <ol><li>Read the <a href="https://github.com/builderking/koru/tree/main/build%20plan">public build plan</a>.</li><li>Watch <a href="https://github.com/builderking/koru">builderking/koru</a> for implementation work.</li><li>Use <a href="https://github.com/builderking/koru/discussions">GitHub Discussions</a> for questions with synthetic examples only.</li><li>Review <a href="/privacy/">privacy</a>, <a href="/security/">security</a>, and <a href="/open-source/">open-source governance</a>.</li></ol>
+    <h2>The planned release path</h2>
+    <ol><li>Download the notarized disk image from the official GitHub Release or this site's verified release link.</li><li>Verify its published checksum, then move Koru to Applications.</li><li>Choose Full mode or Hotkey-only mode before broad permissions are requested.</li><li>Enable clipboard history separately and choose retention.</li><li>Complete a local save, fragment recall, explicit insertion, and undo exercise.</li></ol>
+    <h2>Permissions</h2>
+    <p>Accessibility is planned for supported caret, selection, and direct-insertion behavior. Input Monitoring is planned only for typed matching. Registered global hotkeys must remain available without Input Monitoring; downstream placement or insertion may still use capability-specific fallbacks.</p>
+    <h2>Compatibility</h2>
+    <p>The first public test must publish a versioned application matrix. Native fields, browsers, web editors, Electron apps, IDEs, and terminals may expose different levels of caret placement, selection, and insertion support. Koru will document tested behavior rather than claim universal support.</p>
+  </article>
+</BaseLayout>

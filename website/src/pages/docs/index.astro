@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Documentation — Koru" description="Koru product, privacy, security, release, and contributor documentation." canonicalPath="/docs/">
+  <header class="page-hero text-shell"><p class="eyebrow">Documentation</p><h1>Read the contract before the app ships.</h1><p class="lede">Koru's public plan defines the intended behavior, privacy boundaries, fallbacks, and release evidence. User documentation will grow alongside verified native implementation.</p></header>
+  <section class="prose text-shell">
+    <div class="doc-grid">
+      <a class="doc-card" href="/docs/getting-started/"><h3>Getting started</h3><p>Understand the pre-release state and what the eventual installation path must include.</p></a>
+      <a class="doc-card" href="/privacy/"><h3>Privacy model</h3><p>See planned storage, network, clipboard, retention, export, and deletion behavior.</p></a>
+      <a class="doc-card" href="/security/"><h3>Security</h3><p>Report vulnerabilities privately and review the required release baseline.</p></a>
+      <a class="doc-card" href="/faq/"><h3>FAQ</h3><p>Answers about permissions, compatibility, local storage, and positioning.</p></a>
+      <a class="doc-card" href="https://github.com/builderking/koru/tree/main/build%20plan"><h3>Complete build plan</h3><p>Read the product, engineering, accessibility, testing, launch, and operations source of truth.</p></a>
+      <a class="doc-card" href="https://github.com/builderking/koru/blob/main/CONTRIBUTING.md"><h3>Contribution guide</h3><p>Learn how to contribute without exposing private content or changing locked behavior casually.</p></a>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Privacy — Koru" description="Koru's planned local-first privacy model, data boundaries, retention, deletion, and network behavior." canonicalPath="/privacy/">
+  <header class="page-hero text-shell"><p class="eyebrow">Privacy model</p><h1>Local-first is a behavior contract.</h1><p class="lede">Koru is pre-release. This page explains the implementation requirements that the first supported build must satisfy; it is not a claim that an app already does so.</p></header>
+  <article class="prose text-shell">
+    <div class="notice"><strong>Current status:</strong> no supported Koru build exists. The source, security review, and release evidence must verify this model before the language changes from planned to shipped.</div>
+    <h2>Planned defaults</h2>
+    <ul><li>No account, cloud sync, remote content processing, content analytics, or automatic support uploads.</li><li>Clipboard history remains off until explicitly enabled.</li><li>Typed matching remains off until its permission onboarding is complete.</li><li>Secure fields and configured sensitive applications are ignored.</li><li>Insertion and selection saving always require an explicit action.</li></ul>
+    <h2>What Koru is designed to store</h2>
+    <p>Saved-item bodies, titles, tags, match terms, templates, and enabled clipboard history are treated as sensitive. They are designed to be encrypted at rest using AES-GCM. A randomly generated master key is designed to live in the macOS data-protection Keychain without iCloud synchronization.</p>
+    <p>Raw keyboard events, window titles, browser URLs, and document names are prohibited from persistent storage. Typed matching may hold only the bounded current prefix in memory during a verified eligible session.</p>
+    <h2>Clipboard and retention</h2>
+    <p>Clipboard history is planned as a separate temporary layer. Proposed limits are 500 logical events, seven days, 256 MB total encrypted assets, and 25 MB per retained image—but these values remain an open release decision and are not a shipped promise.</p>
+    <p>Saving a clipboard entry creates a separate permanent saved item. It does not silently extend the temporary entry.</p>
+    <h2>Network behavior</h2>
+    <p>The initial release is designed to make no background network request: no analytics SDK, crash uploader, remote configuration, cloud AI, cloud sync, or automatic updater. “Check for Updates” is planned to open the official release page only after an explicit click.</p>
+    <p>This website is static and uses no behavioral analytics, cookies, forms, session replay, third-party fonts, or embedded trackers. Its host may process ordinary request metadata needed to serve and protect the site.</p>
+    <h2>Control and deletion</h2>
+    <p>The app is designed to expose pause, application exclusions, clipboard retention, clear history, export, delete-all data, and uninstall preparation. A whole-vault reset deletes the Keychain key and removes active local Koru data. Koru will not claim forensic erase of APFS, SSD remnants, snapshots, or external backups.</p>
+    <h2>Limits</h2>
+    <p>Local encryption does not protect content from root, a compromised user session, malware with equivalent permissions, or a destination app after you explicitly insert content. Koru also cannot reliably recognize every password, token, or secret copied through the general clipboard.</p>
+    <h2>Questions or reports</h2>
+    <p>Use public GitHub discussions only with synthetic content. Suspected security or privacy vulnerabilities belong in <a href="/security/">the private reporting process</a>. The complete design is in the repository's <a href="https://github.com/builderking/koru/blob/main/build%20plan/09-data-security-and-privacy.md">security and privacy plan</a>.</p>
+  </article>
+</BaseLayout>

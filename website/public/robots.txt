@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://koru.pages.dev/sitemap-index.xml

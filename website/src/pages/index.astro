@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductLoop from '../components/ProductLoop.astro';
+import FaqList from '../components/FaqList.astro';
+import { releaseStatus, site } from '../content/site';
+
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Koru',
+    url: site.url,
+    description: site.description,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Koru',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'macOS',
+    description: 'An open-source local writing-memory utility for macOS. Koru is currently in pre-release development and has no supported binary.',
+    codeRepository: site.repository,
+    license: site.license,
+    isAccessibleForFree: true,
+    url: site.url,
+  },
+];
+---
+<BaseLayout structuredData={structuredData}>
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Writing memory for macOS</p>
+        <h1>Remember what you meant, even from a fragment.</h1>
+        <p class="lede">Koru is being designed to bring saved writing, reusable templates, and recent clipboard items to the caret, locally on your Mac.</p>
+        <div class="actions">
+          <a class="button button-primary" href="/download/">Follow the public release</a>
+          <a class="button button-secondary" href={site.repository}>View source on GitHub</a>
+        </div>
+        <p class="trust-line">Free and open source. No account planned for the core app.</p>
+        <div class="status-note"><span class="status-dot" aria-hidden="true"></span><span><strong>{releaseStatus.label}:</strong> no supported app download exists yet. Koru is in product definition and native feasibility work.</span></div>
+      </div>
+      <ProductLoop />
+    </div>
+  </section>
+
+  <section class="section" id="memory">
+    <div class="shell">
+      <div class="section-intro">
+        <p class="eyebrow">One recall surface</p>
+        <h2>One place for what lasts, what repeats, and what was just copied.</h2>
+      </div>
+      <div class="card-grid">
+        <article class="card">
+          <h3>Saved items</h3>
+          <p>Prompts, passages, commands, replies, and references you choose to keep. One permanent model, with behavior matched to the job.</p>
+          <div class="labels" aria-label="Saved item behaviors"><span class="label">Saved text</span><span class="label">Quick replacement</span><span class="label">Template</span></div>
+        </article>
+        <article class="card">
+          <h3>Recent clipboard</h3>
+          <p>Temporary material for now. Search or use it before it expires, then explicitly create a separate saved item when it is worth keeping.</p>
+          <div class="labels"><span class="label">Opt-in</span><span class="label">Temporary</span><span class="label">Locally retained</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how-it-works">
+    <div class="shell">
+      <div class="section-intro"><p class="eyebrow">The planned interaction</p><h2>Recall without interrupting ordinary writing.</h2></div>
+      <div class="feature-list">
+        <article><span class="feature-number">01</span><h3>Remember a fragment</h3><p>Search by the words you recall, not only an exact title or private abbreviation.</p></article>
+        <article><span class="feature-number">02</span><h3>Begin with a fragment</h3><p>At position zero in a fresh input, type a matching fragment. Empty focus alone never opens Koru; the global hotkey is the manual path.</p></article>
+        <article><span class="feature-number">03</span><h3>Save before it disappears</h3><p>Select useful writing and save it deliberately, with shortcut and macOS Service fallbacks where the host app permits.</p></article>
+        <article><span class="feature-number">04</span><h3>Keep memory close</h3><p>The core is designed for local encrypted storage, visible exclusions, pause, retention, export, and deletion controls.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div class="section-intro"><p class="eyebrow">Three deliberate steps</p><h2>Invoke. Recall. Choose.</h2></div>
+      <div class="steps">
+        <article class="step"><h3>Invoke</h3><p>Use a registered Koru shortcut where you are writing, or begin an eligible fresh-input fragment when typed matching is enabled.</p></article>
+        <article class="step"><h3>Recall</h3><p>Use a partial title, match term, body word, or the planned <code>clp</code> command for recent clipboard material.</p></article>
+        <article class="step"><h3>Insert or keep</h3><p>Explicitly insert or copy a result, save a selection, or turn a temporary clipboard entry into a separate permanent saved item.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="privacy">
+    <div class="shell proof-grid">
+      <div class="section-intro"><p class="eyebrow">Privacy as a contract</p><h2>Your writing memory should be understandable.</h2><p>The build plan makes the intended security model inspectable now. The released app must still prove every item through source review and testing.</p><div class="actions"><a class="button button-secondary" href="/privacy/">Read the privacy model</a><a class="button button-secondary" href="/security/">Security policy</a></div></div>
+      <ul class="check-list">
+        <li>Clipboard history off until explicitly enabled.</li>
+        <li>No raw keystroke persistence and secure fields ignored.</li>
+        <li>No cloud sync, content analytics, or automatic support upload planned for the initial release.</li>
+        <li>Encrypted content at rest with a non-synchronizing Keychain key.</li>
+        <li>Visible pause, exclusions, retention, export, clear, and reset controls.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="compatibility">
+    <div class="shell proof-grid">
+      <div class="section-intro"><p class="eyebrow">Compatibility</p><h2>Tested support, not “works everywhere.”</h2><p>Koru has no verified application matrix yet. The feasibility phase will test native fields, browsers, web editors, Electron apps, IDEs, and terminals across the supported macOS range.</p></div>
+      <div class="notice"><strong>Current state:</strong> under evaluation. Where caret bounds, selection access, or direct insertion are unavailable, Koru must fall back safely to a registered hotkey, stable panel placement, macOS Services, or copy-only behavior.</div>
+    </div>
+  </section>
+
+  <section class="section" id="open-source">
+    <div class="shell proof-grid">
+      <div class="section-intro"><p class="eyebrow">Apache-2.0</p><h2>Built in the open.</h2><p>Follow the roadmap, inspect privacy-sensitive decisions, report compatibility findings, or help build Koru.</p></div>
+      <div class="card"><h3>builderking/koru</h3><p>The repository includes the complete product, privacy, accessibility, release, and operations plan before implementation claims are made.</p><div class="actions"><a class="button button-primary" href={site.repository}>View repository</a><a class="button button-secondary" href={site.contributing}>Contribute</a></div></div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="shell"><div class="section-intro"><p class="eyebrow">FAQ</p><h2>What you should know before Koru ships.</h2></div><FaqList /><div class="actions"><a class="button button-secondary" href="/faq/">Read the full FAQ page</a></div></div>
+  </section>
+
+  <section class="section final-cta">
+    <div class="shell"><p class="eyebrow">Follow the work</p><h2>Stop rebuilding words you already got right.</h2><p>Koru is not ready to install. Watch the public repository for feasibility results, beta instructions, and the first signed and notarized release.</p><div class="actions"><a class="button button-primary" href="/download/">See release status</a><a class="button button-secondary" href={site.repository}>View source</a></div></div>
+  </section>
+</BaseLayout>

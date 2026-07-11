@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { releaseStatus, site } from '../content/site';
+---
+<BaseLayout title="Download status — Koru" description="Koru has no supported download yet. Follow the public repository for signed and notarized release updates." canonicalPath="/download/">
+  <header class="page-hero text-shell"><p class="eyebrow">{releaseStatus.label}</p><h1>{releaseStatus.heading}</h1><p class="lede">{releaseStatus.body}</p></header>
+  <article class="prose text-shell">
+    <div class="notice"><strong>No download is available.</strong> The repository does not currently publish a signed and notarized Koru application. Avoid binaries shared through unofficial links.</div>
+    <h2>When a public test is ready</h2>
+    <p>The official route will point to a versioned GitHub Release containing a Developer ID-signed and notarized macOS disk image, SHA-256 checksum, release notes, dependency notices, SBOM, supported macOS range, compatibility matrix, and known limitations.</p>
+    <h2>Follow progress</h2>
+    <div class="actions"><a class="button button-primary" href={site.repository}>Watch the repository</a><a class="button button-secondary" href={site.releases}>Check releases</a><a class="button button-secondary" href={site.discussions}>Join discussions</a></div>
+    <h2>Planned requirements</h2>
+    <ul><li>Direct distribution for macOS 13 or later is the current target, subject to native feasibility results.</li><li>Universal Apple Silicon and Intel support is required before stable release.</li><li>No account or cloud service is required for the core app.</li><li>The first supported artifact must be signed, notarized, stapled, checksum-verified, and smoke-tested from the public path.</li></ul>
+  </article>
+</BaseLayout>
