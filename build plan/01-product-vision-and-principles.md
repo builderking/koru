@@ -9,7 +9,7 @@ Koru has two deliberately different memory layers:
 - **Saved** is permanent and intentional. It contains reusable saved items.
 - **Clipboard** is temporary and automatic. It contains recently copied text and other supported pasteboard content.
 
-The product is not centered on prompts. Prompts are one use case alongside recurring messages, code commands, addresses, support replies, checklists, and reusable writing templates.
+The product is not centered on prompts. Prompts are one use case alongside recurring messages, code commands, addresses, support replies, checklists, and other reusable writing.
 
 ## Vision
 
@@ -30,7 +30,7 @@ Existing products prove demand but also define a crowded category. Raycast alrea
 Koru's focused difference is the complete loop:
 
 1. Capture useful writing where it is created.
-2. Recall it from whatever initial fragment comes to mind.
+2. Recall it from an assigned exact tag inline or an imperfect query through manual recall.
 3. Preview and explicitly select the intended result.
 4. Insert it beside the caret.
 5. Keep permanent saved items visibly separate from temporary clipboard history.
@@ -52,21 +52,20 @@ The primary audience values speed and keyboard control but should not need to be
 1. **Recall:** When I remember only part of something useful, help me find it without leaving the field where I am writing.
 2. **Capture:** When I have just written something worth keeping, let me save it before I send, submit, or lose it.
 3. **Reuse:** When I choose a saved item, insert it predictably without changing any other text.
-4. **Adapt:** When reusable writing contains changing values, let me complete those values before insertion.
-5. **Recover:** When I need something copied earlier, show a compact, searchable list of recent clipboard items beside my current task.
-6. **Trust:** Keep my writing on my Mac, avoid secure contexts, and make every text-changing action explicit.
+4. **Recover:** When I need something copied earlier, show a compact, searchable list of recent clipboard items beside my current task.
+5. **Trust:** Keep my writing on my Mac and make every text-changing action explicit.
 
 ## Product principles
 
 ### 1. Writing remains untouched until the user acts
 
-Automatic typed matching may surface suggestions only after a qualifying fragment is typed during an eligible fresh, empty input session at the beginning of the field. Merely focusing an empty field never opens Koru, and matching never activates in the middle of established writing. The typed characters remain exactly as entered until the user explicitly selects a result.
+Automatic typed matching may surface suggestions when the complete text suffix immediately before the caret exactly matches an assigned tag at a left boundary, anywhere in an editable field. A tag must contain at least three user-perceived characters. Partial tags, fuzzy matches, derived display labels, saved-content words, focus alone, and unrelated writing never open the automatic panel. The typed tag remains exactly as entered until the user explicitly selects a result.
 
 There is no silent replacement, background rewriting, or automatic prompt improvement.
 
 ### 2. Recall beats memorization
 
-People should be able to type an imperfect fragment such as `pus` and see relevant saved items such as “Push to GitHub.” Exact aliases can improve ranking, but they are not required for basic recall.
+Automatic recall is intentionally predictable: a complete assigned tag such as `pus` opens its saved choices. When the exact tag is forgotten, manual recall supports fuzzy search across tags and saved content without adding trigger characters to the destination.
 
 ### 3. Capture at the point of value
 
@@ -90,11 +89,7 @@ Core capture, recall, clipboard history, search, and insertion work locally with
 
 ### 8. Neutral vocabulary keeps the product broad
 
-The permanent object is a **saved item**. A saved item can behave as:
-
-- **Saved text** — reusable content recalled through search;
-- **Quick replacement** — reusable content with strong initial match terms;
-- **Template** — reusable content with values completed before insertion.
+The permanent object is a **saved item**. A saved item contains reusable text and one or more exact trigger tags. Its display label is derived from a tag or the first useful content line; the save flow does not require a separate title, behavior choice, or template definition.
 
 “Prompt” may appear in examples and onboarding use cases, but not as the product's primary navigation or data model.
 
@@ -126,6 +121,8 @@ Koru is not:
 - a permanent archive of every copied file;
 - an invisible keystroke logger;
 - a tool that replaces text without confirmation.
+
+Koru does not add its own secure-field or application exclusion gate to automatic recall. It still cannot override macOS Secure Input, protected system authorization surfaces, or host controls that suppress key events, Accessibility text state, or event posting; those are documented compatibility limits rather than hidden product restrictions.
 
 ## Product decision test
 

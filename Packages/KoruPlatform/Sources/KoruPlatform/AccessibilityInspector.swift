@@ -1,6 +1,68 @@
 import AppKit
 import ApplicationServices
 import KoruDomain
+import OSLog
+
+/// Resolves the focused UI element and records, without any field content, which accessor answered.
+/// The system-wide `kAXFocusedUIElement` bridge returns cannotComplete for Chromium/Electron hosts
+/// (Claude, VS Code, Slack, Chrome) even when the process is trusted; a query addressed directly to
+/// the frontmost application's element answers once `AXManualAccessibility` has woken its tree.
+public enum AXFocusResolver {
+    public enum Path: String, Sendable { case systemWide = "focus.system_wide", appFallback = "focus.app_fallback", unresolved = "focus.unresolved" }
+    static let log = Logger(subsystem: "dev.koru.app", category: "focus")
+    private static let counters = FocusCounters()
+
+    static func focusedElement(timeout: Float) -> AXUIElement? {
+        let system = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(system, timeout)
+        var raw: CFTypeRef?
+        if AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &raw) == .success, let raw {
+            record(.systemWide, bundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+            return unsafeDowncast(raw, to: AXUIElement.self)
+        }
+        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { record(.unresolved, bundleID: nil); return nil }
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, timeout)
+        _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+        var appRaw: CFTypeRef?
+        let bundleID = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &appRaw) == .success, let appRaw else {
+            record(.unresolved, bundleID: bundleID); return nil
+        }
+        record(.appFallback, bundleID: bundleID)
+        return unsafeDowncast(appRaw, to: AXUIElement.self)
+    }
+
+    private static func record(_ path: Path, bundleID: String?) {
+        counters.increment(path, bundleID: bundleID)
+        // The system-wide accessor answering is the quiet common case; only surface the Electron
+        // fallback and outright failures so shipping logs stay clean but diagnosable.
+        if path != .systemWide { log.notice("\(path.rawValue, privacy: .public) app=\(bundleID ?? "unknown", privacy: .public)") }
+    }
+
+    /// Per-application focus-path tallies keyed "focus.<path>|<bundle-id>" for the Diagnostics surface.
+    public static func snapshotCounts() -> [String: Int] { counters.snapshot() }
+
+    /// Latest resolved-element shape per bundle (role/editability/emptiness/caret — never field content).
+    private static let shapes = FocusShapes()
+    static func recordShape(bundleID: String?, role: String?, editable: Bool, emptyish: Bool, caret: Int?) {
+        shapes.record(bundleID: bundleID ?? "unknown", value: "role=\(role ?? "nil") editable=\(editable) empty=\(emptyish) caret=\(caret.map(String.init) ?? "nil")")
+    }
+    public static func snapshotShapes() -> [String: String] { shapes.snapshot() }
+
+}
+
+final class FocusShapes: @unchecked Sendable {
+    private let lock = NSLock(); private var map: [String: String] = [:]
+    func record(bundleID: String, value: String) { lock.lock(); map[bundleID] = value; lock.unlock() }
+    func snapshot() -> [String: String] { lock.lock(); defer { lock.unlock() }; return map }
+}
+
+private final class FocusCounters: @unchecked Sendable {
+    private let lock = NSLock(); private var counts: [String: Int] = [:]
+    func increment(_ path: AXFocusResolver.Path, bundleID: String?) { lock.lock(); counts["\(path.rawValue)|\(bundleID ?? "unknown")", default: 0] += 1; lock.unlock() }
+    func snapshot() -> [String: Int] { lock.lock(); defer { lock.unlock() }; return counts }
+}
 
 public struct AXTargetSnapshot: Sendable {
     public var processIdentifier: pid_t
@@ -27,12 +89,7 @@ public final class SystemAccessibilityInspector: AccessibilityInspecting, @unche
 
     public func focusedTarget() -> Result<AXTargetSnapshot, AXInspectionError> {
         guard AXIsProcessTrusted() else { return .failure(.permissionDenied) }
-        let system = AXUIElementCreateSystemWide()
-        AXUIElementSetMessagingTimeout(system, timeout)
-        var rawFocused: CFTypeRef?
-        let focusError = AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &rawFocused)
-        guard focusError == .success, let rawFocused else { return .failure(map(focusError, missing: .noFocusedElement)) }
-        let element = unsafeDowncast(rawFocused, to: AXUIElement.self)
+        guard let element = AXFocusResolver.focusedElement(timeout: timeout) else { return .failure(.noFocusedElement) }
         var pid: pid_t = 0
         AXUIElementGetPid(element, &pid)
         let role = stringAttribute(kAXRoleAttribute, element)
@@ -48,12 +105,14 @@ public final class SystemAccessibilityInspector: AccessibilityInspecting, @unche
         if let range {
             rangeBounds = bounds(for: range, element: element) ?? bounds(for: CFRange(location: range.location + range.length, length: 0), element: element) ?? rectAttribute("AXFrame", element)
         } else { rangeBounds = rectAttribute("AXFrame", element) }
+        AXFocusResolver.recordShape(bundleID: NSRunningApplication(processIdentifier: pid)?.bundleIdentifier, role: role, editable: editable, emptyish: (value ?? "").allSatisfy(\.isNewline), caret: range?.location)
         return .success(.init(processIdentifier: pid, role: role, subrole: subrole, isEditable: editable, isSecure: secure, valueLength: value?.utf16.count, selectedRange: range, bounds: rangeBounds, value: value, elementToken: "\(pid):\(CFHash(element))"))
     }
 
-    /// Editability is a capability check: any nonsecure element whose selected text can be replaced is a
-    /// valid destination. Role allowlists exclude web and Electron editors that are otherwise writable.
-    static func editability(secure: Bool, selectedTextSettable: Bool) -> Bool { !secure && selectedTextSettable }
+    /// Editability describes the AX element's write capability only. Secure status remains separate
+    /// diagnostic metadata: recall may operate there when macOS delivers events, while capture and
+    /// clipboard privacy policy continue to reject protected content independently.
+    static func editability(secure _: Bool, selectedTextSettable: Bool) -> Bool { selectedTextSettable }
 
     private func stringAttribute(_ name: String, _ element: AXUIElement) -> String? {
         var value: CFTypeRef?

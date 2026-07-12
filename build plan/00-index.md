@@ -6,7 +6,7 @@ This directory is the source of truth for taking Koru from product definition to
 
 Koru will be a **private writing-memory layer for macOS**. It helps people capture text worth keeping, recall it from an imperfect fragment, and insert it beside the cursor without leaving the app where they are writing.
 
-Koru is not positioned as a prompt manager. Prompts are an important use case, alongside commands, instructions, replies, code fragments, checklists, addresses, and templates. The permanent object is a **saved item**; its behavior can be **Saved text**, **Quick replacement**, or **Template**. Clipboard history is a separate temporary layer.
+Koru is not positioned as a prompt manager. Prompts are an important use case, alongside commands, instructions, replies, code fragments, checklists, and addresses. The permanent object is a **saved item** containing reusable text plus one or more exact trigger tags. It has no required user-authored title, behavior, or template subtype. Clipboard history is a separate temporary layer.
 
 ## 2. Locked product decisions
 
@@ -14,14 +14,14 @@ These decisions remain fixed unless an explicit decision record replaces them:
 
 1. Koru is free and open source under Apache License 2.0.
 2. The native app is local-first, useful without an account, and does not require cloud AI.
-3. Automatic typed matching runs only after a qualifying fragment is typed at the beginning of a fresh, empty input session; focusing an empty field alone never opens Koru, and matching does not interrupt the middle of writing.
+3. Automatic typed matching runs anywhere the user types when the complete suffix immediately before the caret exactly matches an assigned tag at a left boundary. Tags shorter than three characters never trigger the panel, and partial or fuzzy tag matches never trigger it.
 4. Matching never silently replaces text. The user must explicitly choose an item.
-5. A remembered fragment such as `pus` can show multiple relevant saved items without requiring the exact original abbreviation.
-6. Typing `clp` at the start of a fresh input opens the clipboard scope; a global hotkey remains available where macOS permits as a fallback.
+5. More than one tag may point to the same saved text, and more than one saved item may share a tag; an exact match may therefore show multiple choices. Manual recall remains fuzzy across tags and content.
+6. Typing the complete reserved tag `clp` at a left boundary anywhere opens the clipboard scope; a global hotkey remains available where macOS permits as a fallback.
 7. Selecting all text may expose a very small save affordance where the target app supports it. A global shortcut and macOS Service provide fallback paths, subject to the host application's selection support.
 8. Core product language is neutral. The interface does not require users to classify content as a prompt.
 9. The quick interface is minimal, native, keyboard-first, compact, and low-copy. Detailed visual design is deliberately deferred to native prototypes.
-10. Raw keystrokes are never persisted, secure fields are ignored, clipboard capture is opt-in, and sensitive apps can be excluded.
+10. Raw keystrokes are never persisted. Koru does not impose an automatic-recall secure-field or per-app exclusion gate, but macOS Secure Input, protected authorization surfaces, missing Accessibility semantics, or denied event-posting access may still make matching or insertion unavailable. Clipboard capture remains opt-in and keeps its separate sensitive-app controls.
 11. The first supported release is distributed directly as a signed and notarized macOS app. Mac App Store distribution is not a V1 requirement.
 12. The marketing site is a static Astro site in `website/`, published from `main` through Cloudflare Pages with preview deployments for eligible same-repository pull requests; fork previews are not guaranteed.
 13. V1 Clipboard history remains opt-in and defaults to 7 days, 500 logical events, 256 MiB total encrypted assets, and 25 MiB per retained image; files and videos remain references. D-001 is closed by `docs/architecture/adr-001-v1-clipboard-retention.md`.
@@ -36,11 +36,11 @@ Read the files in this order:
 | [02-market-and-positioning.md](02-market-and-positioning.md) | Market truth | Competitive gap and positioning |
 | [03-product-requirements.md](03-product-requirements.md) | Product contract | V1 requirements and acceptance criteria |
 | [04-interaction-model-and-user-flows.md](04-interaction-model-and-user-flows.md) | Behavior contract | Recall, clipboard, capture, onboarding, fallback flows |
-| [05-information-architecture-and-content-model.md](05-information-architecture-and-content-model.md) | Domain contract | Saved items, match terms, templates, clipboard entries, tags |
+| [05-information-architecture-and-content-model.md](05-information-architecture-and-content-model.md) | Domain contract | Saved items, exact trigger tags, clipboard entries, lifecycle |
 | [06-ux-design-system-and-accessibility.md](06-ux-design-system-and-accessibility.md) | Experience constraints | Minimal native direction and accessibility rules |
 | [07-technical-architecture.md](07-technical-architecture.md) | System design | Native modules, storage, event flow, insertion strategy |
 | [08-macos-integrations-and-permissions.md](08-macos-integrations-and-permissions.md) | Platform contract | Accessibility, input, clipboard, Services, permissions |
-| [09-data-security-and-privacy.md](09-data-security-and-privacy.md) | Trust contract | Threat model, encryption, exclusions, retention |
+| [09-data-security-and-privacy.md](09-data-security-and-privacy.md) | Trust contract | Threat model, encryption, Clipboard exclusions, retention |
 | [10-testing-quality-and-release.md](10-testing-quality-and-release.md) | Quality contract | Test matrix, CI, signing, notarization, release gates |
 | [11-open-source-governance.md](11-open-source-governance.md) | Community contract | License, contribution, issue, security, release governance |
 | [12-marketing-website-and-brand.md](12-marketing-website-and-brand.md) | Public story | Landing-page structure, copy, SEO, assets, truth rules |
@@ -59,7 +59,7 @@ No phase is considered complete until its evidence is recorded in the repository
 ### Gate A — problem and behavior
 
 - The target user and primary jobs are validated.
-- The fresh-input activation rule is unambiguous and testable.
+- The exact-tag suffix rule, three-character minimum, left boundary, and explicit-selection requirement are unambiguous and testable.
 - V1 scope and non-goals are approved.
 - The terminology works for prompts and non-prompt content.
 
@@ -71,7 +71,7 @@ No phase is considered complete until its evidence is recorded in the repository
 
 ### Gate C — trusted alpha
 
-- The encrypted local vault, exclusions, retention, pause control, and clear-history behavior pass security review.
+- The encrypted local vault, Clipboard exclusions, retention, pause control, and clear-history behavior pass security review.
 - The core save → recall → insert loop works without network access.
 - No raw keystroke or saved-content data appears in logs, analytics, or crash reports.
 

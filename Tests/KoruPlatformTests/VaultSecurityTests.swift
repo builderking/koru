@@ -124,6 +124,32 @@ final actor StopRecorder: VaultIntegrationStopper { private(set) var stopped = f
     #expect(!FileManager.default.fileExists(atPath: vault.root.appendingPathComponent("vault.sqlite").path))
 }
 
+@Test func maintenanceRetainsOwnedClipboardThumbnailsAndRemovesThemWithTheirEvent() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let original = try await vault.assets.store(Data("original image".utf8))
+    let thumbnail = try await vault.assets.store(Data("small thumbnail".utf8))
+    _ = try await vault.assets.store(Data("orphan".utf8))
+    let event = ClipboardEvent(
+        expiresAt: .now.addingTimeInterval(1_000),
+        representations: [.init(contentType: .image, encryptedPayloadReference: original.opaqueName, encryptedThumbnailReference: thumbnail.opaqueName, thumbnailByteSize: thumbnail.encryptedBytes, byteSize: 14)]
+    )
+    try await vault.repository.saveClipboard(.init(event: event, keyedContentDigest: Data([7])))
+    let service = VaultMaintenanceService(repository: vault.repository, assets: vault.assets, keys: vault.keys, search: InMemorySearchIndex())
+    var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
+
+    let retained = try await service.run(policy: policy)
+    #expect(retained.orphanAssetCount == 1)
+    #expect(try await vault.assets.load(original, maximumBytes: 100) == Data("original image".utf8))
+    #expect(try await vault.assets.load(thumbnail, maximumBytes: 100) == Data("small thumbnail".utf8))
+
+    policy.clipboardHistoryEnabled = false
+    let removed = try await service.run(policy: policy)
+    #expect(removed.expiredClipboardCount == 1)
+    #expect(removed.orphanAssetCount == 2)
+    await #expect(throws: AssetStoreError.missing) { try await vault.assets.load(original, maximumBytes: 100) }
+    await #expect(throws: AssetStoreError.missing) { try await vault.assets.load(thumbnail, maximumBytes: 100) }
+}
+
 @Test func repositoryDiskFullFutureMigrationAndCorruptionFailClosed() async throws {
     let diskFull = try await TestVault.make()
     try await diskFull.repository.setMaximumPageCountForTesting(try await currentPageCount(diskFull.repository))

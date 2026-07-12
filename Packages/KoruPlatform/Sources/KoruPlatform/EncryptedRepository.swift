@@ -132,9 +132,10 @@ public actor EncryptedSQLiteRepository: SavedItemRepository {
         let id = event.id.description
         let metadata = aad(id: id, kind: 2, state: 0, created: event.capturedAt.timeIntervalSince1970)
         let ciphertext = try await keyManager.withKey { try VaultCipher.seal(plaintext, using: $0, authenticating: metadata) }
+        let externalBytes = event.representations.reduce(0) { $0 + max(0, $1.byteSize) + max(0, $1.thumbnailByteSize ?? 0) }
         try withStatement("INSERT OR REPLACE INTO records(id,kind,state,created,updated,expires,byte_count,ciphertext) VALUES(?,2,0,?,?,?,?,?)") { statement in
             bindText(statement, 1, id); bindDouble(statement, 2, event.capturedAt.timeIntervalSince1970); bindDouble(statement, 3, event.capturedAt.timeIntervalSince1970)
-            bindDouble(statement, 4, event.expiresAt.timeIntervalSince1970); bindInt(statement, 5, ciphertext.count); bindBlob(statement, 6, ciphertext); try stepDone(statement)
+            bindDouble(statement, 4, event.expiresAt.timeIntervalSince1970); bindInt(statement, 5, ciphertext.count + externalBytes); bindBlob(statement, 6, ciphertext); try stepDone(statement)
         }
     }
 

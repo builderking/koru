@@ -4,15 +4,15 @@ There is no supported release yet. These are the required recovery paths, not a 
 
 ## Koru does not appear while typing
 
-- Empty focus alone and nonmatching text intentionally show nothing.
-- Typed Matching applies only from a verified fresh-empty field at caret zero.
-- Use manual recall in established writing.
-- Check Pause, Never Observe exclusions, Input Monitoring, and Accessibility state.
-- Secure, protected, canvas, terminal, remote, or custom fields may be Palette-only or Blocked.
+- Nonmatching text and partial tags intentionally show nothing. Type the complete assigned tag; it must be at least three characters, end at the caret, and begin at the start of text or after punctuation/whitespace.
+- Exact tags and `clp` can match anywhere during established writing. Multi-word tags must be typed in full.
+- Check Pause, Typed Matching, and Input Monitoring. Accessibility improves caret placement and direct insertion but is not the gate for event-only matching.
+- There is no Never Observe list for automatic recall. Never Save Clipboard From affects Clipboard capture only.
+- macOS Secure Input can prevent Koru from receiving key events. Koru does not bypass it; use the manual recall shortcut. Canvas, terminal, remote, and custom editors may also expose reduced capabilities.
 
 ## A result cannot insert
 
-Koru cancels if focus or the tracked range changed. Retry with manual recall. If direct insertion is unsupported, use Paste or Copy-only fallback. Never repeatedly grant broader permissions merely to force an unsupported target.
+Koru cancels if focus, the tracked range, the frontmost process, or the rolling-input generation changed. After explicit selection it tries direct AX replacement, then the verified keyboard deletion/local-paste fallback, then copy-only. Retry with manual recall when a host rejects insertion; do not repeatedly grant broader permissions merely to force an unsupported target.
 
 ## Clipboard items are absent
 

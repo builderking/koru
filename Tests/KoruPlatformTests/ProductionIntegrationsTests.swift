@@ -37,6 +37,12 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
     SecurityContext(bundleIdentifier: "example", role: nil, subrole: nil, protectedContent: nil, editable: nil),
 ]) func classifierFailsClosed(context: SecurityContext) { guard case .blocked = SecurityContextClassifier().classify(context) else { Issue.record("unsafe context was allowed"); return } }
 
+@Test func focusDiagnosticsRecordPerAppElementShapeWithoutContent() {
+    // The Diagnostics surface reports the focused element's capability shape, never field content.
+    AXFocusResolver.recordShape(bundleID: "com.anthropic.claudefordesktop", role: "AXTextArea", editable: true, emptyish: true, caret: 0)
+    #expect(AXFocusResolver.snapshotShapes()["com.anthropic.claudefordesktop"] == "role=AXTextArea editable=true empty=true caret=0")
+}
+
 @Test func acknowledgedButUnappliedDirectReplacementFallsToThePasteTier() {
     // Chromium/Electron web content returns success for kAXSelectedText writes without applying them.
     let target = FakeTarget(); target.appliesReplacements = false
@@ -49,6 +55,51 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
     #expect(outcome == .inserted(.pasteboardAndPaste))
     #expect(board.string(forType: .string) == "Push this code to Github")
     #expect(target.selected)
+}
+
+@Test func equalLengthIgnoredAXReplacementDoesNotProduceAFalseSuccess() {
+    let target = FakeTarget(); target.appliesReplacements = false
+    let digest = SystemInsertionTarget.digest("dav")
+    target.snapshot = TargetSnapshot(processIdentifier: 7, elementToken: "composer", replacementLocation: 3, replacementLength: 0, expectedValueDigest: digest)
+    let expected = TargetSnapshot(processIdentifier: 7, elementToken: "composer", replacementLocation: 0, replacementLength: 3, expectedValueDigest: digest)
+    let transaction = InsertionTransaction(invocation: .initialTypedMatch, target: expected, requestedTier: .directAccessibility, explicitlyConfirmed: true)
+    let board = NSPasteboard(name: .init("koru-equal-length-host")); board.clearContents()
+    let outcome = InsertionCoordinator(target: target, pasteboard: board, postPaste: { true }).insert("hey", transaction: transaction, capability: .full)
+    #expect(outcome == .inserted(.pasteboardAndPaste))
+    #expect(target.selected)
+}
+
+@Test func preparedImagePasteRevalidatesTheTargetWithoutOverwritingThePasteboard() {
+    let target = FakeTarget()
+    let expected = TargetSnapshot(processIdentifier: 7, elementToken: "composer", replacementLocation: 3, replacementLength: 0, expectedValueDigest: Data([1]))
+    target.snapshot = expected
+    let transaction = InsertionTransaction(invocation: .manualRecall, target: expected, requestedTier: .pasteboardAndPaste, explicitlyConfirmed: true)
+    let board = NSPasteboard(name: .init("koru-prepared-image")); board.clearContents()
+    let imageBytes = Data([1, 2, 3]); board.setData(imageBytes, forType: .png)
+    let coordinator = InsertionCoordinator(target: target, pasteboard: board, postPaste: { true })
+
+    #expect(coordinator.pastePreparedContent(transaction: transaction) == .inserted(.pasteboardAndPaste))
+    #expect(target.selected)
+    #expect(board.data(forType: .png) == imageBytes)
+
+    target.snapshot?.elementToken = "other"
+    #expect(coordinator.pastePreparedContent(transaction: transaction) == .cancelledTargetChanged)
+}
+
+@Test func failedPasteRestoresTheOriginalCaretInsteadOfLeavingTheTriggerSelected() {
+    let target = FakeTarget(); target.appliesReplacements = false
+    let digest = SystemInsertionTarget.digest("Hello dav")
+    target.snapshot = TargetSnapshot(processIdentifier: 7, elementToken: "web-input", replacementLocation: 9, replacementLength: 0, expectedValueDigest: digest)
+    let expected = TargetSnapshot(processIdentifier: 7, elementToken: "web-input", replacementLocation: 6, replacementLength: 3, expectedValueDigest: digest)
+    let transaction = InsertionTransaction(invocation: .initialTypedMatch, target: expected, requestedTier: .directAccessibility, explicitlyConfirmed: true)
+    let board = NSPasteboard(name: .init("koru-failed-paste-caret")); board.clearContents()
+
+    let outcome = InsertionCoordinator(target: target, pasteboard: board, postPaste: { false }).insert("signature", transaction: transaction, capability: .full)
+
+    #expect(outcome == .copied)
+    #expect(board.string(forType: .string) == "signature")
+    #expect(target.snapshot?.replacementLocation == 9)
+    #expect(target.snapshot?.replacementLength == 0)
 }
 
 @Test func placementClampsAndLabelsFallback() {
@@ -75,12 +126,48 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
 
 @Test func editabilityIsCapabilityBasedSoNonClassicRolesQualify() {
     #expect(SystemAccessibilityInspector.editability(secure: false, selectedTextSettable: true))
-    #expect(!SystemAccessibilityInspector.editability(secure: true, selectedTextSettable: true))
+    // Secure is diagnostic metadata for recall, not a lie about whether the AX element is writable.
+    // Save-selection and clipboard capture still reject protected contexts in their classifiers.
+    #expect(SystemAccessibilityInspector.editability(secure: true, selectedTextSettable: true))
     #expect(!SystemAccessibilityInspector.editability(secure: false, selectedTextSettable: false))
+}
+
+@Test func accessibilityPasteChordBypassesKorusOwnTypedEventTap() {
+    let source = CGEventSource(stateID: .privateState)!
+    let events = InsertionCoordinator.markedPasteEvents(source: source)
+    #expect(events?.down.flags.contains(.maskCommand) == true)
+    #expect(events?.up.flags.contains(.maskCommand) == true)
+    #expect(events?.down.getIntegerValueField(.eventSourceUserData) == TypedEventTapService.syntheticEventMarker)
+    #expect(events?.up.getIntegerValueField(.eventSourceUserData) == TypedEventTapService.syntheticEventMarker)
 }
 
 @Test func resultIdentitySurvivesLiveUpdates() {
     var navigator = ResultNavigator(); navigator.update([.init(id: "a", title: "A", preview: ""), .init(id: "b", title: "B", preview: "")]); navigator.move(1); navigator.update([.init(id: "b", title: "B2", preview: ""), .init(id: "c", title: "C", preview: "")]); #expect(navigator.selectedID == "b")
+}
+
+@Test func helperPanelHeightGrowsWithRowsAndContentBeforeCappingAtTheExistingMaximum() {
+    let layout = RecallPanelLayout()
+    let short = RecallResult(id: "short", title: "Short", preview: "One line")
+    let long = RecallResult(id: "long", title: "Long", preview: String(repeating: "Two-line content ", count: 5))
+    let image = RecallResult(id: "image", title: "Image", preview: "", contentType: .image, thumbnailData: Data([1]))
+
+    let oneRow = layout.panelHeight(rows: [short], showsClipboardHeader: false, notice: nil)
+    let twoRows = layout.panelHeight(rows: [short, short], showsClipboardHeader: false, notice: nil)
+    #expect(twoRows > oneRow)
+    #expect(layout.rowHeight(for: long) > layout.rowHeight(for: short))
+    #expect(layout.rowHeight(for: image) > layout.rowHeight(for: long))
+    #expect(layout.panelHeight(rows: Array(repeating: image, count: 8), showsClipboardHeader: true, notice: nil) == RecallPanelLayout.maximumHeight)
+}
+
+@Test func helperPanelUsesTheExactAdaptiveWebsiteAccentInsteadOfSystemBlue() throws {
+    func components(_ color: NSColor) throws -> (CGFloat, CGFloat, CGFloat) {
+        let converted = try #require(color.usingColorSpace(.sRGB))
+        return (converted.redComponent, converted.greenComponent, converted.blueComponent)
+    }
+    let light = try components(RecallPanelPalette.accent(forDarkMode: false))
+    let dark = try components(RecallPanelPalette.accent(forDarkMode: true))
+    #expect(abs(light.0 - 12.0 / 255) < 0.001 && abs(light.1 - 122.0 / 255) < 0.001 && abs(light.2 - 80.0 / 255) < 0.001)
+    #expect(abs(dark.0 - 85.0 / 255) < 0.001 && abs(dark.1 - 207.0 / 255) < 0.001 && abs(dark.2 - 156.0 / 255) < 0.001)
 }
 
 @Test func selectionIconRequiresExactFullSelectionAndBounds() {
@@ -132,12 +219,4 @@ private final class ScriptedInspector: AccessibilityInspecting, @unchecked Senda
     let board = NSPasteboard(name: .init("koru-test-insert")); let coordinator = InsertionCoordinator(target: access, pasteboard: board, postPaste: { false })
     #expect(coordinator.insert("hello", transaction: transaction, capability: .full) == .inserted(.directAccessibility)); #expect(access.replaced)
     transaction.target.elementToken = "changed"; #expect(coordinator.insert("unsafe", transaction: transaction, capability: .full) == .cancelledTargetChanged)
-}
-
-@Test func generatedSessionsNeverOpenFromEstablishedWriting() {
-    for length in 1...1_000 { var session = FreshInputSession(); let value = String(repeating: "x", count: length); session.handle(.focus(value: value, selectionLocation: length, selectionLength: 0, editable: true, secure: false, excluded: false)); session.handle(.committedCharacter("p", hasQualifyingMatch: true)); guard case .ineligibleUntilFocusChanges = session.state else { Issue.record("opened at length \(length)"); return } }
-}
-
-@Test func prefixValidationRejectsExternalMutation() {
-    var session = FreshInputSession(); session.handle(.focus(value: "", selectionLocation: 0, selectionLength: 0, editable: true, secure: false, excluded: false)); session.handle(.committedCharacter("p", hasQualifyingMatch: false)); session.handle(.validate(value: "px", caretLocation: 2, selectionLength: 0)); #expect(session.state == .ineligibleUntilFocusChanges)
 }

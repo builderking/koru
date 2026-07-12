@@ -7,7 +7,7 @@ Koru's vault implementation lives in `KoruPlatform` and keeps user content local
 - `VaultKeyManager` creates one random 256-bit key in the data-protection Keychain. The item is explicitly non-synchronizable and device-only.
 - A key is loaded only for a usable vault session. Pause, lock, and shutdown callers must call `purgeSession()` (or close the repository), which releases the session key and decrypted indexes.
 - If vault files exist but the Keychain item is missing, opening fails with `keyMissingForExistingVault`; no replacement key is created.
-- SQLite stores stable IDs, record kind/lifecycle, timestamps, expiry, and ciphertext byte counts as operational metadata. Titles, bodies, tags, queries, previews, source application IDs, references, and payloads are JSON-encoded and AES-GCM encrypted before binding.
+- SQLite stores stable IDs, record kind/lifecycle, timestamps, expiry, and ciphertext byte counts as operational metadata. Saved content, trigger tags, legacy compatibility fields, queries, previews, source application IDs, references, and payloads are JSON-encoded and AES-GCM encrypted before binding.
 - Record identity, kind, lifecycle, creation timestamp, and format version are authenticated as AES-GCM additional data. Authentication failure returns no partial plaintext.
 - SQLite uses prepared statements, foreign keys, in-memory temporary storage, WAL checkpointing, secure deletion, transactional schema versions, integrity checks, and SQLite's online backup API. Backups contain the same encrypted records.
 - The live directory is mode `0700`; database and encrypted asset files are mode `0600` where the filesystem supports POSIX modes.
@@ -20,7 +20,9 @@ Moving a Saved item to Recently Deleted preserves its encrypted record. Permanen
 
 ## Search and learning
 
-The deterministic index is an actor-owned, bounded in-memory structure. Saved and Clipboard scopes are separate. Ranking considers exact and prefix match terms, title tokens, tags/body tokens, explicit selections, pinning, app context, frequency, and bounded edit distance, with stable-ID tie breaking. Results are capped at 50 even if a larger caller limit is supplied.
+The deterministic index is an actor-owned, bounded in-memory structure. Saved and Clipboard scopes are separate. Manual recall ranks exact/prefix/contained tags, content tokens, bounded fuzzy tag distance, explicit selections, pinning, app context, frequency, and recency, with stable-ID tie breaking. Results are capped at 50 even if a larger caller limit is supplied.
+
+Automatic recall uses a stricter index path: the complete assigned tag must be at least three characters, end exactly at the caret, and begin at the start of text or after a non-letter/non-number. Partial tags, content matches, and learned fuzzy matches never open the automatic panel. Multi-word tags retain their spaces.
 
 Explicit query-to-item selections are encrypted as vault records. Reset Learned Recall deletes only those records and clears their in-memory weights. Pause, lock, and termination must call `purge()`; there is no plaintext FTS table or persisted preview cache.
 
@@ -32,7 +34,9 @@ Deduplication uses HMAC-SHA256 under the vault key. Koru-originated change count
 
 The locked `RetentionPolicy.v1Defaults` values are 7 days, 500 events, 256 MiB total encrypted Clipboard storage, and 25 MiB per image. Count, age, byte, and enabled-state limits remove only temporary Clipboard rows. Saving a Clipboard entry creates a separate Saved item. Clear History does not remove Saved items, and disabling capture takes effect immediately. See [ADR-001](architecture/adr-001-v1-clipboard-retention.md).
 
-Typed `clp` requires the verified fresh-empty-input state supplied by the input-session layer and preserves its original `0..<3` replacement span when panel search receives focus. The dedicated manual Clipboard recall API has no dependency on Input Monitoring.
+Typed `clp` follows the exact suffix/left-boundary rule anywhere in current writing and preserves only its matched replacement span. The dedicated manual Clipboard recall API has no dependency on Input Monitoring. Automatic typed recall has no Never Observe application exclusion; Never Save Clipboard From remains a separate Clipboard-capture control.
+
+Selecting a result is always explicit. Koru first attempts revalidated direct AX replacement. If the host cannot expose or modify the text through AX, the automatic path revalidates the frontmost process and input generation before posting one marked Backspace per trigger character followed by local Command-V. If event posting is unavailable, Koru copies without deleting the trigger. macOS Secure Input may suppress the original key events, and Koru does not bypass it.
 
 ## Reset and recovery
 

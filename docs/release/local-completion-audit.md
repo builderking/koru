@@ -1,6 +1,6 @@
 # Local build-plan completion audit
 
-Audit baseline: `f498bb1` and later local commits. Audit date: 2026-07-11.
+Audit baseline: `f498bb1` and later local commits. Last contract refresh: 2026-07-12.
 
 This record distinguishes repository proof from release claims. A green command is evidence only for the behavior that command actually exercises. `Proven` means the named local implementation or artifact exists and has direct automated or inspectable evidence. `Weak/missing` means evidence requires a human, another machine, or a release artifact and is not represented as complete. `External` means completing it would require permissions, credentials, users, signing identity, or a remote mutation forbidden during this audit. No item is classified as proven merely because `scripts/check` exits successfully.
 
@@ -10,16 +10,16 @@ This record distinguishes repository proof from release claims. A green command 
 | --- | --- | --- |
 | REQ-001 local-first | Proven locally | Encrypted repository and in-memory search have no network dependency; vault, search, clipboard, product, and support-bundle tests exercise offline paths. Network observation of the final signed binary remains a release gate. |
 | REQ-002 modes and permissions | Proven locally | `PermissionCoordinator`, `TypedEventTapService`, lifecycle degradation tests, real permission callbacks from `ProductStore`, onboarding/settings UI, and hotkey tests. System prompts still require manual verification. |
-| REQ-003 eligible fresh input | Proven locally | `FreshInputSession`, `RecallRuntime`, generated state sequences, secure/unknown-context tests, focus-only and mid-writing regression tests. |
-| REQ-004 typed matching | Proven locally | Runtime orchestration, deterministic search, prefix preservation/revalidation, dismissal, and explicit-insertion tests. Host compatibility remains manual. |
+| REQ-003 automatic eligibility | Proven locally | Exact complete-tag suffix matching at a left boundary, three-character minimum, multi-word tags, established-writing coverage, and nonmatch/boundary tests. |
+| REQ-004 typed matching | Proven locally | Bounded rolling input, authoritative AX value/caret when available, frontmost-process/generation checks, dismissal, and explicit-selection tests. Host compatibility and Secure Input remain manual. |
 | REQ-005 manual recall | Proven locally | Carbon registered hotkeys, conflict states, manual runtime scope, caret fallback, and permission-independent hotkey tests. Actual shortcut conflicts remain host-dependent. |
 | REQ-006 result presentation | Proven locally | Native nonactivating panel, stable identity navigator, keyboard commands, accessible row labels, placement tests. Full VoiceOver review remains manual. |
-| REQ-007 safe insertion | Proven locally | Three-tier insertion coordinator, destination digest revalidation, exactly-once tests, pasteboard fallback contract, and mutation/failure tests. Destination undo is host behavior and remains compatibility evidence. |
-| REQ-008 Clipboard and `clp` | Proven locally | Opt-in monitor, mixed logical events, encrypted retention, `clp` fresh-start runtime, independent manual Clipboard command, and clipboard tests. |
+| REQ-007 safe insertion | Proven locally | Explicit selection, AX target/digest revalidation, direct replacement, process/generation-guarded keyboard fallback, copy-only outcome, and synthetic-event isolation tests. Destination undo is host behavior and remains compatibility evidence. |
+| REQ-008 Clipboard and `clp` | Proven locally | Opt-in monitor, mixed logical events, encrypted retention, exact `clp` suffix anywhere at a left boundary, independent manual Clipboard command, and clipboard tests. |
 | REQ-009 selection capture | Proven locally | AX full-selection guard, non-destructive Service and shortcut paths, menu command now invokes capture, and selection tests. Floating icon is optional (`may`) and remains disabled by default. |
-| REQ-010 save choices | Proven locally | Canonical behavior model, editor validation, reserved-term and lifecycle tests, locally derived capture draft. Near-duplicate UX remains conservative rather than semantic. |
-| REQ-011 templates | Proven locally | Deterministic token parser, ordered fields, required validation, in-memory values, completion view, and render tests. Runtime panel integration needs host UI evidence before release. |
-| REQ-012 library | Proven locally | Native Library CRUD, pin, tags, archive, recently deleted, duplicate, import/export, encrypted persistence, and lifecycle tests. |
+| REQ-010 save choices | Proven locally | User-facing editor contains only content plus multiple exact trigger tags; validation covers empty content/tags, minimum length, duplicates, and reserved `clp`; display titles are derived locally. |
+| REQ-011 templates | Superseded in current surface | Legacy encoded fields and parser remain readable for compatibility, but editor saves canonical Saved text and exposes no template behavior. |
+| REQ-012 library | Proven locally | Native content/tag search and CRUD, pin, archive, recently deleted, duplicate, import/export, encrypted persistence, and lifecycle tests. |
 | REQ-013 Clipboard controls | Proven locally | Off-by-default retention, pause/clear/exclusions, bounded assets/events, encrypted storage, denial and oversize tests. macOS pasteboard access reporting is SDK-dependent and is honestly shown as unavailable when no API exists. |
 | REQ-014 portability | Proven locally | Versioned human-readable JSON, plaintext warning, validation-before-mutation, duplicate policies, round-trip tests, and documented format behavior. |
 | REQ-015 accessibility | Weak/missing release evidence | Native semantic controls, labels, keyboard routes, reduced-motion CSS, and deterministic view/service tests exist. VoiceOver, Full Keyboard Access, contrast, scaling, and appearance matrices require human execution on supported macOS versions. |

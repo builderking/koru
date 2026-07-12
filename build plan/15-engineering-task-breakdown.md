@@ -11,7 +11,7 @@ Every task is complete only when:
 - No user content is added to logs or diagnostics.
 - Koru-owned UI is keyboard accessible and VoiceOver-labeled.
 - Relevant build-plan and user documentation is updated.
-- The task preserves the locked behavior: fresh-empty matching only, tiny panel, explicit insertion, clp mixed recall, and selection-capture fallbacks.
+- The task preserves the locked behavior: exact complete tags of at least three characters anywhere in writing, a tiny panel, explicit insertion, `clp` mixed recall, and selection-capture fallbacks.
 
 Task IDs are stable. Pull requests and issues should reference them.
 
@@ -48,7 +48,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 - File/video references only in temporary history; saving creates a separate permanent saved-item reference and does not duplicate the full binary in V1.
 - Saved items do not expire automatically.
 - No cloud sync, content telemetry, remote exclusion rules, or AI processing.
-- Default sensitive-app exclusions and user override model.
+- Default Clipboard-sensitive-app exclusions and user override model; no automatic-recall app or secure-field exclusion.
 
 **Complete when:**
 
@@ -62,7 +62,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 **Scope:**
 
 - Capability labels: Full, Paste, Copy-only, Palette-only, Blocked.
-- Fail-closed fresh-empty verification.
+- Exact-tag suffix and left-boundary verification with no partial automatic matches.
 - Insertion tiers A, B, and C.
 - Selection icon is optional and opportunistic.
 - Services and global hotkey remain supported capture paths.
@@ -121,13 +121,12 @@ Task IDs are stable. Pull requests and issues should reference them.
 
 **Scope:**
 
-- SavedItem.
-- SavedItemBehavior: savedText, quickReplacement, or template.
-- TemplateField and RecallSignal.
-- MatchTerm, including optional exact-trigger metadata.
+- SavedItem with canonical reusable content and one-or-more exact tags.
+- Legacy encoded SavedItemBehavior, TemplateField, and MatchTerm fields retained only for backward-compatible decoding and migration.
+- RecallSignal.
 - ClipboardEvent and ClipboardRepresentation.
 - ContentType.
-- AppExclusion.
+- ClipboardCaptureExclusion; automatic typed recall has no app-exclusion model.
 - RetentionPolicy.
 - CompatibilityCapability.
 - InsertionTransaction.
@@ -250,7 +249,8 @@ Task IDs are stable. Pull requests and issues should reference them.
 **Scope:**
 
 - Memory-only FTS or equivalent index.
-- Exact and prefix match terms, title, tag and body tokens, deterministic fuzzy matches, explicit-selection recall signals, pinned/app context, recency, and frequency ordering.
+- Exact, prefix, and fuzzy tag matches plus content tokens, explicit-selection recall signals, pinned/app context, recency, and frequency ordering for manual recall.
+- A separate automatic lookup that accepts only a complete assigned tag of at least three characters at a left boundary and never consults content or fuzzy signals.
 - Separate saved-item and clp modes.
 - Independent reset of learned recall signals without deleting Saved or Clipboard content.
 - Index destruction on pause, lock, and termination.
@@ -270,8 +270,8 @@ Task IDs are stable. Pull requests and issues should reference them.
 - Keyed content digest.
 - Count, age, total-byte, and per-image limits.
 - Permanent saved-item separation from temporary clipboard retention.
-- Never Observe and Never Save Clipboard From policies.
-- Versioned default sensitive-app exclusions.
+- Never Save Clipboard From policy; automatic typed recall has no per-app Never Observe policy.
+- Versioned default Clipboard-sensitive-app exclusions.
 
 **Complete when:**
 
@@ -419,42 +419,43 @@ Task IDs are stable. Pull requests and issues should reference them.
 - Full fake-AX error matrix passes.
 - Unsupported targets produce capability outcomes, not crashes or retries.
 
-### TASK-042 — Implement security/context classifier
+### TASK-042 — Implement integration-capability classifier
 
 **Depends on:** TASK-003, TASK-025, TASK-041
 
 **Scope:**
 
-- Editable safe roles.
-- Secure/protected/system controls.
-- Excluded application bundle IDs.
-- Unknown-context fail-closed decision.
+- Editable and writable Accessibility capabilities.
+- Secure Input, protected/system controls, and unavailable host semantics as platform limitations.
+- Clipboard-excluded application bundle IDs only for Clipboard capture.
+- Unknown insertion context fails without modification while automatic panel eligibility remains governed only by the exact-tag rule.
 
 **Complete when:**
 
-- Every secure harness control and default sensitive app is Blocked.
-- Unknown controls never create a typed session.
+- Secure Input and protected harness controls produce no unintended modification and never claim that Koru bypassed macOS.
+- No secure-field or application rule suppresses an otherwise valid automatic exact-tag match on Koru's behalf.
+- Clipboard default-sensitive-app tests remain isolated to Clipboard capture.
 
-### TASK-043 — Implement fresh-empty session state machine
+### TASK-043 — Implement exact typed-trigger state machine
 
 **Depends on:** TASK-040, TASK-041, TASK-042, TASK-045, TASK-046
 
 **Scope:**
 
-- Unknown, Eligible empty start, Tracking prefix, Panel visible, Ineligible, Completed/dismissed.
-- Strict initial empty value and zero caret.
-- Monotonic prefix validation.
+- Unknown, Tracking bounded suffix, Panel visible, Completed/dismissed.
+- Complete tag matching at the current caret during established writing.
+- Minimum three-character tags, left-boundary checks, and longest exact suffix selection.
 - Reset and ineligibility conditions.
 - Reserved clp transition.
 - Phase 50 typed-session adapter into the shared TASK-045 panel and TASK-046 insertion transaction.
-- Continued target-field typing and deliberate Tab transfer into panel search without changing the tracked prefix.
+- Continued target-field typing and deliberate Tab transfer into panel search without changing the tracked exact tag.
 
 **Complete when:**
 
-- A typed panel can become visible only when focus began on a verified empty editable field, the caret began at zero, and the current prefix has a qualifying local match or is the reserved `clp` command.
-- Empty focus alone, a nonqualifying prefix, and established writing never open the typed panel.
-- Generated tests meet the zero-mid-writing and qualifying-fragment invariants.
-- Dismissal or insertion prevents reopening until focus changes.
+- A typed panel can become visible only when the text ending at the caret equals a complete assigned tag or the reserved `clp` command.
+- Empty focus alone, a partial or fuzzy tag, and content-only matches never open the typed panel.
+- Generated tests cover established writing, multi-word tags, left boundaries, Unicode/UTF-16 ranges, and the three-character minimum.
+- Dismissal or insertion clears the active match and Koru's bounded suffix.
 
 ### TASK-044 — Implement caret placement and nonactivating panel shell
 
@@ -500,7 +501,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 
 - Target transaction snapshot and immediate revalidation.
 - Manual-recall insertion at the caret or over an explicitly active selection.
-- Typed initial-fragment ranges supplied only by the TASK-043 Phase 50 adapter.
+- Typed exact-tag ranges supplied only by the TASK-043 Phase 50 adapter.
 - Tier A direct AX replacement.
 - Tier B current-host-only pasteboard plus Paste event.
 - Tier C copy-only fallback.
@@ -511,28 +512,24 @@ Task IDs are stable. Pull requests and issues should reference them.
 - Focus/range mismatch produces no target modification.
 - Manual hotkey recall can complete safe insertion before the typed-session adapter is enabled.
 - Explicit insertion occurs once.
-- Every failure reaches a safe fallback without deleting the prefix.
+- Every failure reaches a safe fallback without deleting the matched tag.
 
-### TASK-047 — Implement Template completion and rendering
+### TASK-047 — Preserve legacy template compatibility (superseded product surface)
 
 **Depends on:** TASK-012, TASK-045, TASK-046
 
 **Scope:**
 
-- Deterministic placeholder parser and renderer.
-- Ordered required/optional single-line and multiline fields.
-- Compact completion surface.
-- In-memory filled values.
-- Explicit final Insert and target revalidation.
-- Cancel, lock, pause, and target-change cleanup.
-- No executable expressions or external lookup.
+- Keep supported older template fields and placeholder payloads decodable during vault and export migration.
+- Keep compatibility parsing deterministic and non-executable.
+- Do not expose template creation, completion, or behavior selection in the canonical editor.
+- Canonical saves write reusable content plus exact tags and clear obsolete template fields.
 
 **Complete when:**
 
-- Choosing a Template changes no destination text.
-- Required-field and keyboard-navigation tests pass.
-- Escape leaves the destination unchanged.
-- Filled values never persist unless the person explicitly updates the saved item.
+- Supported legacy fixtures remain readable and migrate without content loss.
+- New saved items require only content plus one or more exact tags.
+- No user-facing Template label, field-completion flow, or template behavior is reachable.
 
 ## 7. Clipboard workstream
 
@@ -570,7 +567,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 
 **Complete when:**
 
-- clp is eligible only at a verified fresh empty start.
+- `clp` is eligible at a left boundary anywhere in ordinary writing.
 - The Clipboard hotkey opens Clipboard recall with TASK-040 stopped and Input Monitoring denied.
 - Mixed results insert through the documented target tier.
 - Full file/video bytes are not loaded for result rendering.
@@ -654,9 +651,9 @@ Task IDs are stable. Pull requests and issues should reference them.
 **Scope:**
 
 - Review captured content.
-- Saved-item behavior choice: Saved text, Quick replacement, or Template.
-- Title and optional flat tags.
-- Preferred match terms for Quick replacement and field definitions for Template.
+- Reusable content.
+- One or more exact word-or-phrase tags, each meeting the three-character minimum.
+- Reserved `clp`, duplicate, and empty-tag validation.
 - Save/cancel.
 - Duplicate warning.
 
@@ -675,8 +672,8 @@ Task IDs are stable. Pull requests and issues should reference them.
 
 - Search, browse, create, edit, duplicate, pin, archive, move to Recently Deleted, restore, and permanently delete with confirmation.
 - Content-type previews.
-- Match-term validation including reserved `clp` conflict.
-- Saved text, Quick replacement, and Template behavior editing with TemplateField definitions.
+- Exact-tag validation including minimum length, duplicates, and reserved `clp` conflict.
+- Content and one-or-more exact-tag editing with no title, behavior picker, match-term mode, or template editor.
 
 **Complete when:**
 
@@ -694,7 +691,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 - Typed matching and selection icon toggles.
 - Global shortcuts.
 - Retention and asset limits.
-- Never Observe and Never Save Clipboard From.
+- Never Save Clipboard From; automatic typed recall has no per-app Never Observe list.
 - Launch at Login.
 - Pause and clear/reset entry points.
 
@@ -792,9 +789,9 @@ Task IDs are stable. Pull requests and issues should reference them.
 
 **Scope:**
 
-- Fresh-empty invariant.
-- No typed panel on empty focus alone or a nonqualifying prefix.
-- Typed panel allowed only after verified empty focus, caret zero, and a qualifying local match or reserved `clp`.
+- Exact complete-tag invariant.
+- No typed panel on empty focus alone, a partial tag, a fuzzy match, or a content-only match.
+- Typed panel allowed when a qualifying complete tag or reserved `clp` ends at the caret with a valid left boundary.
 - Explicit insertion.
 - Dismissal.
 - Target mismatch.
@@ -803,7 +800,7 @@ Task IDs are stable. Pull requests and issues should reference them.
 
 **Complete when:**
 
-- Zero typed-panel openings during established writing, on empty focus alone, or for nonqualifying prefixes, and zero automatic insertions.
+- Zero typed-panel openings for partial/nonqualifying text and zero automatic insertions; exact tags must open reliably during established writing.
 - Failing seeds become permanent regression tests.
 
 ### TASK-092 — Implement security, parser, and migration test suites
@@ -935,8 +932,8 @@ The principal dependency chains are:
 - Platform decisions → project shell → modules/models → macOS integrations.
 - Threat model → Keychain → encrypted repository/assets → search and retention.
 - Permission Coordinator → GlobalHotKeyRegistrar → manual Saved recall, Clipboard recall, and Save Selection commands without Input Monitoring.
-- Search + caret placement + registered manual recall → shared panel → insertion → Template completion in Phase 40.
-- Event tap + AX + shared panel/insertion → fresh-input state machine and typed-session adapter in Phase 50.
+- Search + caret placement + registered manual recall → shared panel → insertion in Phase 40.
+- Event tap + optional AX context + shared panel/insertion → exact-tag suffix state machine and typed-session adapter in Phase 50.
 - Repository/assets/retention + pasteboard permission → clipboard monitor → clp.
 - AX/context + panel placement → optional selection icon.
 - Services and registered Save Selection command + AX selected-text read → shared save confirmation.
@@ -954,7 +951,7 @@ Work on UI, repository, permission onboarding, harness, Services, and release in
 - No InputMethodKit or privileged/background helper.
 - Global shortcuts use a public registered-hotkey path independent of the CG event tap and Input Monitoring.
 - The event tap is limited to typed matching and its target-field panel navigation.
-- Typed matching fails closed and runs only from a verified fresh empty input at character zero.
+- Typed matching uses exact complete tags of at least three characters at a left boundary anywhere in ordinary writing.
 - No automatic insertion.
 - clp is the reserved clipboard-recall command.
 - Selection icon is optional; Services and global hotkey are supported fallbacks.

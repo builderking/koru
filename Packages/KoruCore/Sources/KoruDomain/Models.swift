@@ -79,6 +79,47 @@ public struct SavedItem: Identifiable, Hashable, Codable, Sendable {
         self.isPinned = isPinned; self.archivedAt = archivedAt; self.deletedAt = deletedAt; self.createdAt = createdAt; self.updatedAt = updatedAt
         self.lastUsedAt = lastUsedAt; self.useCount = useCount; self.sourceContext = sourceContext; self.keyedContentDigest = keyedContentDigest
     }
+
+    /// The single user-facing tag list. Older records may have values in either `tags` or
+    /// `matchTerms`, so preserve both encoded fields and expose their stable union here.
+    public var triggerTags: [String] {
+        Self.canonicalTriggerTags(tags + matchTerms.map(\.value))
+    }
+
+    /// A display-only label derived from content. `title` remains encoded so existing vaults and
+    /// exports continue to decode, but users no longer need to name saved text separately.
+    public var displayTitle: String {
+        let firstUsefulLine = plainContent
+            .components(separatedBy: .newlines)
+            .lazy
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
+        guard let firstUsefulLine else { return "Saved text" }
+        return String(firstUsefulLine.prefix(48))
+    }
+
+    public static func normalizedTriggerTag(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+            .lowercased()
+    }
+
+    public static func canonicalTriggerTags(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.compactMap { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+            let normalized = normalizedTriggerTag(trimmed)
+            guard seen.insert(normalized).inserted else { return nil }
+            return trimmed
+        }
+    }
+}
+
+public extension KoruPolicy {
+    static var minimumTriggerLength: Int { 3 }
+    static var maximumTriggerLength: Int { 64 }
 }
 
 public enum ContentType: String, Codable, CaseIterable, Sendable { case plainText, richText, url, image, fileReference, mediaReference, unsupported }
@@ -88,10 +129,14 @@ public enum SavedItemLifecycle: String, Codable, CaseIterable, Sendable { case a
 public struct ClipboardRepresentation: Hashable, Codable, Sendable {
     public var contentType: ContentType
     public var encryptedPayloadReference: String?
+    public var encryptedThumbnailReference: String?
+    public var thumbnailByteSize: Int?
     public var displayMetadata: String?
     public var byteSize: Int
-    public init(contentType: ContentType, encryptedPayloadReference: String? = nil, displayMetadata: String? = nil, byteSize: Int = 0) {
+    public init(contentType: ContentType, encryptedPayloadReference: String? = nil, encryptedThumbnailReference: String? = nil, thumbnailByteSize: Int? = nil, displayMetadata: String? = nil, byteSize: Int = 0) {
         self.contentType = contentType; self.encryptedPayloadReference = encryptedPayloadReference
+        self.encryptedThumbnailReference = encryptedThumbnailReference
+        self.thumbnailByteSize = thumbnailByteSize
         self.displayMetadata = displayMetadata; self.byteSize = byteSize
     }
 }

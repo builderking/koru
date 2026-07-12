@@ -17,11 +17,11 @@ This is intentionally not an InputMethodKit product. InputMethodKit can provide 
 
 The following are invariants, not preferences:
 
-1. **Typed matching starts only in a fresh empty editable input.**
-   - The input must have been empty when focus entered it.
-   - The caret must have been at character position zero.
-   - Matching is disabled for the focus session if Koru cannot prove both conditions.
-   - Matching never starts after the person has already written text, moved the caret, selected existing text, pasted content, or returned to the beginning of nonempty content.
+1. **Typed matching uses a complete exact tag suffix anywhere.**
+   - Compare the committed suffix immediately before the current caret with assigned tags.
+   - Require a left boundary and at least three user-perceived characters.
+   - Partial, fuzzy, derived-label, content, and learned matches cannot open the automatic panel.
+   - Existing writing and a caret in the middle of text are valid; a stale process, caret, or input generation is not.
 
 2. **Koru never inserts automatically.**
    - A typed match may only show a tiny suggestion panel.
@@ -32,7 +32,7 @@ The following are invariants, not preferences:
    - When the caret rectangle is unavailable, Koru uses a documented fallback position and never pretends the panel is caret-anchored.
 
 4. **The reserved clipboard command is clp.**
-   - clp is eligible only under the same fresh-empty-input rule.
+   - clp is eligible under the same exact-suffix and left-boundary rule anywhere.
    - It opens mixed clipboard recall for supported text, images, files, and media references.
    - Selecting an item is still explicit; Koru never pastes the first result automatically.
 
@@ -41,8 +41,9 @@ The following are invariants, not preferences:
    - If Koru cannot prove that the selection starts at zero and covers the control's full character count, it does not show the icon.
    - macOS Services and a global capture hotkey remain first-class supported alternatives for arbitrary selections.
 
-6. **Safety wins over coverage.**
-   - Unknown text context, unknown security state, or unsupported Accessibility behavior produces a false negative, not an accidental popup or insertion.
+6. **Koru adds no automatic secure/app exclusion.**
+   - Automatic matching attempts the same exact-tag behavior in every field and application.
+   - macOS Secure Input, protected authorization surfaces, unavailable Accessibility state, or denied event posting may still prevent observation or insertion; those paths preserve text and expose the available fallback.
 
 ## 3. Minimum macOS version and visual fallback
 
@@ -100,7 +101,7 @@ No integration may infer permission from a previous launch. It checks before sta
 
 Uses a Core Graphics event tap to observe only the event types necessary for:
 
-- A short typed-query state machine.
+- A bounded rolling typed-suffix state machine.
 - Reset conditions such as mouse clicks, focus-changing keys, navigation, and application switching.
 - Panel-navigation commands while an automatic tiny panel is visible and the destination retains focus.
 
@@ -133,7 +134,7 @@ Registered commands require no Input Monitoring request. Their downstream action
 
 - Open Koru and Open Clipboard can open a screen-safe palette with no special permission.
 - Accessibility improves caret anchoring and is required to read a selection or modify another application's text directly.
-- Without Accessibility, recall remains browse/copy capable, Save Selection directs the person to the macOS Service, and insertion remains Copy-only.
+- Without Accessibility, recall remains browse/copy capable, Save Selection directs the person to the macOS Service, and an unchanged exact-tag context may use the synthetic Backspace-and-paste tier when event posting is permitted.
 - Posting Command-V remains a separate post-event permission decision; it is not granted by hotkey registration.
 
 `RegisterEventHotKey` is a public macOS shortcut-registration path, but it is a legacy Carbon API. The feasibility and release matrices must verify registration, conflict behavior, keyboard layouts, sleep/wake, and delivery on every supported macOS version. If Apple removes or materially changes it, replacing the registrar requires an ADR rather than silently falling back to broad event listening. Apple documents hot-key registration and `kEventHotKeyPressed` in the archived [Carbon Event Manager Reference](https://developer.apple.com/library/archive/documentation/Carbon/Reference/Carbon_Event_Manager_Ref/Reference/reference.html).
@@ -154,72 +155,41 @@ Responsibilities:
 
 Accessibility is cooperative. Apple states that clients may return not-implemented, invalid-element, cannot-complete, or API-disabled errors. Koru must treat those as normal compatibility outcomes rather than crashes: [AXUIElement API](https://developer.apple.com/documentation/applicationservices/axuielement_h).
 
-### 4.6 Fresh-input session state machine
+### 4.6 Exact-tag suffix state machine
 
-Maintain one state machine for the currently focused element.
+Maintain a bounded per-frontmost-process suffix and a monotonically increasing input generation.
 
 States:
 
-1. **Unknown**
-   - Focus has changed or the context has not been verified.
-   - No typed suggestions are allowed.
+1. **Inactive** — typed matching is disabled, paused, or no printable event has been observed.
+2. **Tracking suffix** — ordinary printable input, including spaces inside phrase tags, updates the bounded in-memory suffix and generation; it never blocks the destination event.
+3. **Validating committed text** — after a short delay, prefer the current AX value and collapsed caret. If those are unavailable, exact matching may use the rolling suffix. A newer event cancels stale validation.
+4. **Panel visible** — the complete suffix exactly matches an assigned tag of at least three characters at a left boundary, or equals `clp`; the context stores the matched tag, process, generation, and AX range/digest when available.
+5. **Completed or dismissed** — explicit selection, further typing, click, focus/app/caret change, paste, navigation outside Koru, or uncertain composition invalidates the previous context.
 
-2. **Eligible empty start**
-   - The element is editable and nonsecure.
-   - Its original value is empty.
-   - Its original selected range is zero length at location zero.
-   - The application is not excluded.
-
-3. **Tracking prefix**
-   - The first committed characters belong to the same eligible session.
-   - Caret movement remains monotonic from zero.
-   - The observed target value, when available, agrees with the in-memory prefix.
-
-4. **Panel visible**
-   - There is at least one result or the reserved clp mode is active.
-   - The target element and original owning process remain valid.
-
-5. **Ineligible until focus changes**
-   - Any nonempty initial value.
-   - Any initial caret location other than zero.
-   - A paste, dictation, composition Koru cannot validate, selection change, caret move, target mutation from another source, secure state, excluded app, unsupported Accessibility state, or context mismatch.
-
-6. **Completed or dismissed**
-   - Insertion was explicitly requested, or the panel was dismissed.
-   - Matching remains off until focus leaves and a new empty session is verified.
-
-The state machine must not reconstruct arbitrary prose. It retains only the current eligible prefix in memory. If the focused element changes faster than Koru can verify it, the session stays Unknown and matching does not start.
+The event-tap callback only appends a compact message and returns. Accessibility validation, exact-tag lookup, and UI work occur off the callback path. Raw suffix characters remain bounded in memory and are never persisted or logged.
 
 ### 4.7 Query and ranking service
 
 Inputs:
 
-- Current eligible prefix.
+- Current exact suffix for automatic recall, or the user-entered query for manual recall.
 - Mode: saved text or clipboard recall.
 - Optional application scope.
 
 Outputs:
 
 - Stable result IDs.
-- Display-safe title and preview.
+- Derived display label and preview.
 - Content type.
 - Match reason.
 - Usage metadata required for deterministic ranking.
 
-Ranking order:
-
-1. Exact match-term match.
-2. Match-term prefix match.
-3. Exact or prefix title-token match.
-4. Token match across title, tags, and body.
-5. An encrypted local query-to-item signal created only after explicit selection.
-6. Pinned state and prior use in the destination application.
-7. Recency and use frequency as deterministic tie-breakers.
-8. Deterministic fuzzy title or body match.
+Automatic lookup is not ranked fuzzy search. It considers assigned tags only, requires a complete exact suffix, keeps the longest overlapping tag, and returns all items sharing it. Manual recall separately ranks exact/prefix/contained tags, content matches, local learned selections, pinning, recency, frequency, and deterministic fuzzy tag/content matches.
 
 clp switches to clipboard mode. It does not search saved items unless a later product decision explicitly creates a combined mode.
 
-Manual recall is a separate invocation mode. It moves focus deliberately into Koru search and may expose Saved, Clipboard, or All while preserving a snapshot of the destination caret or selection. The fresh-empty rule limits automatic typed matching; it does not disable explicit global recall during established writing.
+Manual recall is a separate invocation mode. It moves focus deliberately into Koru search and may expose Saved, Clipboard, or All while preserving a snapshot of the destination caret or selection. Manual fuzzy search never changes automatic exact-tag eligibility.
 
 All decrypted content search happens in memory. The persistent database must not contain a plaintext full-text index of saved-item or clipboard bodies.
 
@@ -236,8 +206,8 @@ Requirements:
 - Prefer below-caret placement; flip above when space is insufficient.
 - Expose a compact accessibility hierarchy and keyboard navigation.
 - Show at most the amount of information that fits the approved tiny-panel design.
-- Do not focus a text field when the automatic panel first appears. Continued typing remains in the target input and updates the prefix state.
-- Tab may deliberately transfer focus to panel search. That transition freezes the original target prefix range, keeps it unchanged, and routes subsequent search text only to Koru until Escape or explicit selection.
+- Do not focus a text field when the automatic panel first appears. Continued typing remains in the target input and invalidates or updates the exact-tag state.
+- Tab may deliberately transfer focus to panel search. That transition freezes the original matched-tag range, keeps it unchanged, and routes subsequent search text only to Koru until Escape or explicit selection.
 - Manual recall deliberately focuses panel search and stores the original destination caret or selection for later revalidation.
 - Capture only panel-navigation events while visible; unrelated input continues to the target.
 
@@ -247,42 +217,42 @@ The current AppKit style mask explicitly supports panels that do not activate th
 
 Insertion is a transaction bound to:
 
-- Invocation mode: initial typed match, clp, or manual recall.
+- Invocation mode: automatic exact tag, clp, or manual recall.
 - Target process ID.
 - Target AX element identity.
-- Expected replacement range: the tracked initial prefix for typed/clp invocation, or the snapshotted caret/selection for manual recall.
+- Expected replacement range: the matched tag suffix at its actual UTF-16 location for typed/clp invocation, or the snapshotted caret/selection for manual recall.
 - Expected target text and selection where readable.
 - Selected result ID and content representation.
 
 Revalidate the target immediately before modifying it. If focus, range, process, or value no longer matches, cancel safely.
 
-Behavior gate:
-
-- Saved text and Quick replacement can proceed to the insertion tiers after explicit selection.
-- Selecting a Template does not modify the target. It opens compact field completion, keeps entered values in memory, and requires a second explicit Insert confirmation.
-- Required template fields block final insertion until complete.
-- Escape from template completion discards entered values and leaves the destination unchanged.
-- Template rendering is deterministic and supports no executable expressions, scripts, or remote lookup.
+Every saved item is plain reusable content. It proceeds to insertion only after explicit selection.
 
 Insertion tiers:
 
 1. **Tier A — direct Accessibility replacement**
    - Verify selected-range and selected-text capabilities.
-   - Select exactly the tracked prefix range from character zero to the current caret.
+   - Select exactly the matched tag's UTF-16 range wherever it occurs.
    - Replace that selection with plain text.
    - Use only for targets included in the tested compatibility contract.
 
 2. **Tier B — pasteboard plus explicit paste event**
-   - Select the exact tracked prefix range through Accessibility.
+   - Select the exact matched tag range through Accessibility.
    - Put the chosen text, rich text, URL, image, file URL, or grouped representations on NSPasteboard.
    - Post Command-V only after the target is revalidated.
    - Leave the inserted item as the current clipboard item; automatic restoration is unsafe because target applications may read the pasteboard asynchronously.
 
-3. **Tier C — copy-only fallback**
+3. **Tier C — synthetic Backspace plus paste**
+   - Use only after explicit selection, successful event-post preflight, and validation that the frontmost process and input generation are unchanged.
+   - Write the chosen content to NSPasteboard, post one marked Backspace key pair per user-perceived character in the matched tag, then post Command-V.
+   - Mark all generated events with Koru-specific source metadata so the event tap ignores them.
+   - This is a best-effort compatibility tier because macOS does not make the multi-event sequence atomic.
+
+4. **Tier D — copy-only fallback**
    - Put the item on NSPasteboard.
    - Close the panel.
    - Tell the person that Koru copied the item and that they should press Command-V.
-   - Never delete the typed prefix if Koru cannot safely select or replace its exact range.
+   - Never delete the typed tag if Koru cannot validate either the AX or synthetic context.
 
 Character-by-character synthetic typing is not an insertion tier. It is layout-dependent, slow for large saved items, and unreliable with input methods.
 
@@ -367,11 +337,11 @@ Koru publishes capabilities, not an unsupported universal promise.
 
 Per target application/control, compatibility may be:
 
-- **Full:** fresh-empty verification, caret bounds, direct text insertion, mixed paste where supported, and selection capture.
-- **Paste:** fresh-empty verification and caret bounds work, but insertion uses pasteboard plus Command-V.
+- **Full:** exact-tag matching, caret bounds, direct text insertion, mixed paste where supported, and selection capture.
+- **Paste:** exact-tag matching and caret bounds work, but insertion uses pasteboard plus Command-V.
+- **Synthetic:** exact-tag matching works from the rolling suffix and insertion uses validated Backspace plus Command-V because AX range replacement is unavailable.
 - **Copy-only:** panel can appear, but Koru cannot safely modify the target; selection copies the result for manual paste.
-- **Palette-only:** typed matching cannot be safely verified; the global palette and Services remain available.
-- **Blocked:** secure/protected context, sensitive application, login/authorization surface, or explicit user exclusion.
+- **Palette-only:** typed matching cannot be observed reliably; the global palette and Services remain available.
 
 Store compatibility decisions locally by bundle identifier and control capability, not by window title or document content. Built-in compatibility overrides ship with releases; there is no remote rules service.
 
@@ -384,7 +354,7 @@ The build and product copy must state these limits:
 - Koru cannot inject a first-class custom item directly into every application's contextual menu. Services is the supported public mechanism.
 - Koru does not run at the login window, FileVault unlock, or protected authorization surfaces.
 - A registered chord can be unavailable because macOS or another application already owns it, and modifier/key behavior can vary by OS release and keyboard layout. Koru reports the conflict and preserves menu commands; it does not add broad event listening as a workaround.
-- Secure and password fields are deliberately blocked.
+- Koru does not deliberately block secure/password fields for automatic recall, but macOS Secure Input and protected authorization surfaces may suppress event delivery, readable text, AX modification, or synthetic posting. Koru cannot override that OS behavior.
 - Raw key events do not perfectly represent committed text from all keyboard layouts, dead keys, dictation, or third-party input methods. Unknown composition makes the session ineligible.
 - A target application decides whether it accepts images, files, video references, rich text, or only plain text.
 - Clipboard history begins only while Koru is running, enabled, and allowed to read the general pasteboard.
@@ -393,25 +363,24 @@ The build and product copy must state these limits:
 
 ## 8. Architecture acceptance criteria
 
-1. Typed matching cannot enter Tracking prefix unless the testable focused-element contract proves an initially empty value and a zero-length selection at location zero.
-2. Automated state-machine tests produce zero panel openings after nonempty initial content, caret movement, selection changes, paste, or re-entry into an existing field.
+1. Typed matching shows a panel only for a complete assigned tag of at least three characters at a left boundary or reserved `clp`.
+2. Automated tests prove the same exact-tag behavior at field start, after existing prose, and in the middle of text, while partial, fuzzy, derived-label, content, and stale-generation matches remain hidden.
 3. No result inserts without an explicit Return, keyboard selection command, or click.
-4. Dismissal leaves the target's typed prefix and focus unchanged.
+4. Dismissal leaves the target's typed tag and focus unchanged.
 5. The standard AppKit test harness anchors the panel within eight points of the reported caret rectangle on one- and two-display setups.
 6. A target mismatch immediately before insertion cancels without deleting or replacing text.
 7. Every insertion failure reaches copy-only fallback without content loss.
 8. clp returns mixed retained clipboard entries with accurate type labels and never loads a full video asset merely to render a result.
-9. Secure fields, protected content, excluded applications, and unknown security contexts never create a typed session, clipboard capture, or selection icon.
+9. Koru adds no secure/app exclusion to automatic recall; OS-suppressed secure contexts fail without unintended modification, while clipboard capture and the optional selection icon retain their separate privacy gates.
 10. The optional selection icon never appears for a partial selection; Services and the global capture hotkey remain available.
 11. Killing Koru during an encrypted repository write leaves either the previous committed state or the complete new state, never a partially decrypted or corrupt record.
 12. Raw keystrokes, selected text, saved-item bodies, clipboard bodies, file paths, window titles, and URLs do not appear in persisted logs.
 13. On macOS 13 through the current release, denied or revoked permissions degrade the relevant feature without crashing or blocking Library access.
-14. Selecting a Template changes no destination text until required fields are complete and the person explicitly confirms Insert.
-15. Manual recall during established writing modifies only the snapshotted caret/selection after successful immediate revalidation.
-16. Moving a saved item to Recently Deleted removes it from recall without destroying recoverability; Restore returns it to the correct saved-item state, while explicit permanent deletion or recovery-window expiry removes its record and owned assets transactionally.
-17. With Input Monitoring denied and the event tap stopped, a successfully registered Open Koru or Open Clipboard command still opens the palette; without Accessibility it uses screen-safe placement and Copy-only behavior.
-18. A registered Save Selection command can be invoked without Input Monitoring, but reads no text without Accessibility and instead offers the Services path.
-19. Hotkey registration conflict or failure is visible, preserves the last valid configuration where possible, and leaves menu-bar commands usable without installing an event tap.
+14. Manual recall during established writing modifies only the snapshotted caret/selection after successful immediate revalidation.
+15. Moving a saved item to Recently Deleted removes it from recall without destroying recoverability; Restore returns it to the correct saved-item state, while explicit permanent deletion or recovery-window expiry removes its record and owned assets transactionally.
+16. With Input Monitoring denied and the event tap stopped, a successfully registered Open Koru or Open Clipboard command still opens the palette; without Accessibility it uses screen-safe placement and Copy-only behavior.
+17. A registered Save Selection command can be invoked without Input Monitoring, but reads no text without Accessibility and instead offers the Services path.
+18. Hotkey registration conflict or failure is visible, preserves the last valid configuration where possible, and leaves menu-bar commands usable without installing an event tap.
 
 ## 9. Official Apple references
 

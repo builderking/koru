@@ -33,23 +33,23 @@ const longText =
                 </div>
                 <span class="shot-label">Screenshot · inserted from clipboard</span>
               </div>
-              <!-- Floats caret-relative: anchored to the start of the typed fragment. -->
+              <!-- Floats caret-relative: anchored to the exact typed tag. -->
               <div class="panel-slot">
                 <div class="recall-panel panel-saved visible">
-                  <div class="search-row"><span>⌕&nbsp; “foll”</span><span class="count">3 matches</span></div>
+                  <div class="search-row"><span>⌕&nbsp; “foll”</span><span class="count">3 exact matches</span></div>
                   <div class="result selected">
                     <span class="result-icon">S</span>
-                    <span><strong>Follow-up after intro call</strong><small>Saved text</small></span>
+                    <span><strong>Hi Maia — great talking today…</strong><small>Tag · foll</small></span>
                     <span class="key" data-key="↵">↵</span>
                   </div>
                   <div class="result">
-                    <span class="result-icon">T</span>
-                    <span><strong>Client follow-up template</strong><small>Template · 3 fields</small></span>
+                    <span class="result-icon">S</span>
+                    <span><strong>Thanks again for the introduction…</strong><small>Tag · foll</small></span>
                     <span class="key" data-key="2">2</span>
                   </div>
                   <div class="result">
-                    <span class="result-icon">C</span>
-                    <span><strong>Recent clipboard</strong><small>Type clp to browse copies</small></span>
+                    <span class="result-icon">S</span>
+                    <span><strong>I’ll send the agreement tomorrow…</strong><small>Tag · foll</small></span>
                     <span class="key" data-key="3">3</span>
                   </div>
                 </div>
@@ -82,7 +82,7 @@ const longText =
           </div>
         </div>
         <figcaption class="demo-caption" id="demo-caption">
-          <span class="caption-text">Type a fragment you remember — or <code>clp</code> for recent copies. Koru shows matches beside the caret; nothing is inserted until you choose.</span>
+          <span class="caption-text">Type a saved text's exact tag anywhere you write — or <code>clp</code> for recent copies. Koru shows matches beside the caret; nothing is inserted until you choose.</span>
         </figcaption>
       </figure>
     </div>
@@ -189,7 +189,7 @@ const longText =
     };
 
     const sceneSavedText = async () => {
-      await setCaption('Start typing something you’ve saved — Koru’s recall menu appears right at your caret.');
+      await setCaption('Type a complete assigned tag of at least three characters — Koru’s recall menu appears right at your caret.');
       await type('foll');
       await wait(280);
       panelSaved.classList.add('visible');
@@ -206,7 +206,7 @@ const longText =
     };
 
     const sceneClipboardImage = async () => {
-      await setCaption('<code>clp</code> is the shortcut to your recent clipboard — text, links, and screenshots.');
+      await setCaption('Type <code>clp</code> anywhere for your recent clipboard — text, links, and screenshots.');
       clearField();
       await wait(500);
       await type('clp');

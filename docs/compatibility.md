@@ -6,13 +6,13 @@ Koru targets a universal arm64/x86_64 app for macOS 13 and later. Release-blocki
 
 ## Capability labels
 
-- **Full:** strict fresh-empty verification, caret panel, direct or paste insertion, and selection capture passed the matrix.
-- **Paste:** strict verification and caret panel passed; insertion uses pasteboard.
+- **Full:** exact tag-suffix detection during established writing, caret panel, direct AX insertion, manual recall, and selection capture passed the matrix.
+- **Paste:** matching and the panel passed; insertion uses the verified keyboard deletion/local-paste fallback because writable AX text is unavailable.
 - **Copy-only:** Koru copies for a manual paste without modifying the target.
 - **Palette-only:** typed matching is unavailable; manual global/menu-bar palette remains.
-- **Blocked:** secure, protected, sensitive, system, or excluded context.
+- **Blocked:** the target changed, the host rejected every insertion path, or macOS denied the required capability.
 
-One successful attempt is not enough to label a target Full. Secure fields remain Blocked even if an input event could technically be posted.
+One successful attempt is not enough to label a target Full. Automatic recall has no Never Observe application exclusion. When macOS Secure Input is active, the OS may withhold keystrokes from Koru, so typed matching is unavailable and the manual shortcut is the supported path; Koru does not bypass Secure Input.
 
 ## Release matrix template
 
@@ -20,6 +20,6 @@ One successful attempt is not enough to label a target Full. Secure fields remai
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Unreleased | Not tested | Not tested | Not tested | Not tested | Not tested | Not tested | Not tested | Not tested | Not certified | App absent | — |
 
-Each release must cover native AppKit/SwiftUI, Safari/WebKit, Chrome/Chromium, Electron, Office, browser document editors, developer tools, terminals, Finder/system, remote/canvas, and secure controls using dedicated synthetic data. Browser editors, terminals, remote/canvas, and custom source editors are expected to use reduced capabilities honestly.
+Each release must cover native AppKit/SwiftUI, Safari/WebKit, Chrome/Chromium, Electron, Office, browser document editors, developer tools, terminals, Finder/system, remote/canvas, and controls with Secure Input using dedicated synthetic data. The matrix must separately record exact-tag detection, `clp`, AX replacement, keyboard fallback, copy-only behavior, and OS-suppressed input. Browser editors, terminals, remote/canvas, and custom source editors are expected to use reduced capabilities honestly.
 
 Fork/community reports are evidence inputs, not automatically certified results. Maintainers reproduce them on the release matrix before changing a public label.

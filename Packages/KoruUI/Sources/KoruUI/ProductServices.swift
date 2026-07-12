@@ -3,23 +3,6 @@ import KoruDomain
 import OSLog
 import Combine
 
-public enum ProductValidationError: LocalizedError, Equatable {
-    case emptyTitle, emptyContent, reservedMatchTerm, duplicateMatchTerm, missingRequiredField(String), malformedTemplate(String), unsupportedImportVersion(Int), malformedImport, duplicateItems(Int)
-    public var errorDescription: String? {
-        switch self {
-        case .emptyTitle: "Enter a title."
-        case .emptyContent: "Enter content to save."
-        case .reservedMatchTerm: "“clp” is reserved for Clipboard."
-        case .duplicateMatchTerm: "Match terms must be unique."
-        case .missingRequiredField(let label): "Complete \(label)."
-        case .malformedTemplate(let token): "Template placeholder \(token) is invalid."
-        case .unsupportedImportVersion(let version): "Import version \(version) is not supported."
-        case .malformedImport: "The selected file is not a valid Koru export."
-        case .duplicateItems(let count): "The import contains \(count) duplicate item(s)."
-        }
-    }
-}
-
 public enum DuplicateResolution: String, CaseIterable, Sendable { case skip, keepBoth, replace }
 
 public struct TemplateDefinition: Equatable, Sendable {
@@ -197,14 +180,10 @@ public struct ProductStorePersistence: Sendable {
         "unknown"
         #endif
     }
-    public func save(_ item: SavedItem) throws {
-        guard !item.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ProductValidationError.emptyTitle }
-        guard !item.plainContent.isEmpty else { throw ProductValidationError.emptyContent }
-        let normalized = item.matchTerms.map { $0.value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
-        if normalized.contains(KoruPolicy.reservedClipboardCommand) { throw ProductValidationError.reservedMatchTerm }
-        if Set(normalized).count != normalized.count { throw ProductValidationError.duplicateMatchTerm }
-        if let index = items.firstIndex(where: { $0.id == item.id }) { items[index] = item } else { items.append(item) }
-        if let persistence { enqueuePersistence("repository.save_failed") { try await persistence.save(item) } }
+    public func save(_ candidate: SavedItem) throws {
+        let savedItem = try SavedItemValidation.preparedForSave(candidate)
+        if let index = items.firstIndex(where: { $0.id == savedItem.id }) { items[index] = savedItem } else { items.append(savedItem) }
+        if let persistence { enqueuePersistence("repository.save_failed") { try await persistence.save(savedItem) } }
     }
     public func move(_ id: SavedItemID, to collection: SavedItemCollection) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }

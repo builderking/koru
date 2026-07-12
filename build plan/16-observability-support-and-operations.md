@@ -22,7 +22,7 @@ This keeps operations consistent with Koru's local-first promise, but it means t
 ## 2. Observability principles
 
 1. **Content is never an observable.**
-   - No keystrokes, prefixes, saved-item bodies, clipboard bodies, selected text, filled template values, titles, tags, previews, paths, filenames, window titles, document titles, or URLs.
+   - No keystrokes, typed suffixes, saved-item bodies, clipboard bodies, selected text, tags, previews, paths, filenames, window titles, document titles, or URLs.
 
 2. **Record outcomes, not inputs.**
    - Permission state, capability tier, error code, latency, content-type category, and bounded byte bucket are sufficient.
@@ -125,12 +125,12 @@ Never log event key codes, characters, or modifier sequences.
 - AX-STALE-ELEMENT
 - AX-CANNOT-COMPLETE
 - AX-MESSAGING-TIMEOUT
-- AX-SECURE-BLOCKED
-- AX-EXCLUDED-APP
-- CONTEXT-INITIAL-EMPTY-VERIFIED
-- CONTEXT-INELIGIBLE
+- AX-SECURE-INPUT-UNAVAILABLE
+- CLIPBOARD-EXCLUDED-APP
+- CONTEXT-EXACT-TAG-MATCH
+- CONTEXT-NO-EXACT-TAG
 
-CONTEXT-INELIGIBLE is an aggregate counter by reason enum; it is not emitted for every key.
+CONTEXT-NO-EXACT-TAG is an aggregate counter by reason enum; it is not emitted for every key. It must not imply that ordinary established writing, a secure field, or an application was excluded by Koru.
 
 Target app bundle identifiers are excluded by default. Diagnostics may include an app identifier only after the person turns on Include App Identifiers in the export preview.
 
@@ -269,7 +269,7 @@ Display:
 - Last integrity check and migration outcome.
 - Local performance aggregates.
 - Whether Koru is paused or the session is locked.
-- A list of active default/user exclusions by count; names appear only in the interactive local screen, not the default export.
+- A list of active default/user Clipboard exclusions by count; names appear only in the interactive local screen, not the default export.
 
 Actions:
 
@@ -331,10 +331,9 @@ Flow:
 - Keychain items or keys.
 - Ciphertext, nonces, or authentication tags.
 - Saved-item or clipboard content.
-- Queries or eligible prefixes.
+- Queries or bounded typed suffixes.
 - Selected text.
-- Filled template values.
-- Titles, tags, previews, file paths, or file names.
+- Derived display labels, tags, previews, file paths, or file names.
 - Window/document titles or browser URLs.
 - Raw pasteboard types.
 - Raw key events.
@@ -461,7 +460,7 @@ Check:
 
 - Clipboard History enabled.
 - General pasteboard access behavior.
-- Sensitive-app exclusion.
+- Clipboard-sensitive-app exclusion.
 - Retention policy.
 - Oversized/unsupported counts.
 - Monitor health.
@@ -604,7 +603,7 @@ Koru does not delete itself or request administrator privileges.
 ## 16. Operations acceptance criteria
 
 1. Production logs contain only allowlisted enums, counts, durations, and reviewed low-sensitivity metadata.
-2. Canary strings from keyboard, saved-item, clipboard, selection, title, tag, path, and URL fixtures never appear in logs or support bundles.
+2. Canary strings from keyboard, saved-item, clipboard, selection, derived-label, tag, path, and URL fixtures never appear in logs or support bundles.
 3. Diagnostic export is explicit, previewable, redactable, and never uploaded by Koru.
 4. Include App Identifiers is off by default.
 5. Hotkey-registrar, event-tap, AX, pasteboard, and repository watchdogs stop after bounded recovery and cannot create a busy loop.

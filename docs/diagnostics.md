@@ -13,8 +13,8 @@ No logging API should accept arbitrary user-controlled strings. Potentially iden
 Required reason-code families:
 
 - `permission.*`: never-requested, denied, revoked, unavailable.
-- `target.*`: insecure-metadata, secure, excluded, stale-focus, stale-range, unsupported.
-- `eventTap.*`: disabled, timeout, invalidated, backoff-exhausted.
+- `target.*`: stale-focus, stale-range, process-changed, unsupported.
+- `eventTap.*`: disabled, timeout, invalidated, unavailable, backoff-exhausted. An unavailable tap may reflect permission state or macOS Secure Input; diagnostics must not claim Koru can bypass it.
 - `ax.*`: api-disabled, cannot-complete, notification-unsupported, observer-invalid.
 - `pasteboard.*`: denied, unsupported-type, oversized, malformed, suspended.
 - `insertion.*`: direct-failed, paste-failed, copy-only, target-mismatch.

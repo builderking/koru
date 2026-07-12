@@ -44,7 +44,7 @@ Privacy, permission, and fallback states use direct language. Koru never hides a
 
 - Use the macOS system font and semantic system text styles.
 - Use standard body/control sizing for primary content and system small/caption sizing for metadata.
-- Keep hierarchy shallow: result title, preview, metadata.
+- Keep hierarchy shallow: content-derived label or preview, tag/source metadata.
 - Avoid all-caps labels and excessive weight contrast.
 - Permit truncation in list previews, but never in the full preview, editor, permission explanation, or error recovery action.
 - Respect accessibility text and display settings; compactness must yield before legibility.
@@ -56,7 +56,7 @@ Apple's current [Accessibility](https://developer.apple.com/design/human-interfa
 - Use semantic system colors so light, dark, increased-contrast, and inactive-window states remain correct.
 - The primary art direction is light and clean, but the product must follow the user's system appearance.
 - Use one restrained accent for selection and primary actions.
-- Do not encode Saved versus Clipboard, availability, error, or template state through color alone.
+- Do not encode Saved versus Clipboard, availability, or error state through color alone.
 - Avoid large saturated surfaces, decorative gradients, and custom translucency that competes with destination content.
 - Respect Reduce Transparency with an opaque system-equivalent background.
 
@@ -73,7 +73,7 @@ Apple's current [Accessibility](https://developer.apple.com/design/human-interfa
 - Pair unfamiliar icons with an accessible label or tooltip.
 - The optional save affordance may be icon-only visually, but it requires a clear accessibility label such as “Save selected text to Koru.”
 - Do not use emoji as control icons.
-- Do not create different decorative icons for prompt, snippet, replacement, and text; behavior labels are sufficient.
+- Do not create different decorative icons or item types for prompt, snippet, replacement, and other reusable text.
 
 ### 3.5 Density and spacing
 
@@ -93,7 +93,7 @@ Purpose: find, distinguish, and explicitly select a result.
 Required elements:
 
 - source indicator;
-- query or reflected initial fragment;
+- the exact matched tag for automatic recall or the entered query for manual recall;
 - result count communicated accessibly;
 - result list;
 - visible focused-row treatment;
@@ -114,12 +114,12 @@ The panel should not normally show:
 
 Each row may include:
 
-- title or derived clipboard label;
+- a content-derived saved-text label or derived clipboard label;
 - a one- or two-line preview;
-- source/type or behavior metadata;
+- source/type or exact-tag metadata;
 - thumbnail for images where useful;
 - age for clipboard entries;
-- small template-field or unavailable-state indicator.
+- small unavailable-state indicator.
 
 The entire row is the primary selection target. Secondary actions must not crowd the scanning path and should appear through a standard action menu or accessible details route.
 
@@ -139,20 +139,17 @@ Focused, hovered, pressed, unavailable, and selected-for-action states must be v
 The initial state contains:
 
 - exact content preview;
-- locally suggested editable title;
-- Saved text / Quick replacement / Template choice;
-- only the fields required by that choice;
+- one or more exact trigger-tag fields, each at least three characters;
 - Save and Cancel.
 
-Advanced tags and metadata are optional disclosure, not blockers. Copy should remain concise and use the term saved item.
+Content and at least one valid tag are the only required inputs. Copy should remain concise and use the term saved item.
 
-### 4.5 Template completion
+### 4.5 Tag editing
 
-- Present one clear field path and a live preview.
-- Identify required fields with text or semantics, not color alone.
-- Keep Insert distinct from Update Template.
-- Preserve values while correcting validation errors during the active completion flow.
-- Cancel changes no destination content and does not save filled values.
+- Accept one or more exact word-or-phrase tags.
+- Explain the three-character minimum and reserved `clp` conflict inline.
+- Preserve entered content and valid tags while correcting validation errors.
+- Cancel changes no destination content and persists no draft.
 
 ### 4.6 Library window
 
@@ -177,9 +174,11 @@ Status must be available as text within the menu; icon changes alone are insuffi
 
 Koru relies on a precise distinction between the destination's focus and Koru's focus.
 
-### Initial typed matching
+### Automatic exact-tag matching
 
 - Destination text control retains typing focus.
+- The panel may appear at the beginning, middle, or end of ordinary writing only after a complete assigned tag of at least three characters at a left boundary.
+- Partial, fuzzy, content, and derived-label matches remain manual-search-only.
 - Koru displays result focus as a navigable suggestion state.
 - Arrow navigation is used only when it can be captured without corrupting destination editing.
 - Return inserts only after the user has deliberately moved or confirmed result focus according to the tested interaction contract.
@@ -210,9 +209,9 @@ VoiceOver must announce:
 - “Koru suggestions” or “Koru recall” when the panel becomes available;
 - active source;
 - result count;
-- focused result title, preview summary, source/type, and position;
-- whether insertion replaces an initial fragment, active selection, or inserts at the caret;
-- template field label, required state, help, validation, and progress;
+- focused result preview summary, source/type, and position;
+- whether insertion replaces the exact matched tag, an active selection, or inserts at the caret;
+- save-editor content and trigger-tag validation;
 - permission, unavailable, and fallback states;
 - completion of Save or Insert without reading private content unnecessarily.
 
@@ -228,8 +227,7 @@ Every core action must be possible without a pointer:
 - preview and select;
 - choose insertion mode;
 - save selection;
-- choose saved-item behavior;
-- fill a template;
+- create and edit exact trigger tags;
 - edit, archive, restore, delete, clear, and export;
 - open permission repair and settings.
 
@@ -259,7 +257,7 @@ Every core action must be possible without a pointer:
 
 ### 6.6 Cognitive accessibility
 
-- Use consistent terms: Saved, Clipboard, Saved item, Saved text, Quick replacement, Template.
+- Use consistent terms: Saved, Clipboard, Saved item, content, trigger tag.
 - Keep each transient surface focused on one decision.
 - Do not auto-dismiss forms or validation messages on a timer.
 - Avoid teaching a large shortcut grammar before first value.
@@ -284,9 +282,8 @@ Use:
 - Saved
 - Clipboard
 - Saved item
-- Saved text
-- Quick replacement
-- Template
+- Trigger tag
+- Content
 - Save selection
 - Insert
 - Copy
@@ -326,10 +323,10 @@ Every release candidate must be checked with:
 - Reduce Motion;
 - Full Keyboard Access;
 - VoiceOver;
-- keyboard-only recall, capture, template, library, and settings flows;
+- keyboard-only recall, capture, tag editing, library, and settings flows;
 - multiple displays and screen edges;
 - common text scaling/display configurations;
-- secure fields and excluded applications;
+- secure fields and applications where macOS Secure Input or host capabilities limit integration;
 - no-caret-bounds fallback;
 - empty, loading, permission, unavailable, and failure states.
 

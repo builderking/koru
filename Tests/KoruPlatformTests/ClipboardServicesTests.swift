@@ -1,12 +1,92 @@
+import AppKit
 import Foundation
 import KoruDomain
 @testable import KoruPlatform
 import Testing
 
 final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
-    var count = 0; var state: PasteboardAccessState = .available; var groups: [[MaterializedPasteboardItem]] = []
+    var count = 0; var state: PasteboardAccessState = .available; var groups: [[MaterializedPasteboardItem]] = []; var koruOriginated = false
     func changeCount() -> Int { count }; func accessState() -> PasteboardAccessState { state }
+    func isKoruOriginatedChange() -> Bool { koruOriginated }
     func materialize(limits: PasteboardLimits) throws -> [[MaterializedPasteboardItem]] { groups }
+}
+
+@Test func generalPasteboardSourceDetectsOnlyTheExactKoruOriginMarker() {
+    let pasteboard = NSPasteboard(name: .init("koru-origin-\(UUID().uuidString)"))
+    defer { pasteboard.clearContents() }
+    let source = GeneralPasteboardSource(pasteboard: pasteboard)
+
+    pasteboard.prepareForNewContents(with: .currentHostOnly)
+    pasteboard.setString("ordinary copy", forType: .string)
+    #expect(!source.isKoruOriginatedChange())
+
+    #expect(KoruPasteboardOrigin.write("Koru copy", to: pasteboard))
+    #expect(source.isKoruOriginatedChange())
+
+    pasteboard.prepareForNewContents(with: .currentHostOnly)
+    pasteboard.setString("another-app", forType: KoruPasteboardOrigin.type)
+    pasteboard.setString("not Koru", forType: .string)
+    #expect(!source.isKoruOriginatedChange())
+}
+
+@Test func clipboardImageResolverDecryptsABoundedThumbnailAndPreservesOriginalPasteboardBytes() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")!
+    let asset = try await vault.assets.store(png)
+    let event = ClipboardEvent(
+        expiresAt: .now.addingTimeInterval(100),
+        representations: [.init(contentType: .image, encryptedPayloadReference: asset.opaqueName, byteSize: png.count)]
+    )
+    try await vault.repository.saveClipboard(.init(event: event, keyedContentDigest: Data([9])))
+
+    let resolver = ClipboardContentResolver(repository: vault.repository, assets: vault.assets, maximumImageBytes: 1024, thumbnailPixels: 64)
+    let resolved = try #require(try await resolver.image(eventID: event.id))
+    #expect(resolved.originalData == png)
+    #expect(resolved.format == .png)
+    #expect(NSImage(data: resolved.thumbnailData) != nil)
+
+    let pasteboard = NSPasteboard(name: .init("koru-image-resolver-\(UUID().uuidString)"))
+    defer { pasteboard.clearContents() }
+    #expect(KoruPasteboardOrigin.writeImage(resolved, to: pasteboard))
+    #expect(pasteboard.data(forType: .png) == png)
+    #expect(pasteboard.string(forType: KoruPasteboardOrigin.type) == KoruPasteboardOrigin.value)
+}
+
+@Test func capturedImagesPersistASeparateSmallThumbnailForTheClipboardPanel() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")!
+    let fake = FakePasteboard(); var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
+    let monitor = PasteboardMonitor(source: fake, repository: vault.repository, assets: vault.assets, keys: vault.keys, exclusions: ExclusionPolicy(), policy: policy)
+    await monitor.setEnabled(true)
+    fake.groups = [[.init(contentType: .image, value: .data(png))]]
+    fake.count = 1
+
+    let eventID = try #require(try await monitor.poll(frontmostBundleID: "com.example.editor"))
+    let payload = try #require(try await vault.repository.clipboardEvents().first(where: { $0.event.id == eventID }))
+    let representation = try #require(payload.event.representations.first)
+    #expect(representation.encryptedPayloadReference != nil)
+    #expect(representation.encryptedThumbnailReference != nil)
+    #expect((representation.thumbnailByteSize ?? 0) > 0)
+
+    let resolver = ClipboardContentResolver(repository: vault.repository, assets: vault.assets)
+    let thumbnail = try #require(try await resolver.thumbnail(eventID: eventID))
+    #expect(NSImage(data: thumbnail) != nil)
+}
+
+@Test func pasteboardMonitorSkipsKoruMarkedWritesWithoutPersistingThem() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let fake = FakePasteboard(); var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
+    let monitor = PasteboardMonitor(source: fake, repository: vault.repository, assets: vault.assets, keys: vault.keys, exclusions: ExclusionPolicy(), policy: policy)
+    await monitor.setEnabled(true)
+    fake.groups = [[.init(contentType: .plainText, value: .data(Data("Koru copy".utf8)))]]
+    fake.koruOriginated = true; fake.count = 1
+
+    #expect(try await monitor.poll(frontmostBundleID: "com.example.editor") == nil)
+    #expect(try await vault.repository.clipboardEvents().isEmpty)
+
+    fake.koruOriginated = false; fake.count = 2
+    #expect(try await monitor.poll(frontmostBundleID: "com.example.editor") != nil)
+    #expect(try await vault.repository.clipboardEvents().count == 1)
 }
 
 @Test func pasteboardMonitorRequiresOptInGroupsMixedTypesAndDeduplicates() async throws {
@@ -61,12 +141,11 @@ final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
     #expect(try await vault.repository.clipboardEvents().isEmpty)
 }
 
-@Test func clpRequiresFreshStartButManualRecallIsPermissionIndependent() async throws {
+@Test func clpCanReplaceItsExactSpanAnywhereAndManualRecallNeedsNoSpan() async {
     let search = InMemorySearchIndex(); let service = ClipboardRecallService(search: search)
-    await #expect(throws: ClipboardRecallError.ineligibleTypedInvocation) { try await service.typedCLP(verifiedFreshStart: false, commandSpan: 0..<3) }
-    let typed = try await service.typedCLP(verifiedFreshStart: true, commandSpan: 0..<3)
+    let typed = await service.typedCLP(commandSpan: 12..<15)
     let focused = await service.focusSearch("more", session: typed)
-    #expect(focused.originalCommandSpan == 0..<3)
+    #expect(focused.originalCommandSpan == 12..<15)
     #expect(await service.manualHotKey().originalCommandSpan == nil)
 }
 
@@ -77,7 +156,25 @@ final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
     let controller = ClipboardHistoryController(monitor: monitor, repository: vault.repository, search: search, exclusions: exclusions, policy: policy)
     let event = ClipboardEvent(expiresAt: .now.addingTimeInterval(100), representations: [.init(contentType: .plainText)])
     try await vault.repository.saveClipboard(.init(event: event, searchableText: "save me", keyedContentDigest: Data([1])))
-    let saved = try await controller.saveToLibrary(eventID: event.id, title: "Saved separately")
+    await #expect(throws: ProductValidationError.emptyTags) {
+        try await controller.saveToLibrary(eventID: event.id, tags: [])
+    }
+    await #expect(throws: ProductValidationError.triggerTagTooShort) {
+        try await controller.saveToLibrary(eventID: event.id, tags: ["no"])
+    }
+    await #expect(throws: ProductValidationError.reservedMatchTerm) {
+        try await controller.saveToLibrary(eventID: event.id, tags: ["clp"])
+    }
+    await #expect(throws: ProductValidationError.duplicateMatchTerm) {
+        try await controller.saveToLibrary(eventID: event.id, tags: ["saved clip", "SAVED CLIP"])
+    }
+    #expect(try await vault.repository.savedItems(states: [.active]).isEmpty)
+    let saved = try await controller.saveToLibrary(eventID: event.id, tags: ["saved clip"])
+    #expect(saved.title == "save me")
+    #expect(saved.behavior == .savedText)
+    #expect(saved.tags == ["saved clip"])
+    #expect(saved.matchTerms == [.init(value: "saved clip", isPreferredInitialTerm: true, isExactTrigger: true)])
+    #expect(saved.templateFields.isEmpty)
     try await controller.clearHistory()
     #expect(try await vault.repository.clipboardEvents().isEmpty)
     #expect(try await vault.repository.item(id: saved.id) != nil)

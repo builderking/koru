@@ -6,15 +6,15 @@ Status: repository specification for TASK-020. Tests marked `planned` cannot run
 
 Boundaries are: macOS input/Accessibility to Koru process; general pasteboard to parser; decrypted process memory to encrypted storage; app to target application; contributor CI to protected release environment; signed artifact to public download; and static website source to Cloudflare Pages.
 
-Prohibited diagnostic/persistent fields are raw keys/prefixes, content, selection, template values, titles/tags/previews, paths/names, document/window titles, URLs, identifying custom pasteboard identifiers, keys, Keychain results, and nonce/ciphertext pairs.
+Prohibited diagnostic/persistent fields are raw keys/rolling suffixes, saved or clipboard content, selections, tags/previews, paths/names, document/window titles, URLs, identifying custom pasteboard identifiers, keys, Keychain results, and nonce/ciphertext pairs.
 
 ## Threat register
 
 | ID | Threat/boundary | Owner | Mitigation | Evidence/test | Status |
 |---|---|---|---|---|---|
-| TM-INPUT-001 | Observe secure/excluded or established writing | Platform | Fresh-empty state machine; secure subrole/exclusion fail-closed; memory-only prefix | `SEC-FRESH-001`, generated 100k sequence suite, host matrix | planned |
-| TM-INPUT-002 | Persist/log raw input or dismissed query | Platform/Security | Typed API accepts normalized state only; prohibited-field guards; selection-only learning | `SEC-LOG-001`, plaintext scan | specified |
-| TM-INSERT-001 | Focus/range changes before insert | Platform | Revalidate bundle, element, selection, and invocation; cancel on mismatch | `SEC-INSERT-001` | planned |
+| TM-INPUT-001 | Retain more established writing than exact matching needs | Platform | Bounded memory-only rolling suffix; exact complete-tag comparison; purge on pause/lock/process change; no Never Observe claim; never bypass macOS Secure Input | exact-trigger, lifecycle, host-matrix tests | implemented; host evidence pending |
+| TM-INPUT-002 | Persist/log raw input or dismissed query | Platform/Security | Input remains memory-only; prohibited-field guards; explicit-selection-only learning | `SEC-LOG-001`, plaintext scan | specified |
+| TM-INSERT-001 | Focus, range, process, or rolling-input generation changes before insert | Platform | Require explicit selection; revalidate AX target or frontmost process/generation; cancel before AX or synthetic keyboard changes | insertion and synthetic-replacement tests | implemented; host evidence pending |
 | TM-PASTE-001 | Pasteboard parser crash, allocation, execution, or file access | Clipboard | Type/size allowlist; bounded decode; never WebView-render HTML; references are data | fuzz corpus `SEC-PASTE-001` | planned |
 | TM-PASTE-002 | Universal Clipboard exposes inserted content | Clipboard | Minimum representations; `currentHostOnly`; mark Koru-origin; no unsafe restore | `SEC-PASTE-002` | planned |
 | TM-STORE-001 | Offline plaintext disclosure | Storage/Security | AES-GCM per record; authenticated metadata; Keychain random key; in-memory search | known-fixture scan `SEC-STORE-001` | planned |
@@ -29,7 +29,7 @@ Prohibited diagnostic/persistent fields are raw keys/prefixes, content, selectio
 
 ## Manual tests
 
-- `MAN-PRIV-001`: security reviewer checks permissions, exclusions, retention, deletion, export, backup, and out-of-scope language against shipped UI.
+- `MAN-PRIV-001`: security reviewer checks permissions, Secure Input behavior, Clipboard exclusions, retention, deletion, export, backup, and out-of-scope language against shipped UI.
 - `MAN-CLEAN-001`: clean test account installs, exercises all permission states, deletes all data, uninstalls, and checks Koru-managed live storage and Keychain entries.
 - `MAN-REL-001`: quarantine the public download, verify checksum, signature, Hardened Runtime, notarization ticket, Gatekeeper, architectures, and launch.
 - `MAN-FORK-001`: open a fork PR containing a harmless secret-presence assertion; confirm no environment secret or write token is exposed and no preview/release deploy runs.

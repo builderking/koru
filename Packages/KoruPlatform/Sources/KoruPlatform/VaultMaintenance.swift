@@ -30,7 +30,11 @@ public actor VaultMaintenanceService {
         let purged = try await repository.purgeRecentlyDeleted(before: now.addingTimeInterval(-recoveryWindow))
         for id in purged { await search.remove(savedItemID: id) }
         let clipboard = try await repository.clipboardEvents()
-        let owned = Set(clipboard.flatMap { $0.event.representations.compactMap(\.encryptedPayloadReference) })
+        let owned = Set(clipboard.flatMap { payload in
+            payload.event.representations.flatMap { representation in
+                [representation.encryptedPayloadReference, representation.encryptedThumbnailReference].compactMap { $0 }
+            }
+        })
         let orphanCount = try await assets.removeOrphans(ownedNames: owned)
         try await repository.pruneBackups(keeping: backupLimit)
         return .init(integrityOK: integrity, expiredClipboardCount: expired.count, purgedSavedItemCount: purged.count, orphanAssetCount: orphanCount)

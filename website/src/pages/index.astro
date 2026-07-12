@@ -30,33 +30,33 @@ const structuredData = [
 
 const features = [
   {
-    title: 'Recall from a fragment',
-    body: 'Search by the words you actually remember — a phrase from the body, a tag, half a title. No exact triggers to memorize.',
+    title: 'Exact tags, right where you type',
+    body: 'Give saved text one or more trigger tags of 3–64 characters. Type a complete tag anywhere in your writing and Koru opens beside the caret.',
     icon: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   },
   {
     title: 'Save without switching apps',
-    body: 'Select text you got right and save it on the spot with a shortcut. Keep writing — Koru files it for next time.',
+    body: 'Select text you got right, save the content, and add the trigger tags you want. There is no title or separate item type to manage.',
     icon: '<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/>',
   },
   {
     title: 'Clipboard, on your terms',
-    body: 'Type clp to browse recent copies. Clipboard history is off until you turn it on, kept briefly, and stored encrypted.',
+    body: 'Type clp anywhere to browse recent copies. Clipboard history is off until you turn it on, kept briefly, and stored encrypted.',
     icon: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 11h6M9 15h4"/>',
   },
   {
-    title: 'Templates that fill fast',
-    body: 'Saved items with placeholders become quick forms: tab through the blanks, then insert the finished text in one step.',
+    title: 'Search when you forget the tag',
+    body: 'Open Koru with the global shortcut and search saved content or tags. The shortcut stays available when an app limits typed matching.',
     icon: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/><path d="M15.5 15.5 17 17"/>',
   },
   {
-    title: 'Quick replacements',
-    body: 'Give your most-used items a short trigger and swap it for the full text instantly — expansion when you want it.',
+    title: 'Complete tags only',
+    body: 'Koru waits for a complete assigned tag — da stays quiet for a tag named dav — then lets you choose before replacing only that tag.',
     icon: '<path d="m13 3-9 11h7l-1 7 9-11h-7l1-7Z"/>',
   },
   {
     title: 'Works where you write',
-    body: 'Email, docs, browsers, editors, terminals. Where direct insertion is not possible, Koru falls back safely to hotkey and copy.',
+    body: 'Email, docs, browsers, editors, terminals. Where an app or macOS Secure Input limits matching or insertion, Koru falls back to the hotkey and copy.',
     icon: '<path d="M4 17V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><path d="M2 17h20v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1Z"/>',
   },
 ];
@@ -66,7 +66,7 @@ const features = [
     <div class="shell">
       <p class="hero-badge"><span class="dot" aria-hidden="true"></span>Free for macOS</p>
       <h1>Never rewrite what you already got right.</h1>
-      <p class="lede">Koru remembers the text you choose to keep — replies, snippets, prompts, templates — and brings it back right where you're typing. All of it stays on your Mac.</p>
+      <p class="lede">Koru remembers the text you choose to keep — replies, snippets, prompts, commands — and brings it back right where you're typing. All of it stays on your Mac.</p>
       <div class="actions">
         <DownloadButton large />
         <a class="button button-secondary button-large" href="#how-it-works">See how it works</a>
@@ -87,11 +87,11 @@ const features = [
       <div class="steps">
         <article class="step">
           <h3>Save what's worth keeping</h3>
-          <p>Select a sentence, a reply, a command, a prompt — anything you'll want again — and save it with a shortcut without leaving the app you're in.</p>
+          <p>Select a sentence, reply, command, or prompt, save its content, and assign one or more trigger tags of 3–64 characters.</p>
         </article>
         <article class="step">
-          <h3>Recall from a fragment</h3>
-          <p>Press the Koru hotkey, or just start a fresh field with a fragment you remember. Matching items appear beside your caret. Type <code>clp</code> for recent clipboard copies.</p>
+          <h3>Type a tag or use the shortcut</h3>
+          <p>Type a complete assigned tag anywhere in your writing. Koru appears beside the caret. Use the global shortcut to search content and tags, or type <code>clp</code> anywhere for recent copies.</p>
         </article>
         <article class="step">
           <h3>Insert with intent</h3>
@@ -136,8 +136,8 @@ const features = [
         <li>Everything is stored locally, encrypted at rest with a key in your Mac's Keychain.</li>
         <li>No analytics, tracking, or background network requests.</li>
         <li>Clipboard history stays off until you explicitly enable it — and expires on your schedule.</li>
-        <li>Password fields are always ignored, and you can exclude any app entirely.</li>
-        <li>Pause, export, clear, and delete-everything controls are always one click away.</li>
+        <li>Koru does not deliberately exclude password fields, but macOS Secure Input can prevent typed matching or replacement.</li>
+        <li>Pause, Clipboard exclusions, export, clear, and delete-everything controls are always one click away.</li>
       </ul>
     </div>
   </section>

@@ -10,10 +10,10 @@ Koru will enter the market as **local writing memory for macOS**.
 
 It is not positioned as a better text expander, a generic prompt library, or a feature-heavy clipboard manager. Those categories are mature. Koru's wedge is removing the boundary between two storage layers people currently search separately:
 
-1. permanent saved items, each of which can behave as Saved text, a Quick replacement, or a Template;
+1. permanent saved text, each stored as content plus one or more exact trigger tags;
 2. recent clipboard material that is useful now but may not deserve permanent storage.
 
-Both layers are recalled from beside the caret where the target exposes reliable bounds, with a stable fallback elsewhere. At position zero in a fresh empty input, the user can begin typing a matching fragment; the interface appears only when the fragment matches. The global hotkey can open Koru immediately where macOS permits. Selected writing can be captured before it is sent or replaced when the host exposes it through Accessibility or Services. The core remains local and understandable.
+Both layers are recalled from beside the caret where the target exposes reliable bounds, with a stable fallback elsewhere. A complete saved tag of at least three characters opens the interface wherever it ends at the caret during ordinary writing; prefixes and content matches do not open it automatically. The global hotkey can open Koru immediately where macOS permits. Selected writing can be captured before it is sent or replaced when the host exposes it through Accessibility or Services. The core remains local and understandable.
 
 The shortest category statement is:
 
@@ -21,7 +21,7 @@ The shortest category statement is:
 
 The clearest product explanation is:
 
-> Koru brings saved writing, reusable templates, and recent clipboard items to the caret, locally on your Mac.
+> Koru brings saved writing and recent clipboard items to the caret, locally on your Mac.
 
 ## The market truth
 
@@ -70,7 +70,7 @@ Koru should search one writing-memory surface first and reveal whether the resul
 
 Abbreviations are fast only when remembered exactly. Large libraries turn into private command languages that users forget. Search overlays help, but they commonly begin after the user remembers a separate keyboard shortcut.
 
-Koru should accept imperfect fragments, match terms, words from the body, and recent context. Exact triggers remain an accelerator, not a prerequisite.
+Manual recall should accept partial or fuzzy tags, words from the content, and approved recent context. Complete exact tags remain the automatic accelerator, not a prerequisite for manual search.
 
 ### 3. Clipboard history is temporary but treated as a separate destination
 
@@ -92,7 +92,7 @@ Koru should be narrower: activate at the writing surface, show only writing-rele
 
 ### 6. Privacy is often an assurance, not a visible model
 
-Clipboard and prompt content can include credentials, personal messages, client information, and unpublished work. “Local” is most trustworthy when users can see exclusions, retention, storage location, pause controls, and deletion behavior.
+Clipboard and prompt content can include credentials, personal messages, client information, and unpublished work. “Local” is most trustworthy when users can see Clipboard exclusions, retention, storage location, pause controls, and deletion behavior.
 
 Koru should make those controls part of the product, not only a privacy policy.
 
@@ -134,11 +134,11 @@ The audience is not “everyone who types” at launch. Koru should first serve 
 
 Five behaviors form the launch wedge. Removing any one makes Koru easier to compare with an existing category.
 
-1. **One recall surface:** permanent saved items and recent clipboard entries appear in one ranked result list; a saved item's behavior may be Saved text, Quick replacement, or Template.
-2. **Fragment-first retrieval:** a user can type or search with the words they remember; exact triggers are optional accelerators.
-3. **Start where writing starts without interruption:** when the user types a matching fragment at position zero in a fresh empty input, Koru may appear. It never opens merely because the field is empty. The hotkey remains the immediate manual path.
+1. **One recall surface:** permanent saved text and recent clipboard entries appear in one ranked result list.
+2. **Two intentional retrieval paths:** exact complete tags open automatic recall; the global shortcut searches tags and content without requiring a memorized trigger.
+3. **Recall during established writing:** when a complete assigned tag of at least three characters ends at the caret, Koru may appear without requiring a fresh or empty field. Partial tags never open it.
 4. **Capture before use:** selected writing can be saved in one step and then left in place, copied, or used normally.
-5. **Local, inspectable memory:** core storage and ranking work without an account or cloud dependency, with visible exclusions and deletion.
+5. **Local, inspectable memory:** core storage and ranking work without an account or cloud dependency, with visible Clipboard exclusions and deletion.
 
 This wedge is more important than an exhaustive feature checklist. Koru should initially do these five things exceptionally well across a verified set of Mac applications.
 
@@ -148,16 +148,16 @@ The product should explain its model in ordinary language:
 
 | Product term | Meaning | Default behavior |
 | --- | --- | --- |
-| **Saved item** | One permanent object for writing the user intentionally keeps. Its behavior is Saved text, Quick replacement, or Template. | Remains until edited or deleted. Searchable by title, match terms, tags, and body. |
+| **Saved item** | One permanent object containing reusable content and one or more exact trigger tags. | Remains until edited or deleted. Searchable by tag and content. |
 | **Recent clipboard entry** | Separate temporary material captured for short-term recall. | Expires under a visible retention policy. Saving it creates a separate permanent saved item without extending the temporary entry. |
 
-Behaviors and temporary status should remain visually legible in results, but users should never need to choose a database before searching.
+Source and temporary status should remain visually legible in results, but users should never need to choose a database before searching.
 
-“Prompt” is a supported item purpose, not a separate storage silo. A saved item may be a prompt, response, command, paragraph, address, checklist, or template.
+“Prompt” is a supported use case, not a separate storage silo. A saved item may contain a prompt, response, command, paragraph, address, checklist, or any other reusable text.
 
 ## Positioning statement
 
-For Mac users who repeatedly write and reuse valuable text across applications, Koru is a local writing-memory utility that recalls saved writing, quick templates, and recent clipboard material beside the caret. Unlike exact-only text expanders, standalone prompt libraries, clipboard archives, and general launchers, Koru starts from what the user remembers, even an imperfect fragment, and makes preserving the current selection part of the same flow.
+For Mac users who repeatedly write and reuse valuable text across applications, Koru is a local writing-memory utility that recalls saved writing and recent clipboard material beside the caret. Unlike exact-only text expanders, standalone prompt libraries, clipboard archives, and general launchers, Koru combines predictable exact-tag activation with manual search by the fragment the user remembers and makes preserving the current selection part of the same flow.
 
 ## Messaging hierarchy
 
@@ -171,12 +171,12 @@ Remember what you meant, even when you only remember a fragment.
 
 ### Explanation
 
-Saved writing, reusable templates, and recent clipboard items, recalled beside the caret.
+Saved writing and recent clipboard items, recalled beside the caret.
 
 ### Proof
 
-- Find from a partial phrase, title, match term, or body word.
-- Type a matching fragment at position zero in a fresh input, or use the hotkey for immediate browsing.
+- Find from a partial tag or body phrase with the manual shortcut.
+- Type a complete assigned tag anywhere in ordinary writing, or use the shortcut for immediate browsing.
 - Insert without leaving the application.
 - Save selected writing before it disappears.
 - See and control what is stored locally.
@@ -190,21 +190,21 @@ Stop rebuilding language you already worked to get right.
 
 ### Imperfect prompt recall
 
-A developer remembers “push…” but not the abbreviation or title. Koru ranks “Push to GitHub safely” and shows its saved status and optional trigger. The user explicitly chooses it, and only then does Koru insert it. The marketing claim is recall from a remembered fragment, not the literal example trigger “Pus.”
+A developer remembers “push…” but not the complete assigned tag. Manual recall ranks the saved text whose content begins “Push to GitHub safely” and shows its saved status and tags. The user explicitly chooses it, and only then does Koru insert it. Automatic recall remains reserved for a complete assigned tag.
 
 ### Clipboard rescue
 
 A user activates Koru in a text field and searches recent items for a filename, link, image, or copied paragraph. The item appears in the same surface as saved writing. If it will matter later, the user promotes it to Saved.
 
-The V1 default “clp” is a locked clipboard-scope trigger when typed at position zero in a fresh empty input. It must still require explicit item choice, never silently replace text, and may become configurable after V1. The global hotkey remains the manual fallback where macOS permits.
+The V1 default “clp” is a locked clipboard-scope trigger when typed at a left boundary anywhere in ordinary writing. It must still require explicit item choice, never silently replace text, and may become configurable after V1. The global hotkey remains the manual fallback where macOS permits.
 
 ### Capture before sending
 
-A user finishes a strong response, selects it, invokes Koru, and chooses Save selection. Koru proposes a title and keeps the original text untouched. Saving should not require opening the library first.
+A user finishes a strong response, selects it, invokes Koru, and chooses Save selection. Koru asks for one or more exact tags and keeps the original text untouched. Saving should not require opening the library first.
 
 ### Start with a remembered fragment
 
-At position zero in a fresh empty input, the user begins typing a fragment such as “pus.” Koru appears only after that fragment matches and shows relevant saved items. It never opens merely because the field is empty. If the user wants to browse before typing, the global hotkey opens the same surface immediately.
+During ordinary writing, the user types a complete assigned tag such as “pus.” Koru appears only when the whole tag matches and shows the saved texts assigned to it. If the user remembers only a fragment, the global shortcut opens the same surface for search.
 
 ## Competitive boundaries and honest claims
 
@@ -253,13 +253,13 @@ It does not remove the need for signing, notarization, dependency review, secure
 
 The beta should collect local, opt-in or user-reported evidence rather than default behavioral telemetry.
 
-- users retrieve an item without remembering its exact title or trigger;
+- users retrieve an item manually without remembering its complete assigned tag;
 - saved-selection capture leads to later reuse;
 - recent clipboard items are sometimes promoted rather than accumulating forever;
-- users successfully trigger Koru from a matching fragment at position zero in a fresh input, and use the hotkey when they want immediate browsing;
+- users successfully trigger Koru from a complete assigned tag during established writing, and use the hotkey when they remember only a fragment;
 - false activations remain rare enough that users leave the feature enabled;
-- users can explain that Saved text, Quick replacement, and Template are behaviors of one permanent saved item, while Recent clipboard entries are temporary;
-- users trust exclusions and retention because they can inspect and test them;
+- users can explain that permanent saved text contains only reusable content plus trigger tags, while Recent clipboard entries are temporary;
+- users trust Clipboard exclusions and retention because they can inspect and test them;
 - users replace a multi-tool workflow, not merely duplicate one more utility.
 
 ## Positioning decisions still to validate

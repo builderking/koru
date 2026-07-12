@@ -49,19 +49,19 @@ The following are not open design prompts.
 | ID | Locked decision | Consequence |
 | --- | --- | --- |
 | L-001 | Koru is free and open source under Apache-2.0. | No proprietary-core pivot or source-available substitute without an explicit project-level decision. |
-| L-002 | Koru is a local-first native macOS utility, useful without an account or cloud AI. | Core save, search, clipboard recall, template completion, and insertion work offline. |
-| L-003 | Automatic typed matching is eligible only at position zero in a fresh input that was empty when focused. | No automatic matching in established writing, after returning to the beginning, or when the context cannot be proved safe. |
-| L-004 | Koru does not open merely because a field is empty. | A qualifying typed fragment is required; the global hotkey is the immediate browse path. |
+| L-002 | Koru is a local-first native macOS utility, useful without an account or cloud AI. | Core save, search, clipboard recall, and insertion work offline. |
+| L-003 | Automatic typed matching uses a complete assigned tag suffix of at least three characters at a left boundary anywhere in writing. | Existing text and caret position do not disable matching; partial, fuzzy, derived-label, content, and stale-generation matches do not open the panel. |
+| L-004 | Koru does not open merely because a field is focused or text resembles saved content. | A complete exact assigned tag or reserved `clp` is required; the global hotkey is the immediate fuzzy-browse path. |
 | L-005 | Koru never silently replaces or inserts text. | Showing, focusing, ranking, timeout, blur, or exact match cannot insert. Explicit choice is always required. |
-| L-006 | Imperfect fragments may return multiple relevant saved items; exact abbreviations are optional accelerators. | Ranking must search titles, content, terms, and approved local signals rather than exact aliases alone. |
-| L-007 | clp is the V1 reserved clipboard command at the start of an eligible fresh input. | clp enters clipboard scope, leaves the typed characters untouched until explicit selection, and may become configurable only after V1. |
+| L-006 | Automatic recall is exact and manual recall is fuzzy. | Automatic matching reads assigned tags only; manual ranking searches tags, content, and approved local signals. |
+| L-007 | clp is the V1 reserved clipboard command at a left boundary anywhere. | clp enters clipboard scope, leaves the typed characters untouched until explicit selection, and may become configurable only after V1. |
 | L-008 | The global hotkey remains available everywhere the platform permits as a fallback. | Manual commands use a registered-hotkey path independent of Input Monitoring and the typed-event tap; Accessibility remains optional or required according to the downstream caret, selection, and insertion capability. |
-| L-009 | The permanent object is one saved item whose behavior is Saved text, Quick replacement, or Template. | Do not build separate permanent prompt, snippet, replacement, and template databases. |
+| L-009 | The permanent object is one saved item containing reusable text plus one or more exact tags. | Do not require a user-authored title, behavior subtype, match-term mode, template schema, or competing libraries. |
 | L-010 | Recent clipboard content is a separate temporary layer. | Promotion creates a saved item; temporary retention is not silently extended. |
 | L-011 | Selecting all may expose a small save affordance only where reliable and safe. Global shortcut and macOS Service are required fallbacks. | The floating affordance is opportunistic, not a universal compatibility claim. |
 | L-012 | Product vocabulary is neutral; prompt is a use case, not a required type. | Marketing and UI cannot narrow Koru to “AI prompt manager.” |
 | L-013 | The quick interface is compact, native, keyboard-first, and low-copy. | Detailed visual polish follows native prototypes; no web-style command center is required for recall. |
-| L-014 | Raw keystrokes are never persisted, secure fields are ignored, clipboard capture is opt-in, and sensitive apps can be excluded. | Content-free diagnostics and conservative false negatives are required. |
+| L-014 | Raw keystrokes are never persisted; Koru adds no automatic-recall secure-field or per-app exclusion; clipboard capture remains opt-in with separate exclusions. | macOS Secure Input and protected surfaces remain hard platform limits, and every unsupported insertion path must preserve text or fall back to Copy. |
 | L-015 | The first supported release is directly distributed as a signed and notarized macOS app. | Mac App Store constraints are not a V1 requirement. |
 | L-016 | The launch website is static Astro in website/, with Cloudflare Pages production from main and pull-request previews. | No launch CMS, SSR, account backend, or Pages Function is needed. |
 | L-017 | Planning and implementation do not themselves authorize Git push, Cloudflare mutation, deployment, release, or announcement. | Each remote action follows its explicit approval gate. |
@@ -72,7 +72,7 @@ The following are not open design prompts.
 - automatic expansion after an exact trigger;
 - changing clp into a tentative example;
 - requiring people to classify saved content as a prompt;
-- storing Quick replacement and Template as competing libraries;
+- restoring title/behavior/template classification to the canonical saved-item schema;
 - enabling clipboard history by default;
 - making cloud sync or remote AI necessary for core retrieval;
 - claiming universal host-application compatibility;
@@ -89,7 +89,7 @@ These are binding implementation choices in the current supporting plans. Change
 | A-003 | Minimum deployment target macOS 13; release artifact is universal arm64 and x86_64. | Preserves a meaningful Intel path while using modern ServiceManagement. |
 | A-004 | SQLite stores ciphertext and minimal operational metadata; CryptoKit AES-GCM encrypts record payloads; the master key is in the data-protection Keychain. | 07 and 09; makes local privacy inspectable and avoids plaintext full-text storage. |
 | A-005 | Searchable content index exists only in memory after decryption. | Prevents a plaintext body index on disk. |
-| A-006 | Event-tap and Accessibility integration fail closed when field state or security is uncertain. | Safety is more important than coverage. |
+| A-006 | Event-tap and Accessibility integration bind every automatic match to a frontmost process, input generation, exact tag, and AX range/digest when available. | Koru does not security-gate automatic recall, but stale or uncertain insertion context fails without modification. |
 | A-007 | Initial release makes no background network request and contains no analytics, crash upload, remote config, sync, AI service, or automatic update feed. | 09 and 10; keeps the V1 trust contract narrow. |
 | A-008 | Check for Updates opens the official release page after explicit action. | Avoids an unreviewed update channel in V1. |
 | A-009 | Clipboard files and videos are references; Koru does not archive large video binaries in V1. | Bounds storage and avoids misrepresenting temporary references as durable media. |
@@ -97,6 +97,7 @@ These are binding implementation choices in the current supporting plans. Change
 | A-011 | Official releases use vX.Y.Z Git tags, signed and notarized DMG assets, SHA-256 checksums, release notes, notices, compatibility evidence, and SBOM. | 10 and 11; provides traceability and supply-chain evidence. |
 | A-012 | No CLA or DCO enforcement at initial public contribution. | 11; avoids unnecessary contribution friction, subject to later governance review. |
 | A-013 | Manual global commands use a dedicated `GlobalHotKeyRegistrar` backed by the public `RegisterEventHotKey` path; the Core Graphics event tap is limited to typed matching and automatic-panel navigation. | 07, 08, and 16; shortcut registration receives discrete command IDs without Input Monitoring, while Accessibility remains capability-specific. See Apple's archived [Carbon Event Manager Reference](https://developer.apple.com/library/archive/documentation/Carbon/Reference/Carbon_Event_Manager_Ref/Reference/reference.html). |
+| A-014 | Automatic lookup is complete exact-tag suffix matching with a three-character minimum and left boundary; manual lookup remains fuzzy. | Makes inline behavior predictable while preserving discovery through the shortcut panel. |
 
 ## 5. Closed reconciliation decision
 
@@ -120,10 +121,8 @@ Open questions are decision tasks, not a speculative feature backlog.
 | --- | --- | --- | --- | --- | --- |
 | OQ-001 | Can Koru be used as the product name respectfully and legally? | Keep as working name; use neutral wordmark; obtain trademark search, legal review, and Māori cultural guidance before public branding. | Product and brand | Roadmap 90 | Search report, advisor feedback, written go/rename decision |
 | OQ-002 | What are the default global shortcuts for recall, clipboard recall, and Save Selection? | Choose conflict-tested, configurable `GlobalHotKeyRegistrar` chords after the host-app spike; do not override macOS or common editor shortcuts and do not use the event tap as a conflict workaround. | UX and platform | Roadmap 20 | Registration/conflict matrix across supported macOS versions and keyboard layouts, plus keyboard-accessibility review |
-| OQ-003 | What qualifies as a meaningful initial fragment? | Use conservative deterministic thresholds and confidence; prefer no panel over a weak match; allow exact match terms to rank strongly. | Search and product | Roadmap 20 | Corpus evaluation, false-open measurements, multilingual tests |
 | OQ-004 | Which host applications and field types receive “Supported” status in V1? | Publish only the matrix proven by the feasibility harness; label fallbacks and exclusions explicitly. | QA and platform | Roadmap 20 | Versioned application/capability matrix |
 | OQ-005 | Which pasteboard representations are inserted versus copied, dragged, revealed, or rejected? | Support ordinary text, rich text, URL, image, and file references only where round-trip tests are reliable; never eagerly load large media. | Platform and security | Roadmap 60 | UTType matrix, size tests, per-host insertion evidence |
-| OQ-006 | Which template field types are in V1? | Begin with ordered text fields, required state, and optional defaults; defer scripts, remote values, and complex automation. | Product and UX | Roadmap 40 | Flow prototype, accessibility test, data-model sign-off |
 | OQ-007 | Where is the select-all save affordance allowed? | Start with an allowlist derived from stable AX selection and bounds; keep shortcut and Service as primary fallbacks elsewhere. | UX and platform | Roadmap 70 | False-positive/occlusion tests across host matrix |
 | OQ-008 | Which import formats ship in V1? | Guarantee Koru's own open export first; add Apple or competitor import only if fixtures and licensing support a reliable migration. | Product and data | Roadmap 70 | Format samples, round-trip tests, failure messaging |
 | OQ-009 | What public domain should the website use? | Launch on the verified pages.dev host until name, trademark, ownership, DNS, and recovery are settled. | Brand and operations | Roadmap 90 | Domain decision, ownership record, DNS and rollback plan |
@@ -148,7 +147,7 @@ Open questions are decision tasks, not a speculative feature backlog.
 - permanent video archive;
 - default background telemetry;
 - changing the reserved clp command;
-- automatic matching outside the fresh-input contract.
+- template variables or executable saved-item behavior.
 
 ## 7. Risk register
 
@@ -211,21 +210,21 @@ Release evidence:
 **Owner:** Platform, search, QA
 **Gate:** 20, 50, 80
 
-A false panel in the middle of text undermines the defining safety promise.
+A false panel without a complete assigned tag undermines the defining predictability promise. A panel in established writing is correct when the exact tag rule is satisfied.
 
 Mitigations:
 
-- enforce the fresh-empty-input state machine;
-- require proof that focus began on empty content with caret at zero;
-- never start a new session after clearing established content within the same focus session;
-- stop eligibility after unrelated text or uncertain state;
-- require a qualifying match before showing;
-- provide global and per-app disable controls;
+- require a complete assigned tag of at least three characters at a left boundary;
+- never use prefix, fuzzy, derived-label, content, or learned matches for automatic opening;
+- prefer committed AX text and caret state when available;
+- bind rolling-suffix fallback to the frontmost process and input generation;
+- invalidate the panel on further typing, focus/app/caret change, click, paste, or uncertain composition;
+- provide a global automatic-matching disable control;
 - preserve failing generated-test seeds.
 
 Release evidence:
 
-- zero mid-writing openings in generated sequences and the host matrix;
+- zero openings without a complete exact tag in generated sequences and the host matrix, with positive coverage at field start and during established writing;
 - explicit beta unwanted-surface review;
 - content-free diagnostics can distinguish why a session was ineligible.
 
@@ -241,11 +240,11 @@ Focus changes, asynchronous paste behavior, rich editors, stale selections, or b
 Mitigations:
 
 - never insert from mere focus, rank, timeout, or blur;
-- revalidate target, selection, and fragment immediately before insertion;
-- replace only the exact active initial fragment;
+- revalidate target, selection, and exact matched tag range immediately before insertion;
+- replace only the exact active tag suffix at its actual range;
 - cancel when the destination changed;
 - preserve the inserted pasteboard item rather than racing to restore it;
-- provide explicit Copy when safe insertion cannot be proved;
+- validate process/generation before the synthetic Backspace-and-paste tier and provide Copy when safe insertion cannot be proved;
 - test native undo behavior and multi-format paste.
 
 Release evidence:
@@ -284,13 +283,15 @@ Release evidence:
 **Owner:** Security, privacy, platform
 **Gate:** 20, 30, 60, 80
 
-macOS does not provide a universal signal that arbitrary clipboard content is a password or token.
+macOS does not provide a universal signal that arbitrary clipboard content is a password or token, and Secure Input does not guarantee that a third-party utility will receive key, AX, or posting capabilities consistently.
 
 Mitigations:
 
-- reject secure fields and unknown security contexts;
-- ship visible sensitive-app exclusions by bundle identifier;
-- let users add Never Observe and Never Save Clipboard From entries;
+- apply no Koru secure-field or app exclusion to automatic exact-tag recall;
+- keep the rolling suffix bounded, transient, and absent from logs, diagnostics, persistence, and network traffic;
+- treat Secure Input and protected authorization surfaces as OS limitations that may suppress matching or insertion;
+- ship visible clipboard-sensitive-app exclusions by bundle identifier;
+- let users add Never Save Clipboard From entries;
 - make capture opt-in and retention conservative;
 - provide pause and clear actions;
 - never treat heuristic secret detection as a guarantee;
@@ -298,7 +299,8 @@ Mitigations:
 
 Release evidence:
 
-- secure-field and excluded-app negative tests;
+- secure/password-field compatibility tests proving no unintended modification under each exposed capability;
+- clipboard-excluded-app negative tests;
 - adversarial clipboard fixtures;
 - deletion and retention tests;
 - public privacy copy explains the detection limit.
@@ -336,21 +338,21 @@ Release evidence:
 **Owner:** Search and product
 **Gate:** 40, 50, 80
 
-If people must remember an exact trigger, Koru collapses back into the mature text-expander category.
+Automatic matching deliberately requires an exact tag, so manual fuzzy recall must remain good enough when a person forgets it.
 
 Mitigations:
 
-- evaluate exact term, prefix, title, body, tag, fuzzy, and local learned signals;
+- evaluate exact tag, prefix/contained tag, content, fuzzy, and local learned signals in manual recall only;
 - keep deterministic explainable ranking in V1;
 - measure relevant result position, false openings, and successful explicit choices;
-- let users add match terms without requiring them;
+- let users assign multiple memorable phrase tags to the same content;
 - keep learned signals local and resettable;
 - do not claim semantic recall until implemented and evaluated.
 
 Release evidence:
 
 - representative synthetic and consented dogfood corpus;
-- imperfect-fragment retrieval thresholds;
+- fuzzy manual-recall retrieval thresholds;
 - beta interviews show recovery without exact abbreviation.
 
 ### R-009 — Clipboard media causes storage or performance failure
@@ -385,7 +387,7 @@ Release evidence:
 **Owner:** Platform, accessibility, localization
 **Gate:** 20, 50, 80
 
-Composed input, dead keys, right-to-left text, non-Latin scripts, and alternate keyboard layouts can make event-level fragments differ from committed text.
+Composed input, dead keys, right-to-left text, non-Latin scripts, and alternate keyboard layouts can make an event-level suffix differ from committed text.
 
 Mitigations:
 
@@ -393,7 +395,7 @@ Mitigations:
 - derive committed field state through Accessibility where possible;
 - test multiple layouts and representative IMEs;
 - keep manual recall fully functional;
-- do not normalize or replace text beyond the verified fragment.
+- do not normalize or replace text beyond the verified exact tag.
 
 Release evidence:
 
@@ -413,8 +415,8 @@ Apple, Typinator, TextExpander, Raycast, Alfred, Paste, PastePal, and Espanso al
 Mitigations:
 
 - position Koru as local writing memory;
-- demonstrate imperfect-fragment recall under the fresh-input safety rule;
-- show one permanent saved-item model plus temporary Recent recall;
+- demonstrate exact-tag inline recall plus fuzzy manual recall;
+- show one content-plus-tags saved-item model plus temporary Recent recall;
 - make selection capture and promotion part of the same loop;
 - avoid “first” and generic AI claims;
 - validate multi-tool replacement rather than feature awareness.
@@ -585,7 +587,7 @@ Mitigations:
 
 - use native controls and focus effects;
 - preserve full keyboard operation;
-- provide accessible names for source, item behavior, type, and actions;
+- provide accessible names for source, content preview, tags, type, and actions;
 - respect Increase Contrast, Reduce Transparency, Reduce Motion, and system accent;
 - use opaque fallback when glass harms readability;
 - keep primary rows and targets at accessible sizes;
@@ -647,10 +649,10 @@ Release evidence:
 
 Stable release is blocked if any of the following is true:
 
-- a typed panel can open from empty focus alone, a nonqualifying prefix, an unverified or nonempty start, a caret position other than zero, or established writing;
+- a typed panel can open from focus alone, a partial or sub-three-character tag, a missing left boundary, a fuzzy/derived-label/content match, or a stale process/generation;
 - a result can insert without explicit choice;
 - registered manual recall fails solely because Input Monitoring is denied or the typed-event tap is unavailable;
-- a secure or excluded context can create typed state, selection UI, recall signals, or clipboard history;
+- Secure Input or a protected surface can cause unintended modification, automatic typed suffixes can be persisted/logged/transmitted, or a clipboard-excluded app can create clipboard history;
 - saved or clipboard content appears in logs, telemetry, network traffic, plaintext disk storage, or public issue templates;
 - durable saved items can be lost or corrupted through a supported upgrade;
 - a release artifact is unsigned, unnotarized, unstapled, checksum-mismatched, or built from an unidentified commit;

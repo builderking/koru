@@ -6,17 +6,17 @@ This document defines the initial product requirements for Koru, a free, open-so
 
 The product must deliver one dependable loop:
 
-> Save useful writing, recall it from an imperfect initial fragment or a manual shortcut, explicitly choose it, and insert it at the current caret.
+> Save useful writing with exact tags, surface it when a complete tag is typed or through fuzzy manual recall, explicitly choose it, and insert it at the current caret.
 
 Clipboard history supports that loop as temporary memory. It is not the product's primary identity.
 
 ## 2. Goals
 
-1. Make useful saved writing discoverable without requiring an exact abbreviation.
+1. Make automatic recall predictable through exact tags while keeping fuzzy discovery available in manual recall.
 2. Keep the user in the current application during recall, selection, and insertion.
 3. Make saving freshly written text fast and reversible.
-4. Support text, template, and mixed clipboard use cases without prompt-specific vocabulary.
-5. Prevent accidental replacement and mid-writing interruption.
+4. Support reusable text and mixed clipboard use cases without prompt-specific vocabulary.
+5. Prevent accidental replacement while allowing exact-tag recall anywhere the user writes.
 6. Work locally, without an account or network connection.
 7. Provide a compact, native, keyboard-first, accessible macOS experience.
 
@@ -24,13 +24,11 @@ Clipboard history supports that loop as temporary memory. It is not the product'
 
 | Term | Definition |
 | --- | --- |
-| Saved item | A permanent item intentionally kept by the user. |
-| Saved text | A saved item inserted as reusable content. |
-| Quick replacement | A saved item with preferred initial match terms. It still requires explicit selection before replacement. |
-| Template | A saved item with fields the user completes before insertion. |
+| Saved item | Permanent reusable text with one or more assigned exact trigger tags. |
+| Trigger tag | A user-assigned word or phrase whose complete suffix can open automatic recall. |
 | Clipboard entry | A temporary local record of supported pasteboard content. |
 | Recall panel | The compact, caret-adjacent surface used to find and select content. |
-| Initial typed matching | Suggestions based on the first characters in an eligible fresh, empty input session. |
+| Automatic exact-tag matching | Suggestions shown when the complete suffix immediately before the caret exactly matches an assigned tag at a left boundary. |
 | Manual recall | Recall panel invocation through a configurable global keyboard shortcut or menu command. |
 
 ## 4. Initial scope
@@ -39,9 +37,9 @@ Clipboard history supports that loop as temporary memory. It is not the product'
 
 - native macOS menu-bar application and library window;
 - local saved-item storage and local search;
-- saved text, quick replacement, and template behaviors;
-- automatic initial typed matching in eligible empty fields only;
-- `clp` as the initial typed command for mixed clipboard results;
+- saved text with one or more exact word-or-phrase tags and no required title or behavior choice;
+- automatic exact-tag matching at a left boundary anywhere in editable writing;
+- `clp` as the reserved exact command for mixed clipboard results anywhere;
 - global manual recall that works during established writing where macOS permits shortcut registration;
 - caret-adjacent result selection and insertion;
 - optional select-all save icon plus keyboard and menu equivalents;
@@ -58,6 +56,7 @@ Clipboard history supports that loop as temporary memory. It is not the product'
 - nested folders and complex taxonomies;
 - version history beyond basic undo during editing;
 - advanced rich-content editing;
+- template fields and executable or variable substitution;
 - browser extensions;
 - iOS, iPadOS, Windows, or Linux clients;
 - importers beyond documented basic interchange formats;
@@ -67,12 +66,12 @@ Clipboard history supports that loop as temporary memory. It is not the product'
 
 ### REQ-001 — Local-first operation
 
-Koru must provide capture, saved-item search, clipboard search, template completion, and insertion without an account or network connection.
+Koru must provide capture, saved-item search, clipboard search, and insertion without an account or network connection.
 
 Acceptance criteria:
 
 - Core content remains usable with networking disabled.
-- No saved text, clipboard content, query text, template value, or destination text is transmitted by default.
+- No saved text, clipboard content, query text, trigger tag, or destination text is transmitted by default.
 - The product can be installed and used without creating an identity.
 - Any optional diagnostics are disabled until the user consents and contain no writing content.
 
@@ -80,7 +79,7 @@ Acceptance criteria:
 
 Koru must support:
 
-- **Full mode**, where initial typed matching is enabled after the required macOS permissions are granted;
+- **Full mode**, where automatic exact-tag matching is enabled after the required macOS permissions are granted;
 - **Hotkey-only mode**, where automatic typed matching is disabled and recall is manually invoked.
 
 Acceptance criteria:
@@ -92,41 +91,38 @@ Acceptance criteria:
 
 Apple describes Input Monitoring as permission for an app to monitor keyboard, mouse, or trackpad input across apps in [Control access to input monitoring on Mac](https://support.apple.com/guide/mac-help/mchl4cedafb6/mac). Koru's onboarding must therefore explain the narrow purpose and local handling of input clearly.
 
-### REQ-003 — Eligible initial input session
+### REQ-003 — Automatic exact-tag eligibility
 
-Automatic typed matching may run only when all of the following are true:
+Automatic matching evaluates the committed text suffix immediately before the caret after ordinary typing. It is eligible when Full mode is active and all of the following are true:
 
-1. an editable text control has just received focus;
-2. its actual value is empty;
-3. the caret is at the beginning;
-4. there is no selected or marked text;
-5. the field is not secure or protected;
-6. an input-method composition is not active;
-7. the current application is not excluded;
-8. Full mode is active.
+1. the complete suffix exactly equals an assigned trigger tag after case-, diacritic-, and width-insensitive comparison;
+2. the tag contains at least three user-perceived characters;
+3. the match begins at the start of the field or immediately after a non-letter/non-number left boundary;
+4. the same frontmost process and input generation remain active when results are shown and when insertion is requested.
 
-The eligible window covers only the initial uninterrupted run of non-whitespace characters. It ends when the user types whitespace or a newline, pastes content, moves the caret, creates a selection, dismisses the panel, switches focus, or changes the field through another action.
+Koru prefers a post-commit Accessibility value and caret range. When a host exposes neither reliably, Koru may use a bounded, in-memory rolling typed suffix for exact matching. Koru does not apply an automatic-recall secure-field or per-app exclusion rule. macOS Secure Input, protected authorization UI, unavailable committed-text semantics, or denied event-posting access can still prevent observation or insertion and must be reported as platform limitations.
 
 Acceptance criteria:
 
-- Automatic matching never opens after the user has begun established writing in that field.
-- Clearing a nonempty field does not silently restart matching during the same focus session; a new eligible session begins after the field is empty and receives focus again.
-- Secure fields and active input-method compositions never trigger matching.
-- A preference allows initial typed matching to be disabled globally and per application.
+- Existing paragraphs, text before or after the caret, and moving the caret within editable text do not by themselves disable automatic matching.
+- A two-character tag or the first two characters of a longer tag never opens the panel; `dav` may open only when `dav` is an assigned complete tag.
+- Multiword tags retain their internal spaces and can match as complete phrases.
+- Typing another character, changing focus or application, moving the caret, clicking elsewhere, pasting, or starting uncertain IME composition invalidates a stale automatic match before insertion.
+- A preference allows automatic typed matching to be disabled globally.
 
-### REQ-004 — Initial typed matching
+### REQ-004 — Automatic exact-tag matching
 
-During an eligible session, Koru may surface saved-item matches after a meaningful initial fragment. A fragment such as `pus` may surface “Push to GitHub” and related items.
+When an eligible exact tag is complete, Koru may surface every saved item assigned to that tag. If more than one eligible tag is a suffix, only the longest complete tag participates.
 
 Acceptance criteria:
 
-- The typed fragment remains visible and unchanged in the destination field while results are shown.
-- Koru does not delete, replace, select, rewrite, or move the fragment before explicit result selection.
-- Results appear only when there is a qualifying local match or a recognized command such as `clp`.
-- Continuing normal writing past the eligibility boundary dismisses the panel and preserves all text.
+- The exact typed tag remains visible and unchanged in the destination field while results are shown.
+- Koru does not delete, replace, select, rewrite, or move the matched tag before explicit result selection.
+- Results appear only for a complete exact assigned tag or the reserved exact command `clp`; prefix, fuzzy, derived-label, content, and learned matches never open the automatic panel.
+- Continuing normal writing past the exact tag dismisses or updates the panel and preserves all text.
 - Escape dismisses the panel and preserves all text.
 - Merely highlighting a result with arrow keys does not change destination text.
-- Initial matching can use titles, explicit match terms, tags, and locally learned query-to-item choices; an exact alias is not required.
+- Multiple tags may point to one item, and multiple items may share the same tag and appear as distinct choices.
 
 ### REQ-005 — Manual recall
 
@@ -134,7 +130,7 @@ A configurable global shortcut must open manual recall after writing has begun w
 
 Acceptance criteria:
 
-- The shortcut uses a public registered-hotkey path and remains available when Input Monitoring is denied and initial typed matching is disabled.
+- The shortcut uses a public registered-hotkey path and remains available when Input Monitoring is denied and automatic typed matching is disabled.
 - Registration conflicts are detected without taking over an existing system or application shortcut, and the user can choose another binding.
 - Manual recall does not require or insert a trigger string into the destination.
 - Search input is captured inside the Koru panel.
@@ -149,11 +145,10 @@ The recall panel must present a compact ranked list with enough context to disti
 
 Each result provides, when applicable:
 
-- title or useful first line;
-- behavior or content-type indicator;
+- matched tag or useful first content line;
+- source or content-type indicator;
 - a short preview;
 - pin or recent state;
-- template-field count;
 - clipboard age and source type.
 
 Acceptance criteria:
@@ -166,21 +161,21 @@ Acceptance criteria:
 
 ### REQ-007 — Safe insertion
 
-Koru must change destination content only after explicit selection of a result or completed template.
+Koru must change destination content only after explicit selection of a result.
 
 Acceptance criteria:
 
-- In initial typed matching, insertion replaces only the exact initial fragment that produced the active results.
+- In automatic typed matching, insertion replaces only the exact matched tag suffix at its current location, including in the middle or at the end of established writing.
 - In manual recall, insertion replaces only the active selection, or inserts at the caret when no selection exists.
 - Before insertion, Koru confirms that the destination field, focus, caret or selection, and expected query span have not changed.
 - If destination state changed, Koru cancels safely and offers Copy instead of writing to an uncertain location.
-- Plain-text insertion is available when the target can be modified safely; otherwise Koru preserves the destination and offers Copy. Preserved-format insertion appears only when supported.
+- Koru first attempts direct Accessibility replacement of the exact range. If direct replacement or AX selection is unavailable but the same process and input generation remain active, it may synthesize one Backspace per matched user-perceived character and then Command-V. If that fallback cannot be validated or event posting is unavailable, Koru preserves the destination and offers Copy.
 - Direct Accessibility insertion does not alter the system clipboard. When a compatibility fallback must use the pasteboard, Koru leaves the chosen item as the current clipboard item rather than racing the destination app with an unsafe automatic restoration, and it communicates that outcome succinctly.
 - A standard Undo action can reverse the insertion in the destination app when that app supports undo.
 
 ### REQ-008 — Clipboard memory and `clp`
 
-Typing `clp` during an eligible initial session must open mixed Clipboard results. Manual recall must also expose Clipboard as a source.
+Typing the complete reserved tag `clp` at a left boundary anywhere must open mixed Clipboard results. Manual recall must also expose Clipboard as a source.
 
 Acceptance criteria:
 
@@ -208,32 +203,31 @@ Acceptance criteria:
 - Activating the icon opens a compact save surface with the selected content prefilled.
 - VoiceOver and Full Keyboard Access users can perform the same save action without targeting the floating icon.
 
-### REQ-010 — Save choices
+### REQ-010 — Save content and tags
 
-The save surface must offer neutral behavior choices: Saved text, Quick replacement, and Template.
+The save surface contains only the reusable content and its assigned trigger tags.
 
 Acceptance criteria:
 
 - Saved content is never altered during capture.
-- Koru suggests a title locally from the first useful line but lets the user change it.
-- Saved text can be committed with a title and content only.
-- Quick replacement requires at least one preferred initial match term and explains that replacement still requires selection.
-- Template creation can convert marked tokens into editable fields before saving.
+- A saved item requires nonempty content and at least one nonempty tag.
+- The user can assign multiple word-or-phrase tags to the same content.
+- No separate title, behavior picker, match-term field, or template editor is required.
+- Koru derives any compact display label from the first tag or first useful content line without persisting a second user-authored name.
 - Cancel leaves the source text unchanged and creates no saved item.
 - Duplicate or near-identical content prompts the user to open, update, or save separately rather than silently duplicating.
 
-### REQ-011 — Templates
+### REQ-011 — Trigger-tag validation
 
-A Template must allow a user to complete named values before insertion.
+Trigger tags must remain predictable and portable.
 
 Acceptance criteria:
 
-- Template fields have a label, order, required state, and optional default.
-- Choosing a template opens a compact completion surface near the recall panel.
-- Return advances or completes according to the current field; Escape cancels without changing destination text.
-- Required incomplete fields prevent insertion and show a concise accessible error.
-- The rendered preview updates before insertion.
-- Filled values are not saved to history by default unless the user explicitly updates the template.
+- Leading and trailing whitespace is removed; internal whitespace is preserved.
+- Duplicate tags on one item are removed with case-, diacritic-, and width-insensitive comparison.
+- Tags shorter than three user-perceived characters may be stored for organization or manual search but never trigger automatic recall.
+- `clp` remains reserved for Clipboard and cannot be assigned to a saved item.
+- Tags contain data only; they execute no scripts, commands, variables, or remote lookups.
 
 ### REQ-012 — Saved-item library
 
@@ -241,8 +235,8 @@ Koru must provide a separate library window for deliberate management, while kee
 
 Acceptance criteria:
 
-- Users can create, search, edit, duplicate, archive, delete, pin, tag, and change the behavior of saved items.
-- Search covers title, content, match terms, and tags.
+- Users can create, search, edit, duplicate, archive, delete, pin, and assign multiple tags to saved items.
+- Manual search covers tags and content and may use deterministic fuzzy ranking and local learned choices.
 - No folder is required to save or find an item.
 - Nested folders are not part of the initial release.
 - Archived items do not appear in normal recall but remain recoverable.
@@ -280,7 +274,7 @@ All core flows must work with the keyboard and macOS assistive technologies.
 Acceptance criteria:
 
 - Full Keyboard Access reaches every action.
-- VoiceOver announces panel purpose, source, result count, focused item, selected action, template errors, and insertion outcome.
+- VoiceOver announces panel purpose, source, result count, focused item, selected action, and insertion outcome.
 - Focus is never moved without an initiating user action.
 - UI does not rely on color, animation, hover, or pointer precision alone.
 - Reduced Motion, Increase Contrast, Reduce Transparency, and system appearance settings are respected.
@@ -305,7 +299,7 @@ Apple recommends relying on system focus behavior, supporting keyboard-only inte
 ### Privacy and security
 
 - Content telemetry is prohibited.
-- Secure fields are out of scope for capture, matching, recall insertion, and clipboard collection.
+- Koru does not deliberately exclude secure or password fields from automatic matching, but macOS Secure Input and protected system surfaces may suppress observation or event posting. Selection capture and clipboard collection retain their separately documented privacy controls.
 - Local content must use macOS-appropriate file protection and least-privilege permissions.
 - Clipboard retention defaults must be conservative and explained during onboarding.
 
@@ -319,20 +313,17 @@ Apple recommends relying on system focus behavior, supporting keyboard-only inte
 
 | Edge case | Required behavior |
 | --- | --- |
-| User types a normal word beginning with a saved item's fragment | Suggestions may appear only during eligibility; text remains untouched, and whitespace dismisses the panel. |
+| User types only the beginning of an assigned tag | No automatic panel; the complete tag is required. |
 | User types literal `clp` | Escape or continued normal writing keeps `clp`; no clipboard item is inserted without selection. |
-| Input already contains text when focused | No automatic matching. Manual recall remains available. |
-| User returns the caret to the start mid-document | No automatic matching. |
-| Field is cleared while still focused | No automatic restart until a new eligible focus session. |
-| Input method editor is composing text | Suspend matching and floating capture UI. |
-| Secure or protected field | Do not observe, capture, suggest, or insert. |
+| Input already contains text or caret is mid-document | An exact complete tag at the caret may open; other text is irrelevant. |
+| Input method editor is composing text | Use verified committed AX text where possible; do not use an uncertain blind suffix to insert. |
+| Secure or protected field | Apply no Koru exclusion; if macOS suppresses events, AX, or posting, leave text untouched and expose the supported fallback. |
 | App does not expose caret bounds | Anchor to the active control or pointer-safe screen position; retain all keyboard behavior. |
 | App does not support direct insertion | Offer Copy and explain the limitation once, without repeated alerts. |
 | Destination changes while panel is open | Cancel write and offer Copy. |
 | Clipboard file moved or deleted | Mark unavailable and offer Reveal only when a valid path remains. |
 | Very large clipboard object | Skip according to limits and keep other entries functioning. |
 | Duplicate saved item | Offer open/update/save-separately; never silently duplicate or overwrite. |
-| Template is canceled | Destination text and initial query remain unchanged. |
 | Permissions revoked after an OS update | Degrade to supported features, show status, and guide repair. |
 | Multiple screens or Spaces | Keep the panel within the active screen's visible bounds and attached to the active destination. |
 | VoiceOver active | Announce state changes without stealing focus from the user's initiated navigation. |
@@ -346,18 +337,18 @@ Apple recommends relying on system focus behavior, supporting keyboard-only inte
 - Acting as a general launcher, command runner, or automation framework.
 - Becoming a permanent archive for copied videos or large files.
 - Shipping a team subscription, marketplace, or shared prompt catalog.
-- Requiring tags, aliases, or folders before an item can be useful.
+- Requiring a title, behavior category, template type, or folder before an item can be saved.
 - Designing the product around a “Prompts” tab or prompt-specific object.
 
 ## 9. Release-level acceptance
 
 The initial stable release is acceptable only when:
 
-1. automatic matching is demonstrably confined to eligible initial sessions;
+1. automatic matching appears only for complete exact tags of at least three characters at a left boundary, anywhere in writing;
 2. no test path changes destination text without explicit selection;
 3. capture, recall, selection, insertion, and clipboard promotion work offline;
 4. the supported-app matrix meets the reliability thresholds in the launch plan;
-5. secure contexts are excluded;
+5. Koru adds no automatic secure/app exclusion and documented macOS Secure Input limits fail without unintended modification;
 6. keyboard-only and VoiceOver test passes are complete;
 7. users can export all permanent saved items;
 8. the privacy behavior is documented and matches observed network behavior.

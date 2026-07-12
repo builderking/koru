@@ -28,16 +28,16 @@ The project has one coherent answer to what Koru is, who it serves, and how V1 b
 
 - approve the plan index and locked decisions;
 - reconcile product vision, market, requirements, flows, information architecture, privacy, architecture, quality, and definition of done;
-- define the permanent object as one **saved item** with one of three behaviors: Saved text, Quick replacement, or Template;
+- define the permanent object as a **saved item** containing reusable content plus one or more exact trigger tags;
 - define Recent clipboard entries as a separate temporary layer whose content can be saved as a new permanent saved item without extending the original entry;
-- define the fresh-input session precisely:
-  - automatic typed matching starts only at position zero in a fresh, initially empty input;
-  - Koru does not open merely because a field is empty;
-  - unrelated typing ends eligibility for that input session;
-  - a matching fragment may open the result panel;
+- define exact automatic matching precisely:
+  - a complete assigned tag of at least three characters may open the panel wherever it ends at the caret;
+  - Koru does not open for an empty field, partial/fuzzy tag, or content-only match;
+  - the longest exact suffix wins when tags overlap;
+  - left-boundary and UTF-16 replacement ranges are preserved;
   - insertion always requires explicit user choice;
   - the global hotkey may open immediately anywhere supported;
-- lock **clp** as the V1 default that enters clipboard scope under the same fresh-input rule;
+- lock **clp** as the V1 default that enters clipboard scope under the same exact-suffix and left-boundary rule;
 - approve V1 non-goals and supported-media expectations;
 - record who can approve changes to locked behavior.
 
@@ -46,7 +46,7 @@ The project has one coherent answer to what Koru is, who it serves, and how V1 b
 - [ ] No build-plan file contradicts the 00-index.md locked decisions.
 - [ ] Every V1 requirement has a stable identifier and at least one acceptance test.
 - [ ] “Prompt” is documented as a use case, not a required content type.
-- [ ] Saved-item behaviors and temporary Recent storage are unambiguous in product, UX, data, and technical documents.
+- [ ] The canonical content-plus-tags saved-item model and temporary Recent storage are unambiguous in product, UX, data, and technical documents.
 - [ ] Typed activation, clp, hotkey, explicit insertion, and selection capture have state diagrams or testable flow descriptions.
 - [ ] Open questions that can change architecture are listed in 17-risks-decisions-and-open-questions.md.
 - [ ] A named product owner signs the gate record.
@@ -89,10 +89,10 @@ A disposable harness proves that the locked interaction is technically viable on
 - build the Koru Integration Harness with controlled AppKit and SwiftUI text fields;
 - spike global event observation and permission behavior;
 - prove the public global-hotkey registrar works independently of the typed-event tap and Input Monitoring on macOS 13 through the current supported release;
-- detect focus, role, secure state, current value, selection, and position zero through Accessibility where available;
-- implement the fresh-input session state machine in isolation;
-- prove a matching typed fragment can show a panel only in an eligible session;
-- prove clp enters clipboard scope only under the same eligibility rules;
+- detect focus identity, current value, selection, and caret through Accessibility where available;
+- implement the bounded typed-suffix and exact-trigger state machine in isolation;
+- prove only a complete assigned tag can show the automatic panel;
+- prove `clp` enters clipboard scope only under the same exact-suffix rules;
 - anchor a compact panel to the caret, then exercise control-relative and screen-safe fallbacks;
 - test explicit keyboard and pointer selection;
 - test insertion tiers without silent replacement;
@@ -111,12 +111,12 @@ A disposable harness proves that the locked interaction is technically viable on
 
 ### Exit criteria
 
-- [ ] Zero mid-writing automatic openings occur across the generated state-machine suite.
-- [ ] A matching fragment at position zero in a fresh input can open results in the launch-critical host categories.
+- [ ] Complete assigned tags open during established writing across the generated state-machine suite.
+- [ ] Partial, fuzzy, and content-only text produce zero automatic openings in launch-critical host categories.
 - [ ] Koru never opens solely because a field is empty.
 - [ ] clp enters clipboard scope and does not silently insert an item.
 - [ ] Every insertion requires an explicit user action.
-- [ ] Secure fields and excluded contexts produce no typed session or capture.
+- [ ] Koru applies no automatic app/password exclusion; when macOS Secure Input suppresses capabilities, no unintended modification occurs.
 - [ ] Caret anchoring has a safe visible fallback when precise bounds are unavailable.
 - [ ] Selection capture has a documented non-destructive fallback.
 - [ ] Denied and revoked permissions degrade features without blocking Library access.
@@ -137,17 +137,18 @@ Koru can store and search synthetic saved items and temporary Recent entries loc
 - keep only approved low-sensitivity operational metadata plaintext;
 - build the in-memory search index after vault unlock;
 - implement schema versioning, atomic migrations, recovery, and test backup handling;
-- model saved items with behavior Saved text, Quick replacement, or Template;
+- model canonical saved items as reusable content plus one or more exact tags;
+- keep older encoded title, behavior, match-term, and template fields readable only for vault/export compatibility, without exposing them as current product choices;
 - model temporary Recent clipboard events separately, including multi-item events and the save flow that creates a separate permanent saved item;
 - implement default expiry, count, and asset-size limits from the privacy plan;
-- implement exclusions, pause, clear history, delete all data, export, and key-loss behavior;
+- implement Clipboard exclusions, pause, clear history, delete all data, export, and key-loss behavior;
 - implement content-free structured diagnostics.
 
 ### Exit criteria
 
 - [ ] Known synthetic saved and clipboard strings cannot be found in the database, WAL, temporary files, assets, backups, logs, or crash diagnostics.
 - [ ] Keychain deletion, locked Keychain, corrupt ciphertext, interrupted migration, and disk-full states fail safely.
-- [ ] Migration tests preserve every saved-item behavior and relationship.
+- [ ] Migration tests preserve canonical content and tags and continue to read every supported legacy encoded record.
 - [ ] Saving a Recent entry creates one separate permanent saved item; the original temporary entry keeps its existing expiry.
 - [ ] Retention applies transactionally using all documented limits.
 - [ ] Searchable plaintext exists only in bounded process memory and is removed on lock or termination.
@@ -164,14 +165,11 @@ A user can create, edit, organize, recall, and insert permanent writing through 
 ### Work
 
 - implement Library views for saved items;
-- support all three saved-item behaviors without separate user-facing databases:
-  - Saved text for durable recall;
-  - Quick replacement with explicit match terms;
-  - Template with V1-approved fields;
-- implement title, body, match terms, and flat tags only to the approved V1 extent;
-- implement deterministic lexical and fuzzy ranking from title, match terms, tags, body, explicit-selection recall signals, usage, and recency as defined by the requirements;
+- expose one saved-item editor containing reusable content and one or more exact word-or-phrase tags;
+- require neither a user-authored title nor a behavior/template choice;
+- implement deterministic manual lexical and fuzzy ranking from tags, content, explicit-selection recall signals, usage, and recency as defined by the requirements;
 - add the public registered global-open hotkey, independent of the typed-event tap, and explicit result selection;
-- make the manual panel and insertion transaction accept an invocation context directly, without depending on the fresh-input state machine delivered at Phase 50;
+- make the manual panel and insertion transaction accept an invocation context directly, without depending on the automatic exact-tag adapter delivered at Phase 50;
 - add insertion fallbacks and copy-only recovery;
 - add edit, duplicate, delete, undo where specified, import, and export;
 - add keyboard navigation, VoiceOver labels, Dynamic Type-equivalent macOS text scaling support, contrast, and reduced-motion behavior;
@@ -180,29 +178,29 @@ A user can create, edit, organize, recall, and insert permanent writing through 
 ### Exit criteria
 
 - [ ] The full save → find from imperfect fragment → choose → insert loop works offline.
-- [ ] Exact triggers are optional accelerators, not the only retrieval path.
+- [ ] Complete exact tags are predictable automatic accelerators; manual recall also retrieves by partial tag, fuzzy tag, and content.
 - [ ] No ranking completion, timeout, blur, or top-result state causes insertion.
 - [ ] Hotkey retrieval works when typed monitoring is unavailable.
 - [ ] A failed explicitly requested insertion leaves content available through an explicit copy path.
-- [ ] All saved-item behaviors use one canonical permanent model and round-trip through export/import.
+- [ ] Content and exact tags use one canonical permanent model and round-trip through export/import; supported legacy fields remain readable but are not user-facing.
 - [ ] Keyboard-only and VoiceOver users can complete the core loop.
 - [ ] Search quality passes the agreed synthetic and dogfood corpus evaluation.
 
-## 50 — Fresh-input typed recall complete
+## 50 — Automatic exact-tag recall complete
 
 ### Outcome
 
-Koru's signature fragment-first activation works conservatively beside the caret without interrupting ordinary writing.
+Koru opens predictably beside the caret only for a complete assigned tag, including during ordinary established writing.
 
 ### Work
 
 - productionize the event-tap and Accessibility bridges behind tested protocols;
-- implement the approved fresh-input state machine;
+- implement the approved bounded rolling-suffix and exact-tag state machine;
 - connect the typed-session invocation adapter to the already working manual panel and insertion transaction without making manual recall depend on typed monitoring;
 - maintain only the minimum bounded in-memory keystroke buffer;
-- end eligibility on unrelated text, caret movement, selection, focus change, deletion pattern, unsupported context, or security uncertainty as specified;
-- show results only when a matching fragment exists;
-- remove or replace the typed fragment only after explicit result choice;
+- invalidate stale matches on further typing, caret movement, selection, focus/process change, deletion, paste, or uncertain composition as specified;
+- show results only when the complete suffix at the caret equals an assigned tag of at least three characters at a left boundary;
+- replace only the exact matched tag range after explicit result choice;
 - preserve undo behavior and target-application expectations;
 - implement panel positioning, screen bounds, multiple displays, Spaces, full screen, and fallback placement;
 - surface permission education only when the user enables typed recall;
@@ -211,12 +209,12 @@ Koru's signature fragment-first activation works conservatively beside the caret
 ### Exit criteria
 
 - [ ] Generated state-machine tests complete at least the release-plan sequence count with all regression seeds preserved.
-- [ ] No panel opens in the middle of existing text across the release compatibility matrix.
-- [ ] No panel opens from an empty field before the user types a matching fragment.
+- [ ] Complete exact tags can open in the middle of existing text across the release compatibility matrix.
+- [ ] No panel opens from an empty field or a partial/fuzzy tag.
 - [ ] No raw keystroke or typed query is persisted or emitted in diagnostics.
 - [ ] Explicit choice produces one insertion and preserves a usable undo path.
 - [ ] Permission denial, revocation, event-tap timeout, unsupported AX control, and secure input produce safe fallback behavior.
-- [ ] p95 eligible-prefix search and panel presentation meet the quality budgets.
+- [ ] p95 exact-tag lookup and panel presentation meet the quality budgets.
 - [ ] Automatic typed recall can be disabled without disabling Library or hotkey use.
 
 ## 60 — Clipboard recall and clp complete
@@ -232,7 +230,7 @@ Opt-in temporary clipboard memory works as a bounded, private layer and is reach
 - capture supported text, rich text, images, files, and V1-approved media references as logical clipboard events;
 - apply observed-frontmost-app exclusions and retention before persistence, without claiming macOS proves the clipboard source application;
 - label result types without eagerly loading large payloads;
-- implement clp at position zero in a fresh input as the default clipboard-scope command;
+- implement `clp` at a left boundary anywhere in ordinary writing as the default clipboard-scope command;
 - implement a dedicated clipboard hotkey fallback;
 - support search, explicit insert/copy, delete, clear, and save-as-new-saved-item;
 - avoid recapturing Koru-originated insertion events;
@@ -242,14 +240,14 @@ Opt-in temporary clipboard memory works as a bounded, private layer and is reach
 ### Exit criteria
 
 - [ ] Clipboard capture remains off until explicitly enabled.
-- [ ] clp works only under the fresh-input rule and opens clipboard scope without silent insertion.
+- [ ] `clp` follows the exact-suffix rule and opens clipboard scope without silent insertion.
 - [ ] The global clipboard hotkey works independently of typed activation.
 - [ ] One copy operation becomes one logical event, including supported multi-item content.
 - [ ] Default expiry, event count, and asset cap all enforce the privacy-plan limits.
 - [ ] Clipboard changes observed while an excluded app is frontmost create no retained event; arbitrary secret-detection and source-attribution limits remain documented.
 - [ ] Pasteboard denial stops new capture and preserves existing retained entries safely.
 - [ ] Text, images, files, and approved media references insert or fall back predictably.
-- [ ] Saving creates one canonical saved item with an explicitly selected behavior, while the original clipboard entry keeps its existing expiry.
+- [ ] Saving creates one canonical saved item after content and one or more exact tags are supplied, while the original clipboard entry keeps its existing expiry.
 - [ ] Idle CPU, capture-to-search latency, memory, and disk use meet quality budgets.
 
 ## 70 — Capture, onboarding, and product shell complete
@@ -267,7 +265,7 @@ A new user can install Koru, understand its permissions, save writing at the mom
 - implement the macOS Service fallback;
 - prototype the small select-all affordance only for controls where it is reliable and non-obstructive;
 - ensure the selection affordance never appears in secure or excluded contexts;
-- implement menu-bar state, Library, settings, exclusions, retention, pause, clear, export, diagnostics, and uninstall guidance;
+- implement menu-bar state, Library, settings, Clipboard exclusions, retention, pause, clear, export, diagnostics, and uninstall guidance;
 - add launch-at-login through SMAppService;
 - add compatibility status and fallback explanations;
 - test fresh installation, upgrade, and complete removal with synthetic data.
@@ -278,9 +276,9 @@ A new user can install Koru, understand its permissions, save writing at the mom
 - [ ] No broad permission is requested before its feature is explained and chosen.
 - [ ] Save Selection preserves the original text and current clipboard unless the user chooses a clipboard-changing action.
 - [ ] Shortcut and Service fallbacks work according to the documented host matrix; when neither path exposes the selection, Koru explains the limitation without modifying source text or the general clipboard.
-- [ ] The affordance never appears in secure fields, excluded apps, or uncertain security contexts.
+- [ ] The selection affordance never appears where secure or unsupported selection semantics make capture uncertain; this does not create an automatic-recall app exclusion.
 - [ ] Every permission state has a visible recovery path.
-- [ ] Pause, history-off, typed-recall-off, exclusions, and app quit have distinct understandable effects.
+- [ ] Pause, history-off, typed-recall-off, Clipboard exclusions, and app quit have distinct understandable effects.
 - [ ] Uninstall and delete-all instructions remove the documented local data.
 - [ ] Onboarding and settings pass keyboard, VoiceOver, contrast, zoom, and reduced-motion checks.
 
@@ -379,7 +377,7 @@ Koru is a signed, notarized, public open-source macOS product with a verified do
 - [ ] The public DMG is signed, notarized, stapled, checksum-verified, and Gatekeeper-tested.
 - [ ] The public source tag matches the release record.
 - [ ] The installed app works offline for save, recall, explicit insert, selection capture fallback, and Library management.
-- [ ] Fresh-input matching, clp, hotkey fallback, and clipboard opt-in behave exactly as locked.
+- [ ] Complete exact-tag matching anywhere in writing, clp, hotkey fallback, and clipboard opt-in behave exactly as locked.
 - [ ] Website production comes from main, shows only verified claims, and points to the exact release.
 - [ ] A known-good app artifact and successful Pages production deployment are available for rollback.
 - [ ] Security reporting, issue triage, support, and release ownership are active.
@@ -400,5 +398,5 @@ After V1, new work enters through evidence and a decision record. The following 
 - browser extensions;
 - persistence of video payloads;
 - default analytics or crash-content collection;
-- changing clp or fresh-input behavior;
-- splitting Saved text, Quick replacement, and Template into separate permanent stores.
+- changing `clp` or complete exact-tag automatic behavior;
+- restoring user-facing title, behavior, match-term mode, or template fields to the canonical saved-item surface.

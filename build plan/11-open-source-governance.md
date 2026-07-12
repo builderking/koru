@@ -158,7 +158,7 @@ Discussions are for open-ended participation:
 - **Q&A** — setup and usage questions;
 - **Ideas** — problems and concepts not yet accepted as roadmap work;
 - **Design and RFCs** — interaction, architecture, privacy, and API proposals;
-- **Show and Tell** — useful workflows, templates, integrations, and community experiments.
+- **Show and Tell** — useful workflows, saved-item examples, integrations, and community experiments.
 
 GitHub's [Discussions quickstart](https://docs.github.com/en/discussions/quickstart) and [repository enablement guide](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/enabling-or-disabling-github-discussions-for-a-repository) are the operational references.
 

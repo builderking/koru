@@ -1,6 +1,6 @@
 # Koru
 
-Koru is a free and open-source macOS writing-memory utility: save useful text where you write it, recall it from a fragment you remember, and insert it without leaving the current field.
+Koru is a free and open-source macOS writing-memory utility: save useful text with one or more trigger tags, recall it where you write, and insert it without leaving the current field.
 
 This repository contains a locally functional unsigned macOS 13+ menu-bar alpha, modular Swift packages, an encrypted persistent vault, clipboard and selection integrations, product surfaces, deterministic tests, a universal build, a static website, and an integration harness. It is not a signed or supported public release.
 
@@ -8,12 +8,14 @@ This repository contains a locally functional unsigned macOS 13+ menu-bar alpha,
 
 Koru should make reusable writing feel native to the cursor:
 
-- Type a qualifying fragment at the beginning of a fresh, empty input and choose a matching saved item.
-- Type `clp` at the beginning of a fresh, empty input to recall recent clipboard content.
+- Type a complete assigned tag of 3–64 characters anywhere in text. It must end at the caret and start at the beginning or after a non-letter/non-number; then choose the matching saved item.
+- Type `clp` with the same left-boundary rule anywhere in text to recall recent clipboard content.
 - Select valuable text and save it for reuse without leaving the current app.
 - Keep writing and clipboard content private, local, understandable, and under the user's control.
 
-Koru is not an AI assistant, prompt marketplace, automation platform, or cloud account. Prompts are one important use case, but the product works with any reusable text, command, response, instruction, or template.
+Koru never replaces text merely because a tag matched: insertion requires explicit selection. It prefers direct Accessibility replacement, then uses a verified keyboard replacement fallback where the host does not expose writable text through Accessibility.
+
+Koru is not an AI assistant, prompt marketplace, automation platform, or cloud account. Prompts are one important use case, but the product works with any reusable text, command, response, or instruction.
 
 ## Build plan
 

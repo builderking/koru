@@ -24,7 +24,7 @@ Apple's macOS privacy model makes Accessibility and Input Monitoring intentional
 | Browse and edit saved text | Yes | No | No | No | No |
 | Import/export library | Yes, through explicit file panels | No | No | No | No |
 | Global command palette | Yes, through registered hotkey or menu | Optional for caret anchor; required for direct insertion | No | Required only when pasteboard insertion/copy is used | No |
-| Fresh-empty typed matching | No | Required | Required on systems that gate key listening separately | No | No |
+| Automatic exact-tag matching | No | Optional for committed-text validation and caret/range context | Required on systems that gate key listening separately | No | No |
 | Caret-adjacent panel | Window fallback only | Required for caret bounds | No | No | No |
 | Plain-text insertion | Copy-only fallback | Required for direct replacement and synthetic paste | No | Required only when pasteboard is used | No |
 | Mixed clipboard history | No background history | No | No | Required for continuous programmatic reads where macOS gates them | No |
@@ -43,8 +43,8 @@ The table describes Koru's chosen architecture, not a statement that macOS alway
 Accessibility provides the only public cross-application route Koru can use to:
 
 - Resolve the focused editable element.
-- Verify that a focus session began empty with the caret at zero.
-- Detect secure or protected text controls.
+- Read the committed value suffix and current caret range when the host exposes them.
+- Detect when macOS or a protected control withholds usable text semantics.
 - Read and set selected text ranges where the target supports them.
 - Obtain caret and selection rectangles.
 - Observe selection changes for the optional capture icon.
@@ -56,8 +56,8 @@ Apple describes AXUIElement as the client API assistive applications use to comm
 
 1. Koru shows an explanation:
    - What Koru needs to inspect.
-   - That Koru keeps only a short eligible prefix in memory.
-   - That secure fields and excluded apps are blocked.
+   - That Koru keeps only a bounded rolling suffix in memory and never persists it.
+   - That Koru does not add a secure-field or app exclusion to automatic recall, while macOS Secure Input may still block observation or insertion.
    - That the feature can be disabled at any time.
 2. On explicit confirmation, call AXIsProcessTrustedWithOptions with the system prompt option.
 3. Continue showing a waiting state; the call does not grant access and the prompt is asynchronous.
@@ -83,7 +83,7 @@ Koru maps these results to the per-app capability levels defined in section 07. 
 
 ### 4.1 Why it may be separately visible
 
-Koru observes key events while another application is frontmost so it can recognize a qualifying saved-item fragment or `clp` only at the beginning of an eligible empty field. macOS describes Input Monitoring as permission for an app to monitor the keyboard, mouse, or trackpad while other apps are in use: [Control access to Input Monitoring](https://support.apple.com/en-ca/guide/mac-help/mchl4cedafb6/mac).
+Koru observes key events while another application is frontmost so it can recognize a complete assigned tag or reserved `clp` at a left boundary anywhere in writing. macOS describes Input Monitoring as permission for an app to monitor the keyboard, mouse, or trackpad while other apps are in use: [Control access to Input Monitoring](https://support.apple.com/en-ca/guide/mac-help/mchl4cedafb6/mac).
 
 The implementation uses:
 
@@ -102,8 +102,8 @@ Apple exposes separate preflight and request functions for listening and posting
 - Do not retain key-up events unless a test proves they are required.
 - Do not inspect mouse movement.
 - Never persist the event stream.
-- Keep only the prefix of a currently verified fresh-empty session.
-- Reset on context changes.
+- Keep only a bounded rolling suffix associated with the current frontmost process and input generation.
+- Include ordinary spaces so assigned phrase tags can match; reset or invalidate on context changes.
 - Never send event-derived content to logs, crash reports, update checks, or network clients.
 - While the panel is visible, consume only navigation events Koru owns. All other events pass through.
 
@@ -151,23 +151,19 @@ On earlier supported macOS versions, the access-behavior API is unavailable. Kor
 
 The general pasteboard participates in Universal Clipboard, but Apple provides no macOS API for controlling that service. Koru records only content that appears on the local general pasteboard while monitoring is active and permitted. It does not promise to fetch content from another device: [NSPasteboard](https://developer.apple.com/documentation/appkit/nspasteboard).
 
-## 6. Secure and sensitive contexts
+## 6. Secure Input, protected surfaces, and clipboard-sensitive contexts
 
-### 6.1 Secure fields
+### 6.1 Automatic recall and macOS Secure Input
 
-Before starting a typed session, showing the selection icon, or reading selected text:
+Koru does not reject automatic matching solely because AX reports a secure-text-field subrole, protected content, or a sensitive application bundle identifier. The exact-tag matcher follows the same product rule in every field.
 
-- Reject the AX secure-text-field subrole.
-- Reject protected-content state.
-- Reject elements that expose neither a safe editable role nor sufficient range semantics.
-- Reject system authorization and login surfaces.
-- Close existing UI immediately when the target becomes secure.
+This does not create a bypass. macOS or the host may suppress event delivery, return masked or no AX value/range, reject AX modification, or block synthetic event posting under Secure Input and protected authorization surfaces. When that happens, Koru leaves the destination untouched and offers only the capabilities the OS permits, such as manual browse or Copy. Product copy must not promise that Koru works at the login window, FileVault unlock, authorization dialogs, or every password control.
 
 Apple defines kAXSecureTextFieldSubrole as a field intended for sensitive data whose input is displayed as bullets: [kAXSecureTextFieldSubrole](https://developer.apple.com/documentation/applicationservices/kaxsecuretextfieldsubrole).
 
-### 6.2 Sensitive application exclusions
+### 6.2 Clipboard-sensitive application exclusions
 
-Ship a local, versioned default exclusion list for common categories:
+Clipboard history may ship a local, versioned default exclusion list for common categories:
 
 - Password managers.
 - Authenticators and security-token utilities.
@@ -175,9 +171,9 @@ Ship a local, versioned default exclusion list for common categories:
 - Banking or finance applications where the entire app should be treated as sensitive.
 - Terminal applications when secure keyboard entry is active or cannot be determined safely.
 
-The list is based on bundle identifiers, is visible and editable, and updates only with a signed Koru release. A person can add any app to Never Observe or Never Save Clipboard From.
+The list is based on bundle identifiers, is visible and editable, and updates only with a signed Koru release. A person can add any app to Never Save Clipboard From. It does not disable automatic exact-tag recall.
 
-Browser-domain exclusions are not promised. Without a browser extension or Automation access, Koru cannot reliably identify the site represented by every browser field. Koru may exclude an entire browser, and it blocks controls exposed as secure or protected, but it must not claim per-website protection.
+Browser-domain clipboard exclusions are not promised. Without a browser extension or Automation access, Koru cannot reliably identify the site represented by every browser field, and it must not claim per-website protection.
 
 ### 6.3 Clipboard-sensitive content
 
@@ -299,12 +295,12 @@ Apple describes these requirements in [Notarizing macOS software before distribu
 ## 12. Permission-state acceptance criteria
 
 1. Fresh install with no permission can open Library, create saved text, import/export, configure retention, and open Diagnostics.
-2. Enabling Typed Matching explains and requests Accessibility and input listening separately; declining either leaves typed matching off.
-3. Revoking Accessibility while a panel is visible closes the panel and prevents modification of the target.
+2. Enabling Typed Matching explains and requests input listening; Accessibility is requested separately for better committed-text validation, caret placement, and direct replacement.
+3. Revoking Accessibility while a panel is visible removes AX-dependent placement/replacement, invalidates any AX range, and retains only a validated synthetic or Copy fallback.
 4. Revoking input listening stops typed matching and its event tap, shows a nonmodal status in Koru, and does not unregister manual global commands.
 5. Denying newer-macOS pasteboard access stops new background capture while preserving retained items.
 6. Clipboard history can be disabled and cleared without affecting saved items.
-7. Secure fields and default sensitive apps produce no typed session, selection icon, or clipboard capture.
+7. Automatic recall has no Koru secure/app exclusion; OS-suppressed secure fields produce no unintended modification, while the optional selection icon and clipboard capture follow their separate privacy rules.
 8. Save Selection through Services works without Accessibility in the test host application.
 9. Launch at Login status matches SMAppService status after registration, denial, revocation, and app update.
 10. No path asks for Screen Recording, Full Disk Access, Automation, root, or a system extension.

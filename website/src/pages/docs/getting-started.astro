@@ -4,7 +4,7 @@ import { site, download } from '../../content/site';
 ---
 <BaseLayout
   title="Getting started — Koru documentation"
-  description="Install Koru on your Mac, choose Full or Hotkey-only mode, save your first item, and recall it from a fragment."
+  description="Install Koru on your Mac, save text with trigger tags, and recall it anywhere you write."
   canonicalPath="/docs/getting-started/"
 >
   <header class="page-hero text-shell">
@@ -30,19 +30,20 @@ import { site, download } from '../../content/site';
     <ol>
       <li>Select any text you'd want again — a reply you're proud of, a command, a prompt.</li>
       <li>Press the save shortcut. Koru opens a small editor without leaving your app.</li>
-      <li>Give it a title (or keep the suggestion), optionally add tags or match terms, and save.</li>
+      <li>Add one or more trigger tags of 3–64 characters, then save. The content is the item; there is no title to fill in.</li>
     </ol>
     <h2>4. Recall it</h2>
     <ol>
-      <li>Click into any fresh, empty text field and type a fragment you remember — or press the recall hotkey anywhere.</li>
-      <li>Matching items appear beside the caret. Arrow to the one you want.</li>
+      <li>Keep writing in any editable field and type one complete trigger tag. If the assigned tag is <code>dav</code>, <code>da</code> stays quiet and the final <code>v</code> opens Koru.</li>
+      <li>Matching saved text appears beside the caret, even after existing text. Arrow to the one you want.</li>
       <li>Press Return to insert it exactly where you were typing. Nothing is inserted until you choose.</li>
+      <li>If you do not remember the tag, or typed matching is unavailable in that app, press the global recall hotkey and search by content or tag.</li>
     </ol>
     <h2>5. Optional: clipboard history</h2>
-    <p>Clipboard history is off by default. Turn it on in Settings, pick a retention window, then type <code>clp</code> at the start of a fresh field (or use the hotkey) to browse recent copies. Keeping one permanently is an explicit save.</p>
+    <p>Clipboard history is off by default. Turn it on in Settings, pick a retention window, then type <code>clp</code> anywhere in your writing (or use the Clipboard hotkey) to browse recent copies. Keeping one permanently is an explicit save.</p>
     <h2>Good to know</h2>
     <ul>
-      <li>Password fields are always ignored, and you can exclude any app in Settings.</li>
+      <li>Koru does not intentionally block password fields. Some apps enable macOS Secure Input, which can prevent Koru from seeing or replacing the typed tag.</li>
       <li>Everything is stored locally and encrypted; see the <a href="/privacy/">privacy model</a>.</li>
       <li>Where an app limits direct insertion, Koru falls back to the hotkey panel or copy-to-clipboard.</li>
     </ul>

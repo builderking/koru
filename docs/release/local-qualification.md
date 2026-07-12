@@ -15,7 +15,7 @@ This record distinguishes deterministic repository evidence from gates that requ
 
 ## External release blockers
 
-- Execute the real TCC and host compatibility matrix on every supported macOS major version, including secure/protected fields, permission denial/revocation, Accessibility, Input Monitoring, Services, global hotkeys, insertion/undo, and clipboard behavior.
+- Execute the real TCC and host compatibility matrix on every supported macOS major version, including exact tags and `clp` during established writing, macOS Secure Input, permission denial/revocation, Accessibility, Input Monitoring, AX and keyboard insertion/undo, Services, global hotkeys, and Clipboard behavior.
 - Complete human VoiceOver, Full Keyboard Access, contrast/transparency/motion, localization scaling, cultural/brand, product, and independent security review.
 - Meet private/public beta thresholds with representative users and record owner sign-off.
 - Configure and verify GitHub repository visibility, branch protection, CODEOWNERS enforcement, labels/issue forms/Discussions, private vulnerability reporting, protected environments, and signing/deployment secrets.

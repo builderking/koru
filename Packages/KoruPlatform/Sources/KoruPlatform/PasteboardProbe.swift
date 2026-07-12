@@ -26,7 +26,6 @@ public final class PasteboardProbe: @unchecked Sendable {
         return .init(changeCount: pasteboard.changeCount, itemCount: pasteboard.pasteboardItems?.count ?? 0, broadTypes: broadTypes)
     }
     public func copyOnly(_ text: String) -> Bool {
-        pasteboard.prepareForNewContents(with: .currentHostOnly)
-        return pasteboard.writeObjects([text as NSString])
+        KoruPasteboardOrigin.write(text, to: pasteboard)
     }
 }

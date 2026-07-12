@@ -19,7 +19,7 @@ import { site } from '../content/site';
     <h2>The security baseline</h2>
     <ul>
       <li>Content encrypted at rest with a non-synchronizing Keychain key.</li>
-      <li>Secure-field suppression and per-app exclusions that fail closed.</li>
+      <li>Immediate process and typing-context revalidation before replacement; macOS Secure Input may still make a field unavailable.</li>
       <li>No raw-keystroke persistence and no content-bearing diagnostics.</li>
       <li>Bounded, opt-in clipboard retention.</li>
       <li>Explicit insertion and explicit selection saving — nothing automatic.</li>

@@ -12,7 +12,7 @@ These templates are not evidence that a release or website exists.
 ## 24-hour review
 
 - [ ] Reverify public artifact digest/signature/notarization and website download link.
-- [ ] Triage crashes, text loss, mid-writing invocation, secure/excluded observation, migration, and privacy reports first.
+- [ ] Triage crashes, text loss, false exact-tag invocation, keyboard-fallback failure, Secure Input confusion, migration, and privacy reports first.
 - [ ] Check support volume, compatibility regressions, and permission confusion with no private content copied into tracking.
 - [ ] Decide continue, withdraw/rollback, or publish correction; record owner/evidence.
 

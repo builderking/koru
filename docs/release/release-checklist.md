@@ -18,6 +18,7 @@ The latest repository-local qualification evidence is recorded in [local qualifi
 - [ ] Fresh install and onboarding on a clean account pass.
 - [ ] Upgrade from previous test/stable release with a populated encrypted vault passes.
 - [ ] Rollback behavior and compatible encrypted backup restoration pass.
+- [ ] Exact tags (including multi-word tags) and `clp` match at left boundaries during established writing, never insert without selection, and pass AX-direct, keyboard-fallback, copy-only, and Secure Input cases.
 - [ ] Permission, OS/hardware, compatibility, accessibility, offline/network, deletion, export, backup, and recovery matrices pass.
 
 ## Artifact

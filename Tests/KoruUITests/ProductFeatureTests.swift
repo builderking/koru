@@ -5,6 +5,36 @@ import SwiftUI
 import XCTest
 
 final class ProductFeatureTests: XCTestCase {
+    func testContentAndMultipleTagsAreTheOnlyRequiredUserInputs() throws {
+        XCTAssertEqual(
+            try SavedItemValidation.validatedTriggerTags(content: "Reusable paragraph", triggerTags: ["Dav", "client follow up"]),
+            ["Dav", "client follow up"]
+        )
+        XCTAssertThrowsError(try SavedItemValidation.validatedTriggerTags(content: "Reusable", triggerTags: [])) { error in
+            XCTAssertEqual(error as? ProductValidationError, .emptyTags)
+        }
+        XCTAssertThrowsError(try SavedItemValidation.validatedTriggerTags(content: "Reusable", triggerTags: ["da"])) { error in
+            XCTAssertEqual(error as? ProductValidationError, .triggerTagTooShort)
+        }
+        let maximumLengthTag = String(repeating: "a", count: KoruPolicy.maximumTriggerLength)
+        XCTAssertEqual(
+            try SavedItemValidation.validatedTriggerTags(content: "Reusable", triggerTags: [maximumLengthTag]),
+            [maximumLengthTag]
+        )
+        XCTAssertThrowsError(
+            try SavedItemValidation.validatedTriggerTags(content: "Reusable", triggerTags: [maximumLengthTag + "a"])
+        ) { error in
+            XCTAssertEqual(error as? ProductValidationError, .triggerTagTooLong)
+            XCTAssertEqual(
+                error.localizedDescription,
+                "Each tag must be at most \(KoruPolicy.maximumTriggerLength) characters."
+            )
+        }
+        XCTAssertThrowsError(try SavedItemValidation.validatedTriggerTags(content: "Reusable", triggerTags: ["clp"])) { error in
+            XCTAssertEqual(error as? ProductValidationError, .reservedMatchTerm)
+        }
+    }
+
     func testTemplateParserPreservesOrderAndRendersRepeatedTokens() throws {
         let fields = [
             TemplateField(token: "name", label: "Name", isRequired: true, order: 0),
@@ -48,14 +78,40 @@ final class ProductFeatureTests: XCTestCase {
 
     @MainActor func testLibraryLifecycleRestoresStableIDAndValidatesReservedTerm() throws {
         let store = ProductStore()
-        let item = SavedItem(title: "One", behavior: .savedText, plainContent: "Body")
+        let item = SavedItem(
+            title: "",
+            behavior: .template,
+            plainContent: "Body",
+            tags: ["body"],
+            templateFields: [.init(token: "legacy", label: "Legacy", order: 0)]
+        )
         try store.save(item)
+        XCTAssertEqual(store.items[0].title, "Body")
+        XCTAssertEqual(store.items[0].behavior, .savedText)
+        XCTAssertEqual(store.items[0].tags, ["body"])
+        XCTAssertEqual(store.items[0].matchTerms, [.init(value: "body", isPreferredInitialTerm: true, isExactTrigger: true)])
+        XCTAssertTrue(store.items[0].templateFields.isEmpty)
         store.move(item.id, to: .recentlyDeleted)
         XCTAssertNotNil(store.items[0].deletedAt)
         store.move(item.id, to: .active)
         XCTAssertEqual(store.items[0].id, item.id)
-        var invalid = item; invalid.id = .init(); invalid.matchTerms = [.init(value: "clp")]
-        XCTAssertThrowsError(try store.save(invalid))
+        var invalid = item; invalid.id = .init(); invalid.tags = ["clp"]
+        XCTAssertThrowsError(try store.save(invalid)) { error in
+            XCTAssertEqual(error as? ProductValidationError, .reservedMatchTerm)
+        }
+        invalid.tags = ["duplicate", "DUPLICATE"]
+        XCTAssertThrowsError(try store.save(invalid)) { error in
+            XCTAssertEqual(error as? ProductValidationError, .duplicateMatchTerm)
+        }
+        invalid.tags = ["no"]
+        XCTAssertThrowsError(try store.save(invalid)) { error in
+            XCTAssertEqual(error as? ProductValidationError, .triggerTagTooShort)
+        }
+        invalid.tags = []
+        invalid.matchTerms = []
+        XCTAssertThrowsError(try store.save(invalid)) { error in
+            XCTAssertEqual(error as? ProductValidationError, .emptyTags)
+        }
     }
 
     @MainActor func testPermissionControlsDelegateToPlatformWithoutInventingState() {
@@ -110,6 +166,7 @@ final class ProductFeatureTests: XCTestCase {
         await gate.open()
         await store.reloadFromPersistence()
         XCTAssertEqual(store.items.map(\.title), ["Persisted"])
+        XCTAssertTrue(store.items[0].triggerTags.isEmpty)
         XCTAssertEqual(store.diagnosticsSnapshot.repository, .healthy)
     }
 

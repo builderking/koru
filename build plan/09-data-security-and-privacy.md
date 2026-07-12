@@ -16,7 +16,7 @@ The default security posture is:
 - No plug-in or remote-code system.
 - Clipboard history off until explicitly enabled.
 - Typed matching off until explicit permission onboarding is complete.
-- Secure fields and sensitive applications blocked.
+- No Koru automatic-recall app or secure-field exclusion; macOS Secure Input and protected authorization surfaces may still block observation or insertion.
 - Encrypted content at rest.
 - Decrypted search data held only in memory while Koru is active and unlocked.
 - Explicit insertion and explicit selection saving.
@@ -35,7 +35,7 @@ Koru should reduce risk from:
 - A target application changing focus between selection and insertion.
 - Database or ciphertext tampering.
 - Dependency or release-pipeline compromise.
-- A Koru bug displaying or inserting content in a secure or excluded application.
+- A Koru bug modifying text unexpectedly when macOS security or host capabilities are uncertain.
 - Universal Clipboard transmitting a private Koru saved item merely because insertion uses the general pasteboard.
 
 ### 2.2 Out of scope, but documented
@@ -61,21 +61,20 @@ Encryption at rest protects stored data; it does not make Koru safe inside a ful
 | Clipboard text, rich text, and images | Highly sensitive | Only when history is enabled | AES-GCM encrypted and retention-limited |
 | File and video references | Sensitive | Reference only | Encrypted bookmark/path metadata |
 | Selection-capture content | Highly sensitive | No, until Save is confirmed | Memory only, then encrypted |
-| Template definitions and defaults | Highly sensitive | Yes | AES-GCM encrypted |
-| Filled template values | Highly sensitive | No, unless the person explicitly updates the saved item | Memory only and purged after insert/cancel |
+| Legacy template fields in pre-canonical records | Highly sensitive | Compatibility reads only | AES-GCM encrypted; not exposed by the canonical editor |
 | Recall signals and normalized local queries | Sensitive | Yes | AES-GCM encrypted |
 | Trigger names and aliases | Sensitive | Yes | Encrypted; in-memory index after unlock |
-| Titles, tags, and previews | Sensitive | Yes | Encrypted |
+| Derived display labels, tags, and previews | Sensitive | Yes | Encrypted |
 | Source app bundle ID and capture context | Private metadata | Only if needed | Encrypted |
-| Excluded application list | Private metadata | Yes | Encrypted |
+| Clipboard-excluded application list | Private metadata | Yes | Encrypted |
 | Record ID, kind, schema version, ciphertext size, retention deadline | Low sensitivity | Yes | Minimum plaintext operational metadata |
 | Permission state | Low sensitivity | Cached only for UI | Rechecked from public APIs |
 | Raw keyboard events | Prohibited | Never | In-memory event normalization only |
-| Active eligible prefix | Highly sensitive | Never | Short-lived memory only |
+| Bounded rolling typed suffix | Highly sensitive | Never | Short-lived memory only |
 | Window titles, browser URLs, document names | Prohibited | Never | Do not collect |
 | Diagnostics counters and error codes | Low sensitivity | Bounded local retention | Structured private-safe logs |
 
-No persistent table may contain plaintext saved-item bodies, clipboard bodies, selected text, triggers, titles, tags, source app names, file paths, or a plaintext full-text index.
+No persistent table may contain plaintext saved-item bodies, clipboard bodies, selected text, trigger tags, derived display labels, source app names, file paths, or a plaintext full-text index.
 
 ## 4. Vault and key architecture
 
@@ -209,34 +208,29 @@ Heuristic secret detection may be added only as an additional local warning. It 
 
 ## 6. Typed-input privacy
 
-- Store at most the current prefix of a verified fresh-empty session.
-- Never retain keystrokes before eligibility is established.
-- Never continue after the field becomes ineligible.
-- Ignore secure and protected controls.
+- Store at most a bounded, memory-only rolling suffix needed for exact-tag matching.
+- Never persist raw key events or the rolling suffix.
+- Reset the suffix when the frontmost process changes, Koru pauses, or the user session locks.
+- Do not add a Koru-side application or secure-field exclusion to automatic recall. macOS Secure Input and protected authorization surfaces may still suppress observation or insertion and must not be bypassed.
 - Stop observation when Koru is paused or the user session locks.
-- Do not use unselected or dismissed prefixes for analytics or ranking history. Only after explicit item selection may Koru store the encrypted, normalized query-to-item recall signal defined by the product data model; it never stores the underlying raw key events and the signal can be reset independently.
+- Do not use unselected or dismissed typed suffixes for analytics or ranking history. Only after explicit item selection may Koru store the encrypted, normalized query-to-item recall signal defined by the product data model; it never stores the underlying raw key events and the signal can be reset independently.
 - Do not capture composition text that cannot be validated against the focused control.
 - Do not record application window titles, document titles, browser URLs, or surrounding text.
 
-Accessibility exposes a distinct secure-text-field subrole. Koru must block it and also fail closed when custom controls do not provide enough security metadata: [kAXSecureTextFieldSubrole](https://developer.apple.com/documentation/applicationservices/kaxsecuretextfieldsubrole).
+Accessibility exposes a distinct secure-text-field subrole, but it is not a reliable universal gate for automatic recall: [kAXSecureTextFieldSubrole](https://developer.apple.com/documentation/applicationservices/kaxsecuretextfieldsubrole). Koru may use available focus identity and caret geometry without persisting field content; if macOS withholds events or posting access, Koru leaves the destination untouched.
 
 ## 7. Sensitive-application policy
 
-Maintain two user-visible lists:
+Maintain one user-visible capture list:
 
-1. **Never Observe**
-   - No typed session.
-   - No selection icon.
-   - Global palette opens away from the caret and inserts only through copy-only fallback unless explicitly overridden.
-
-2. **Never Save Clipboard From**
+1. **Never Save Clipboard From**
    - Clipboard changes observed while that app is frontmost are not retained.
 
 The bundled defaults are versioned with source code and releases. They are not silently changed from a server.
 
 The settings UI must:
 
-- Explain that exclusions are based on application bundle ID.
+- Explain that Clipboard exclusions are based on application bundle ID and do not control automatic typed recall.
 - Let a person add the frontmost app.
 - Let a person remove or restore defaults.
 - Explain that entire-browser exclusion is available but per-site guarantees are not.
@@ -255,7 +249,7 @@ The settings UI must:
 
 - Decrypt the minimum record set required for search or display.
 - Keep decrypted previews bounded.
-- Keep filled template values in memory only and purge them on insert, cancel, lock, pause, target invalidation, or termination.
+- Keep only bounded decrypted content needed for the active save, search, preview, or insertion operation and purge it on completion, cancel, lock, pause, target invalidation, or termination.
 - Re-encrypt edits before committing.
 - Never pass content to network code.
 
@@ -341,10 +335,10 @@ Allowed:
 
 Prohibited:
 
-- Keystrokes or prefixes.
+- Keystrokes or bounded typed suffixes.
 - Saved text or clipboard content.
 - Selected text.
-- Titles, tags, or previews.
+- Derived display labels, tags, or previews.
 - File paths or names.
 - Window and document titles.
 - Browser URLs.
@@ -378,7 +372,7 @@ Apple's notary service scans Developer ID software for malicious content and sig
 2. The Keychain item is nonsynchronizable and the vault cannot open when it is removed.
 3. Modifying any authenticated ciphertext or bound metadata causes decryption failure and never displays partial plaintext.
 4. Session lock, Pause, and termination destroy the in-memory search index and decrypted caches.
-5. Raw key events and eligible prefixes never enter unified logs, crash metadata, diagnostics, or persistent storage.
+5. Raw key events and bounded typed suffixes never enter unified logs, crash metadata, diagnostics, or persistent storage.
 6. Secure fields and protected-content controls produce no typed session, selection icon, selection read, or insertion attempt.
 7. Default sensitive apps produce no typed observation and no retained clipboard event.
 8. Clipboard history remains off until explicit opt-in.
@@ -388,7 +382,7 @@ Apple's notary service scans Developer ID software for malicious content and sig
 12. Malformed, oversized, and unknown pasteboard data is rejected without crash or uncontrolled allocation.
 13. Clear Clipboard History removes active rows, assets, and in-memory search entries without touching saved items.
 14. Reset Vault renders the previous active vault unreadable and creates no replacement key until deletion completes.
-15. A support bundle contains no test content, paths, titles, URLs, raw key data, ciphertext, or key material.
+15. A support bundle contains no test content, paths, derived display labels, URLs, raw key data, ciphertext, or key material.
 16. The release artifact passes signature, Hardened Runtime, notarization, stapling, and Gatekeeper verification.
 17. The initial production binary performs no background network request.
 

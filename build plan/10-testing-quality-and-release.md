@@ -6,16 +6,15 @@ Koru modifies text in other applications and retains private clipboard content. 
 
 Release priorities, in order:
 
-1. Never show a typed panel unless focus began on a verified empty editable field at caret zero and the current prefix has a qualifying local saved-item match or is the reserved `clp` command; empty focus, nonqualifying prefixes, and established writing never open it.
-2. Never observe or modify secure, protected, or excluded contexts.
-3. Never insert without explicit confirmation.
-4. Never delete or replace text when the target changed.
-5. Never leak content into logs, diagnostics, release artifacts, or network traffic.
-6. Preserve data through upgrades and failure.
-7. Degrade visibly to copy-only, palette-only, Services, or manual paste when a target is unsupported.
-8. Keep the event path fast enough that Koru never affects normal typing.
+1. Never show a typed panel unless the complete suffix before the caret exactly matches an assigned tag of at least three characters at a left boundary or is the reserved `clp` command; partial, fuzzy, derived-label, content, focus-only, and stale-generation matches never open it.
+2. Never insert without explicit confirmation, including in secure or password fields where Koru applies no product exclusion and macOS may suppress access.
+3. Never delete or replace text when the target process, exact range, or input generation changed.
+4. Never leak content into logs, diagnostics, release artifacts, or network traffic.
+5. Preserve data through upgrades and failure.
+6. Degrade visibly to synthetic paste, copy-only, palette-only, Services, or manual paste when a target is unsupported.
+7. Keep the event path fast enough that Koru never affects normal typing.
 
-Any violation of priorities 1 through 5 is release-blocking.
+Any violation of priorities 1 through 4 is release-blocking.
 
 ## 2. Test layers
 
@@ -23,13 +22,13 @@ Any violation of priorities 1 through 5 is release-blocking.
 
 Cover pure and deterministic logic:
 
-- Fresh-input session state machine.
-- Matching and ranking.
+- Exact-tag suffix state machine and generation invalidation.
+- Exact automatic matching and separate fuzzy manual ranking.
 - Reserved clp mode.
-- Template field validation and deterministic rendering.
 - Result selection and dismissal.
 - Insertion transaction validation.
-- App exclusion evaluation.
+- Synthetic Backspace-and-paste validation and generated-event filtering.
+- Clipboard exclusion evaluation.
 - Clipboard type classification.
 - Keyed deduplication.
 - Retention and asset-budget eviction.
@@ -43,7 +42,7 @@ Cover pure and deterministic logic:
 Use property-based or generated-event tests for the state machine. Generate sequences containing:
 
 - Focus changes.
-- Empty and nonempty initial values.
+- Empty and established destination values.
 - Caret movement.
 - Selection.
 - Typing.
@@ -55,7 +54,7 @@ Use property-based or generated-event tests for the state machine. Generate sequ
 - Target replacement.
 - Permission revocation.
 
-Invariant: no generated sequence can enter Panel visible unless the session was proven empty and editable at focus with the caret at zero, remained a monotonic prefix beginning at zero, and the current prefix has a qualifying local saved-item match or is the reserved `clp` command.
+Invariant: no generated sequence can enter Panel visible unless the current committed suffix is a complete assigned tag of at least three characters at a left boundary or reserved `clp`, and the process/generation still match. No generated sequence modifies text without explicit selection and immediate target validation.
 
 ### 2.2 Component tests
 
@@ -113,7 +112,7 @@ Automate Koru-owned surfaces with XCTest/XCUITest:
 - Tiny panel keyboard navigation.
 - Clipboard mixed-item rows.
 - Selection-save confirmation.
-- Settings, exclusions, retention, clear/reset flows.
+- Settings, Clipboard exclusions, retention, clear/reset flows.
 - Diagnostics preview and export.
 
 Use Accessibility Inspector and VoiceOver for manual verification of:
@@ -148,27 +147,30 @@ Run Address Sanitizer, Undefined Behavior Sanitizer, and Thread Sanitizer in sep
 
 ## 3. Locked-behavior test suite
 
-### 3.1 Fresh-empty matching
+### 3.1 Exact-tag matching anywhere
 
 Release-blocking scenarios:
 
 | Scenario | Expected result |
 |---|---|
-| Focus truly empty field with caret at zero; type nothing | Never appear |
-| Focus truly empty field with caret at zero; type a nonqualifying prefix | Never appear |
-| Focus truly empty field with caret at zero; type a matching prefix | Tiny panel may appear |
-| Focus truly empty field with caret at zero; type reserved `clp` | Clipboard panel may appear |
-| Focus nonempty field; type at end | Never appear |
-| Focus nonempty field; move caret to zero; type | Never appear |
-| Focus empty field; type unrelated text; then type a known trigger | Never begin a new session |
-| Focus empty field; type, move caret, continue | Session becomes ineligible |
-| Focus empty field; paste first content | Session becomes ineligible |
-| Focus empty field; begin unverified IME composition | Session becomes ineligible |
-| Focus empty field; Koru misses initial AX verification | Never appear |
-| Dismiss panel and continue writing | Never reopen in that focus session |
-| Explicitly insert result | Exactly one result replaces exactly the tracked prefix |
+| Focus any field; type nothing | Never appear |
+| Assigned tag is `dav`; type `da` | Never appear |
+| Assigned tag is `dav`; type complete `dav` at field start | Tiny panel may appear |
+| Type complete `dav` after existing paragraph text and a space | Tiny panel may appear |
+| Put caret in the middle of existing text; type complete `dav` at a left boundary | Tiny panel may appear and range covers only `dav` |
+| Type `adav` where the `dav` suffix has no left boundary | Never appear |
+| Assign phrase tag `project reply`; type the complete phrase | Tiny panel may appear with the full phrase range |
+| Type a derived-label/content word that is not an assigned tag | Never appear automatically; manual fuzzy recall may find it |
+| Two items share `dav` | One panel shows both stable result IDs |
+| Tags `dav` and `hello dav` both match the suffix | Only the longest complete tag participates |
+| Type reserved `clp` after existing writing at a left boundary | Clipboard panel may appear |
+| Dismiss panel, then complete the tag again later | A new valid generation may reopen it |
+| Continue typing past an exact tag before selection | Old panel/context becomes stale and cannot insert |
+| Begin unverified IME composition | Blind rolling-suffix fallback cannot insert; verified committed AX text may match after commit |
+| AX value/range unavailable but typed suffix is exact | Panel may appear with synthetic/copy capability |
+| Explicitly insert result | Exactly one result replaces exactly the matched tag range |
 | Target field changes before insertion | Cancel without modifying text |
-| Secure field or excluded app | No observation UI or insertion |
+| Secure field or sensitive app | Apply the same exact-tag rule; if macOS suppresses input/AX/posting, leave text untouched and expose the supported fallback |
 
 Run the generated state-machine suite with at least 100,000 deterministic seeded event sequences per release configuration. Preserve failing seeds as regression fixtures.
 
@@ -180,7 +182,9 @@ Run the generated state-machine suite with at least 100,000 deterministic seeded
 - Click inserts only the clicked stable result ID.
 - Double-delivered input events cannot cause duplicate insertion.
 - Tier failure advances once to the next safe tier and never loops.
-- Copy-only fallback does not remove the tracked prefix.
+- Direct AX replacement uses the matched UTF-16 range, not character zero.
+- Synthetic fallback requires unchanged process and input generation, posts exactly one marked Backspace per matched grapheme, then Command-V, and its generated events are ignored by Koru's tap.
+- Copy-only fallback does not remove the matched tag.
 
 ### 3.3 clp mixed recall
 
@@ -206,16 +210,17 @@ Verify:
 - Expired items disappear from both persistent storage and in-memory search.
 - File/video recall does not read an entire asset to render the row.
 - A text-only target reaches an appropriate text or copy-only fallback for nontext content.
-- Pressing Tab after clp moves focus into panel search without changing the original clp span; Escape restores target focus and leaves clp untouched.
+- `clp` works at a left boundary anywhere, not only at field start.
+- Pressing Tab after clp moves focus into panel search without changing the matched clp span; Escape restores target focus and leaves clp untouched.
 
-### 3.4 Template completion
+### 3.4 AX and synthetic insertion fallbacks
 
-- Selecting a Template changes no destination text.
-- Required incomplete fields prevent final insertion.
-- Return/Tab navigation follows field order.
-- Escape at every completion step discards filled values and preserves the destination.
-- Explicit Insert renders deterministically and modifies only the revalidated invocation range.
-- Filled values do not enter clipboard history, recall signals, logs, diagnostics, or persistent storage unless the person explicitly updates the saved item.
+- Honest AX replacement is verified against the resulting caret/value before success is reported.
+- A host that acknowledges AX replacement without applying it advances to paste or synthetic fallback without duplicating content.
+- Synthetic events carry a Koru marker and never re-enter matching or panel command handling.
+- Event-post preflight failure performs zero Backspaces and reaches Copy.
+- A process, focus, pointer, caret, or input-generation change performs zero Backspaces and reaches Copy.
+- Unicode tags use grapheme count for synthetic deletion and UTF-16 ranges for AX replacement.
 
 ### 3.5 Selection capture
 
@@ -234,11 +239,11 @@ Verify:
 
 Record one of:
 
-- **Full** — strict fresh-empty verification, caret panel, direct or paste insertion, and selection capture.
-- **Paste** — strict verification and caret panel work; insertion uses pasteboard.
+- **Full** — exact-tag matching, caret panel, direct or paste insertion, and selection capture.
+- **Paste** — exact-tag matching and caret context work; insertion uses pasteboard.
+- **Synthetic** — exact-tag panel works but insertion requires validated Backspace plus Command-V because AX replacement/selection is unavailable.
 - **Copy-only** — result is copied for manual paste.
 - **Palette-only** — automatic typed matching is unavailable; global/menu-bar palette remains.
-- **Blocked** — secure, protected, sensitive, system, or explicitly excluded.
 
 Do not report unsupported behavior as Full merely because it worked once.
 
@@ -266,9 +271,9 @@ Use dedicated test documents and accounts. Do not use personal clipboard or prod
 
 Expected limitations:
 
-- Browser document editors, terminals, remote desktops, canvas editors, and custom source editors may be Paste, Copy-only, Palette-only, or Blocked.
+- Browser document editors, terminals, remote desktops, canvas editors, and custom source editors may be Full, Paste, Synthetic, Copy-only, or Palette-only.
 - The selection icon is not a compatibility requirement where the target lacks selected-text notifications or bounds.
-- A secure target must be Blocked even if a test could technically post a paste event.
+- Secure and password targets are tested without a Koru exclusion. The matrix records whether macOS exposes Full, Paste, Synthetic, Copy-only, or Palette-only behavior and never implies Secure Input can be bypassed.
 
 Publish the compatibility matrix with each stable release and include the tested app and macOS versions.
 
@@ -334,7 +339,7 @@ Measure with OS signposts and Instruments, using release builds.
 | Area | Acceptance budget |
 |---|---|
 | Event-tap callback | p99 under 1 ms; no synchronous AX, pasteboard, database, or UI work |
-| Eligible-prefix search at default retention limit | p95 under 50 ms |
+| Exact-tag suffix lookup at default saved-item limit | p95 under 50 ms |
 | Qualifying key to visible panel in harness | p95 under 150 ms |
 | Explicit selection to completed supported insertion | p95 under 250 ms |
 | Allowed clipboard change to searchable retained entry | under 1 second |
@@ -400,7 +405,7 @@ A stable release requires:
 - All locked-behavior scenarios passing.
 - No open Critical or High security defect.
 - No data-loss or database-migration defect.
-- No known secure-field or sensitive-app observation defect.
+- No unintended modification when Secure Input suppresses capabilities, and no clipboard-sensitive-app exclusion defect.
 - No plaintext-at-rest or diagnostics-redaction failure.
 - Permission-state matrix completed on a clean machine.
 - Operating-system and hardware matrix completed.
@@ -414,8 +419,8 @@ A stable release requires:
 
 ## 10. Severity definitions
 
-- **Critical:** content exposure, arbitrary code execution, signature/update compromise, key disclosure, secure-field capture, or unrecoverable widespread data loss.
-- **High:** typed popup during existing writing, unintended insertion/deletion, repeatable private-data logging, vault corruption, permission bypass, or sensitive-app observation.
+- **Critical:** content exposure, arbitrary code execution, signature/update compromise, key disclosure, persisted or transmitted secure-field input, or unrecoverable widespread data loss.
+- **High:** typed popup without a complete exact tag, unintended insertion/deletion, repeatable private-data logging, vault corruption, permission bypass, or clipboard-sensitive-app capture.
 - **Medium:** fallback failure, incorrect caret placement, compatibility regression, retention defect without exposure, elevated resource use, or broken diagnostics.
 - **Low:** visual defect, copy issue, minor accessibility-label defect, or isolated nonblocking compatibility problem.
 
@@ -446,19 +451,18 @@ This decision must be surfaced in the main build-plan index.
 
 ## 13. Quality acceptance criteria
 
-1. Zero typed-panel openings from empty focus alone, nonqualifying prefixes, or mid-writing; every opening must prove an initially empty editable field, caret zero, and either a qualifying local saved-item match or reserved `clp`.
+1. Zero typed-panel openings from focus alone, incomplete tags, tags under three characters, fuzzy/derived-label/content matches, missing left boundaries, or stale generations; complete exact tags and `clp` work at the beginning, middle, and end of writing.
 2. Zero automatic insertions.
 3. Zero target modifications after focus/range mismatch.
-4. Zero observation UI in secure or excluded contexts.
+4. Zero unintended modification when macOS Secure Input or a protected host suppresses observation, AX state, or event posting; Koru applies no automatic secure/app exclusion.
 5. Zero known plaintext fixture occurrences in persistent files and logs.
 6. All supported controls reach their documented insertion tier or copy-only fallback.
 7. Unsupported selection-icon contexts retain Services and global-hotkey capture.
 8. All permission denial/revocation states are recoverable without restart unless macOS itself requires it.
 9. All release-blocking OS and hardware targets launch the same universal artifact.
 10. The quarantined release artifact passes Gatekeeper, signature, notarization, and stapling validation.
-11. Upgrade preserves saved items, saved items created from Clipboard, archive and Recently Deleted states, exclusions, retention settings, and Keychain access.
+11. Upgrade preserves saved items, saved items created from Clipboard, archive and Recently Deleted states, Clipboard exclusions, retention settings, and Keychain access.
 12. The current release's diagnostics can distinguish permission denial, event-tap failure, AX unsupported, pasteboard denial, insertion-tier failure, migration failure, and key loss without containing user content.
-13. Template selection, completion, cancel, and final confirmation preserve the same explicit-insertion and target-revalidation guarantees.
 
 ## 14. Official Apple references
 

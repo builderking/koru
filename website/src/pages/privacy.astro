@@ -19,21 +19,21 @@ import { site } from '../content/site';
       <li>No background network requests — the app works fully offline.</li>
       <li>Clipboard history stays off until you explicitly enable it.</li>
       <li>Typed matching stays off until you complete its permission setup.</li>
-      <li>Secure password fields and excluded apps are always ignored.</li>
+      <li>Koru does not intentionally exclude password fields; macOS Secure Input or an app's Accessibility support can still make a field unavailable.</li>
       <li>Inserting text and saving a selection always require an explicit action.</li>
     </ul>
     <h2>What Koru stores</h2>
-    <p>Saved-item bodies, titles, tags, match terms, templates, and (if enabled) clipboard history are treated as sensitive. They're encrypted at rest with AES-GCM, using a randomly generated master key held in your Mac's data-protection Keychain — a key that never syncs to iCloud.</p>
-    <p>Raw keyboard events, window titles, browser URLs, and document names are never written to disk. When typed matching is on, Koru holds only the short current fragment in memory while you type in an eligible field, then discards it.</p>
+    <p>Saved-item content, its trigger tags, and (if enabled) clipboard history are treated as sensitive. They're encrypted at rest with AES-GCM, using a randomly generated master key held in your Mac's data-protection Keychain — a key that never syncs to iCloud.</p>
+    <p>Raw keyboard events, window titles, browser URLs, and document names are never written to disk. When typed matching is on, Koru holds only a short bounded suffix in memory while you type, then discards it.</p>
     <h2>Clipboard and retention</h2>
     <p>Clipboard history is a separate, opt-in temporary layer with bounded retention: recent entries expire automatically, and the oldest entries are removed first when a limit is reached. Keeping a clipboard entry means explicitly turning it into a saved item — nothing is silently promoted.</p>
     <h2>Network behavior</h2>
     <p>Koru makes no background network requests: no analytics SDK, no crash uploader, no remote configuration, no cloud AI, no automatic updater. “Check for Updates” opens the official release page only after you click it.</p>
     <p>This website is static and uses no behavioral analytics, cookies, forms, session replay, third-party fonts, or embedded trackers. Its host may process ordinary request metadata needed to serve and protect the site.</p>
     <h2>Control and deletion</h2>
-    <p>The app exposes pause, per-app exclusions, clipboard retention settings, clear history, export, delete-all-data, and uninstall preparation. A whole-vault reset deletes the Keychain key and removes local Koru data. Koru doesn't claim forensic erasure of filesystem remnants, snapshots, or your own external backups.</p>
+    <p>The app exposes pause, Clipboard-only per-app exclusions, clipboard retention settings, clear history, export, delete-all-data, and uninstall preparation. Automatic typed recall has no Koru app or password-field exclusion. A whole-vault reset deletes the Keychain key and removes local Koru data. Koru doesn't claim forensic erasure of filesystem remnants, snapshots, or your own external backups.</p>
     <h2>Honest limits</h2>
-    <p>Local encryption can't protect content from an administrator account, a compromised user session, or malware with equivalent permissions — and once you insert text into another app, that app has it. Koru also can't reliably recognize every secret that passes through the general clipboard, which is why exclusions, pause, and short retention exist.</p>
+    <p>Local encryption can't protect content from an administrator account, a compromised user session, or malware with equivalent permissions — and once you insert text into another app, that app has it. macOS Secure Input and app-specific Accessibility behavior may prevent typed matching or insertion. Koru also can't reliably recognize every secret that passes through the general clipboard, which is why exclusions, pause, and short retention exist.</p>
     <h2>Questions or reports</h2>
     <p>Email <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a> with questions. For suspected security or privacy vulnerabilities, use the <a href="/security/">private reporting process</a>.</p>
   </article>

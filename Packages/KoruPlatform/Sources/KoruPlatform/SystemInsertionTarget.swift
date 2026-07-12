@@ -27,10 +27,10 @@ public final class SystemInsertionTarget: InsertionTargetAccessing, @unchecked S
 
     private func focused() -> (element: AXUIElement, pid: pid_t, token: String)? {
         guard AXIsProcessTrusted() else { return nil }
-        let system = AXUIElementCreateSystemWide(); AXUIElementSetMessagingTimeout(system, 0.25)
-        var raw: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &raw) == .success, let raw else { return nil }
-        let element = unsafeDowncast(raw, to: AXUIElement.self); var pid: pid_t = 0; AXUIElementGetPid(element, &pid)
+        // Shares the inspector's resolver so the insertion target and the focus snapshot agree on the
+        // same element (and token) even for Electron hosts reached through the app-level fallback.
+        guard let element = AXFocusResolver.focusedElement(timeout: 0.25) else { return nil }
+        var pid: pid_t = 0; AXUIElementGetPid(element, &pid)
         return (element, pid, "\(pid):\(CFHash(element))")
     }
 

@@ -5,18 +5,18 @@
 Launch Koru as a trustworthy, free, open-source macOS writing memory whose core behavior is demonstrably safer and more useful than exact keyboard replacement:
 
 - capture useful writing in place;
-- recall it from an imperfect initial fragment;
+- recall it automatically from a complete assigned tag or manually from an imperfect fragment;
 - explicitly choose and insert beside the caret;
 - access temporary clipboard history through the same compact surface;
 - keep all core content local.
 
-The launch should validate the product behavior, not maximize download count. A stable release is justified only if people repeatedly reuse permanent saved items and the automatic initial-matching rule is reliable and welcome.
+The launch should validate the product behavior, not maximize download count. A stable release is justified only if people repeatedly reuse permanent saved items and the automatic complete-tag rule is reliable and welcome.
 
 ## 2. Positioning
 
 ### Primary statement
 
-> Koru is a local writing memory for macOS. Save useful text, remember any fragment, and insert it where you are writing.
+> Koru is a local writing memory for macOS. Save useful text with exact tags, recall it automatically by a complete tag or manually by a remembered fragment, and insert it where you are writing.
 
 ### Supporting message
 
@@ -32,12 +32,12 @@ The launch demo should show the product loop without relying on abstract explana
 
 1. Write a useful block in a real Mac app.
 2. Select all and save it as a saved item.
-3. Focus a new empty field and type `pus`.
+3. Continue an existing paragraph and type the complete assigned tag `pus`.
 4. See relevant matches without changing `pus`.
 5. Explicitly choose one and see only `pus` replaced.
-6. Focus another empty field, type `clp`, and choose a mixed clipboard result.
+6. In another established field, type `clp` and choose a mixed clipboard result.
 7. Invoke manual recall in the middle of an existing paragraph.
-8. Show local settings, exclusions, pause, and export.
+8. Show local settings, Clipboard exclusions, pause, and export.
 
 Avoid leading with “prompt manager,” AI, automation, or a feature checklist.
 
@@ -87,12 +87,12 @@ Purpose: prove that the product's safety contract is technically achievable.
 
 Required scenarios:
 
-- detect a newly focused empty field without treating mid-writing as eligible;
+- detect an exact complete tag during established writing without opening on partial or fuzzy text;
 - keep `pus` and `clp` untouched while suggestions are visible;
-- replace only the verified initial fragment after explicit selection;
+- replace only the exact matched tag after explicit selection;
 - manually recall and insert at a caret or replace an active selection;
 - position near the caret or use a stable fallback;
-- detect secure/protected contexts;
+- verify that macOS Secure Input and protected contexts cause no unintended modification without adding a Koru automatic-recall exclusion;
 - handle permission denial and revocation;
 - capture and present mixed pasteboard types;
 - preserve the destination and use the defined pasteboard behavior during compatibility fallback; do not race the destination app with automatic clipboard restoration.
@@ -114,12 +114,12 @@ Target app matrix:
 
 Exit gates:
 
-- Every typed-panel opening proves that focus began on a verified empty editable field at caret zero and the current prefix has a qualifying local saved-item match or is the reserved `clp` command.
-- Empty focus alone, nonqualifying prefixes, and established writing produce no typed panel in the matrix.
+- Every typed-panel opening proves that the current suffix at the caret is a complete assigned tag of at least three characters at a left boundary, or the reserved `clp` command, and that process/generation context is current.
+- Empty focus alone, incomplete tags, fuzzy/content matches, and missing left boundaries produce no typed panel; complete tags do work during established writing.
 - No destination mutation without explicit selection.
 - At least 95% successful verified insertions across supported matrix scenarios.
 - Unsupported scenarios fall back to Copy without text loss.
-- Secure-field exclusion passes all defined tests.
+- Secure Input and protected-host tests preserve destination text and document the available fallback; Koru applies no automatic secure-field/app exclusion.
 
 ### Stage B — contributor alpha
 
@@ -128,11 +128,11 @@ Purpose: make the product usable by maintainers and technically confident contri
 Required scope:
 
 - local Saved library;
-- Saved text, Quick replacement, and Template behaviors;
-- initial typed matching and manual recall;
+- canonical saved items containing content plus one or more exact tags;
+- automatic exact-tag matching and fuzzy/content manual recall;
 - `clp` mixed Clipboard results;
 - save selection paths;
-- retention, exclusions, pause, clear, and export;
+- retention, Clipboard exclusions, pause, clear, and export;
 - permission-health and Hotkey-only mode;
 - crash and local diagnostic capture that excludes content.
 
@@ -151,11 +151,11 @@ Purpose: validate value, trust, terminology, and interaction with representative
 Research tasks:
 
 - Observe installation and permission decisions without coaching.
-- Ask users to save real repeated writing and later retrieve it from an imperfect fragment.
-- Compare typed initial matching with manual recall.
+- Ask users to save real repeated writing with exact tags and later retrieve it manually from an imperfect fragment.
+- Compare automatic complete-tag matching with fuzzy/content manual recall.
 - Observe whether `clp` is understandable without documentation.
 - Test the select-all save icon against shortcut-only capture.
-- Test Saved text, Quick replacement, and Template labels.
+- Test that content-plus-tags saving is understood without a title, behavior, or template choice.
 - Include users who keep Hotkey-only mode.
 - Conduct accessibility sessions with VoiceOver and Full Keyboard Access.
 
@@ -238,8 +238,8 @@ The onboarding exercise should use a safe practice field and the user's own loca
 
 1. Enter a short reusable sentence.
 2. Save it.
-3. Focus a new empty field.
-4. Type an initial fragment.
+3. Focus a practice field that already contains ordinary text.
+4. Type the complete trigger tag.
 5. Explicitly choose the saved result.
 6. Undo once to prove normal document control remains available.
 
@@ -249,7 +249,7 @@ No sample content needs to be uploaded or persisted after onboarding unless the 
 
 ### Measurement principles
 
-- Never collect saved content, clipboard content, queries, template values, destination text, file names, URLs, or screenshots.
+- Never collect saved content, clipboard content, queries, destination text, file names, URLs, or screenshots.
 - The initial public binary makes no background analytics, crash-upload, remote-configuration, or automatic-update request.
 - Product behavior is measured through moderated research, content-free local counters that participants explicitly export, and clearly separated opt-in research builds when a study requires aggregate events.
 - Any research build is labeled as such, previews exactly what it records, and limits events to anonymous counters, durations, result positions, generic content classes, success/failure codes, and coarse app compatibility identifiers.
@@ -265,7 +265,7 @@ No sample content needs to be uploaded or persisted after onboarding unless the 
 | Activated | User permanently saves at least one item and later inserts a saved item successfully. |
 | Successful recall | A recall session ends in explicit insertion or intentional Copy after a destination limitation. |
 | Successful saved reuse | A permanent saved item is explicitly selected and inserted. |
-| Unwanted surface | User dismisses an automatic initial-match panel and marks it unwanted, or disables the matching source from that context. |
+| Unwanted surface | User dismisses an automatic exact-tag panel and marks it unwanted, or disables typed matching because of that context. |
 | Insertion failure | An explicit selection does not produce the intended destination result and is not handled as a known Copy fallback. |
 | Retained activated user | An activated user completes at least one successful saved reuse during the measured return window. |
 
@@ -282,13 +282,13 @@ This measures the permanent writing-memory value. Clipboard insertions are track
 - At least 75% of validation users complete onboarding without assistance.
 - Median time from first launch to first successful saved-item insertion is under 5 minutes.
 - At least 65% of onboarded validation users activate.
-- At least 80% can state that Koru never replaces initial text until they select a result.
+- At least 80% can state that Koru never replaces a matched tag until they select a result.
 - At least 80% can distinguish Saved from Clipboard.
 
 ### Recall quality and speed
 
 - At least 75% of Saved recall sessions end in an explicit successful reuse.
-- Median time from recall invocation or qualifying fragment to explicit selection is under 3 seconds for previously used items.
+- Median time from manual recall invocation or complete exact-tag match to explicit selection is under 3 seconds for previously used items.
 - The item the user ultimately chooses appears in the first three results in at least 80% of successful Saved recalls.
 - At least 30% of newly created saved items are reused within 7 days by activated validation users.
 - Activated users reach a median of at least 5 successful saved-item reuses per active week.
@@ -302,10 +302,10 @@ This measures the permanent writing-memory value. Clipboard insertions are track
 ### Safety and trust
 
 - Zero confirmed destination mutations without explicit result selection.
-- Zero secure-field captures in the defined security test suite.
+- Zero unintended destination modifications when macOS Secure Input or a protected host suppresses capabilities; Koru adds no automatic secure-field/app exclusion.
 - Zero saved or clipboard content egress in network inspection.
-- Fewer than 1 reported unwanted automatic panel per 200 eligible initial input sessions in the validation cohort.
-- Fewer than 5% of users disable initial typed matching specifically because it interrupted established writing.
+- Fewer than 1 reported unwanted automatic panel per 200 complete exact-tag matches in the validation cohort.
+- Fewer than 5% of users disable automatic exact-tag matching because it felt intrusive during ordinary writing.
 - At least 85% of interviewed validation users correctly describe Koru as local-first after onboarding.
 
 ### Reliability and performance
@@ -326,12 +326,12 @@ This measures the permanent writing-memory value. Clipboard insertions are track
 
 ## 9. Decision and kill criteria
 
-### Remove or demote automatic initial typed matching if
+### Remove or demote automatic exact-tag matching if
 
-- the technical proof cannot confine it to fresh empty sessions across the supported app matrix;
+- exact typed matching cannot avoid partial/fuzzy false openings across the supported app matrix;
 - unwanted automatic surfaces exceed 1 per 100 eligible sessions after tuning;
 - more than 15% of validation users disable it because it feels intrusive;
-- fewer than 25% of successful Saved recalls use initial matching among users who enabled Full mode;
+- fewer than 25% of successful Saved recalls use automatic exact-tag matching among users who enabled Full mode;
 - permission refusal or revocation makes the interaction unavailable to most target users.
 
 In that case, Hotkey-only manual recall becomes the primary interaction. Koru must not preserve typed matching merely because it is distinctive.
@@ -347,9 +347,9 @@ In that case, Hotkey-only manual recall becomes the primary interaction. Koru mu
 
 ### Block stable launch if
 
-- any typed panel opens from empty focus alone, a nonqualifying prefix, an unverified/nonempty start, a caret position other than zero, or established writing;
+- any typed panel opens from focus alone, an incomplete or sub-three-character tag, a missing left boundary, a fuzzy/content/derived-label match, or stale process/generation context;
 - any path changes destination text without explicit selection;
-- detectable secure/protected contexts enter matching, selection capture, or recall signals, or clipboard changes observed while an excluded app is frontmost enter Clipboard history;
+- macOS Secure Input or protected contexts can cause unintended modification, automatic typed suffixes can be retained as content/recall signals without selection, or clipboard changes observed while a Clipboard-excluded app is frontmost enter Clipboard history;
 - supported-app direct insertion success remains below 98%;
 - migration or update tests can lose permanent saved items;
 - content appears in telemetry or network traffic;
@@ -389,9 +389,9 @@ In that case, Hotkey-only manual recall becomes the primary interaction. Koru mu
 - install and uninstall guide;
 - Full mode versus Hotkey-only explanation;
 - permission and privacy guide;
-- “How automatic matching works” page with the empty-input-only rule;
+- “How automatic matching works” page with the complete-tag, three-character, left-boundary, anywhere-in-writing rule;
 - Saved versus Clipboard explanation;
-- saved-item behavior guide;
+- content-and-trigger-tags saved-item guide;
 - keyboard reference;
 - compatibility matrix;
 - data location, retention, export, backup, restore, and deletion guide;
@@ -405,7 +405,7 @@ Prioritize after stable launch only when evidence supports them:
 1. Improve compatibility and insertion reliability.
 2. Improve imperfect-fragment ranking and local learned recall.
 3. Reduce permission and onboarding friction.
-4. Improve template completion.
+4. Improve exact-tag management and manual-search ranking.
 5. Improve import/export portability.
 6. Consider OCR, sync, or additional platforms only after the core Saved reuse metric is healthy.
 

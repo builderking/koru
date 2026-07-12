@@ -3,11 +3,16 @@ import Foundation
 
 public enum TypedInputMessage: Equatable, Sendable { case character(String), backspace, navigation(Int), confirm, dismiss, reset, pointerDown, tabTransfer }
 public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable {
+    /// Synthetic replacement events carry this marker so the event tap never treats Koru's own
+    /// Backspace and Command-V sequence as fresh user input.
+    static let syntheticEventMarker: Int64 = 0x4B4F5255
     private var tap: CFMachPort?; private var source: CFRunLoopSource?; private let queue = DispatchQueue(label: "dev.builderking.koru.typed-event-tap")
     private let permission: @Sendable () -> Bool
     private let enabled: @Sendable () -> Bool
     private let receive: @Sendable (TypedInputMessage) -> Bool
+    private let observedEvents = TypedEventCounter()
     public private(set) var health: EventTapHealth = .stopped
+    public var observedEventCount: Int { observedEvents.value }
     public init(permission: @escaping @Sendable () -> Bool = { CGPreflightListenEventAccess() }, enabled: @escaping @Sendable () -> Bool = { true }, receive: @escaping @Sendable (TypedInputMessage) -> Bool) { self.permission = permission; self.enabled = enabled; self.receive = receive }
     public func start() {
         guard tap == nil else { return }
@@ -22,6 +27,8 @@ public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable
         tap = port; source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0); CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes); health = .running; CFRunLoopRun()
     }
     fileprivate func handle(type: CGEventType, event: CGEvent) -> Bool {
+        if event.getIntegerValueField(.eventSourceUserData) == Self.syntheticEventMarker { return false }
+        if type == .keyDown || type == .leftMouseDown || type == .rightMouseDown { observedEvents.increment() }
         if type == .tapDisabledByTimeout { health = .disabledByTimeout; if permission(), let tap { CGEvent.tapEnable(tap: tap, enable: true) } }
         else if type == .tapDisabledByUserInput { health = .disabledByUserInput }
         else if type == .leftMouseDown || type == .rightMouseDown { _ = receive(.pointerDown) }
@@ -34,9 +41,19 @@ public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable
         guard event.flags.intersection([.maskCommand, .maskControl]).isEmpty else { return .reset }
         var length = 0; event.keyboardGetUnicodeString(maxStringLength: 0, actualStringLength: &length, unicodeString: nil); guard length > 0 && length <= 4 else { return nil }
         var chars = [UniChar](repeating: 0, count: length); event.keyboardGetUnicodeString(maxStringLength: length, actualStringLength: &length, unicodeString: &chars)
-        let value = String(utf16CodeUnits: chars, count: length); return value.unicodeScalars.allSatisfy { !$0.properties.isWhitespace && !CharacterSet.controlCharacters.contains($0) } ? .character(value) : .reset
+        // Spaces are ordinary trigger characters so a saved text may use a multi-word tag. Return
+        // and Tab are classified above; other control characters still reset the rolling suffix.
+        let value = String(utf16CodeUnits: chars, count: length)
+        return value.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) } ? .character(value) : .reset
     }
     public func stopAndPurge() { if let tap { CGEvent.tapEnable(tap: tap, enable: false); CFMachPortInvalidate(tap) }; if let source { CFRunLoopSourceInvalidate(source) }; tap = nil; source = nil; health = .stopped }
+}
+
+private final class TypedEventCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    var value: Int { lock.lock(); defer { lock.unlock() }; return count }
+    func increment() { lock.lock(); count += 1; lock.unlock() }
 }
 
 private func koruTypedEventCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent, context: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {

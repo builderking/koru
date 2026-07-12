@@ -63,7 +63,7 @@ Koru speaks in short, concrete sentences.
 ### Voice traits
 
 - **Plain:** “Find the words you saved,” not “unlock your knowledge substrate.”
-- **Specific:** “Saved writing, reusable templates, and recent clipboard items,” not “everything you need.”
+- **Specific:** “Saved writing with exact tags and recent clipboard items,” not “everything you need.”
 - **Calm:** no artificial urgency, fear, or countdowns.
 - **Honest:** state supported applications and limitations.
 - **Respectful:** never treat private writing as raw material for vague AI claims.
@@ -106,7 +106,7 @@ Koru — Writing memory for macOS
 
 **Meta description**
 
-Recall saved writing, reusable templates, and recent clipboard items beside the caret. Local-first and open source for macOS.
+Recall saved writing and recent clipboard items beside the caret. Local-first and open source for macOS.
 
 ### Hero
 
@@ -120,7 +120,7 @@ Remember what you meant, even from a fragment.
 
 **Supporting copy**
 
-Koru brings saved writing, reusable templates, and recent clipboard items to the caret, locally on your Mac.
+Koru brings saved writing and recent clipboard items to the caret, locally on your Mac.
 
 **Primary action**
 
@@ -167,9 +167,9 @@ The hero contains copy on the left and a native-looking product demonstration on
 
 The demo should show one continuous story:
 
-1. the caret is in an ordinary text field;
-2. the user invokes Koru and types “push”;
-3. a Saved result titled “Push to GitHub safely” is selected;
+1. the caret is after ordinary existing writing;
+2. the user types the complete assigned tag `push` at a left boundary;
+3. Koru shows saved items assigned to `push`, identified by content previews rather than user-authored titles;
 4. the result is inserted;
 5. a second state shows Recent material and a Save action that creates a separate saved item;
 6. a final state shows Save Selection.
@@ -188,13 +188,13 @@ Two compact cards:
 
 **Saved items**
 
-Prompts, passages, commands, replies, and references you choose to keep. Each saved item can behave as Saved text, a Quick replacement, or a Template.
+Prompts, passages, commands, replies, and references you choose to keep. Each saved item contains the reusable content plus one or more exact trigger tags.
 
 **Recent clipboard**
 
 Clipboard material for now. Use it or search it before it expires, and explicitly save a separate permanent item when it is worth keeping.
 
-The cards share one visual frame to reinforce unified recall. Within the Saved card, three small behavior labels explain Saved text, Quick replacement, and Template without implying separate databases. Recent remains visibly temporary.
+The cards share one visual frame to reinforce unified recall. The Saved card shows reusable content and its assigned trigger tags without asking for a separate title or behavior. Recent remains visibly temporary.
 
 ### 4. Differentiator sequence
 
@@ -202,11 +202,11 @@ Use four short sections with a screenshot or restrained interaction for each.
 
 **Remember a fragment**
 
-Search by the words you recall, not the exact title or abbreviation.
+Use the manual shortcut to search by the content or partial tag you recall; automatic recall stays exact-tag-only.
 
-**Begin with a fragment**
+**Type a complete tag**
 
-At position zero in a fresh input, type a matching fragment and Koru appears. It never opens merely because the field is empty; the global hotkey opens it immediately when you want to browse.
+Type a complete assigned tag of at least three characters anywhere in ordinary writing and Koru appears. Partial tags stay quiet; the global hotkey opens search when you remember only a fragment.
 
 **Save before it disappears**
 
@@ -214,7 +214,7 @@ Select what you just wrote and save it without opening a separate library.
 
 **Keep memory close**
 
-Core capture, storage, and search stay on your Mac, with visible exclusions and retention controls.
+Core capture, storage, and search stay on your Mac, with visible Clipboard exclusions and retention controls.
 
 Avoid turning this section into a grid of twelve generic features.
 
@@ -223,7 +223,7 @@ Avoid turning this section into a grid of twelve generic features.
 A three-step horizontal sequence:
 
 1. **Invoke** — Use the Koru shortcut in the field where you are writing.
-2. **Recall** — Type any remembered fragment at the start of a fresh input, or use the hotkey to browse immediately.
+2. **Recall** — Type a complete assigned tag anywhere in ordinary writing, or use the hotkey to search tags and content immediately.
 3. **Insert or keep** — Insert, copy, save a selection, or save a Recent item permanently.
 
 Include keyboard navigation in the visual. The site should communicate that the product remains fully usable without the pointer.
@@ -236,7 +236,7 @@ Your writing memory should be understandable.
 
 Copy:
 
-Koru's core works without an account. See what is captured, exclude applications, pause history, choose retention, delete everything, and inspect the code that does it.
+Koru's core works without an account. See what is captured, configure Clipboard-only application exclusions, pause history, choose retention, delete everything, and inspect the code that does it. Automatic typed recall has no Koru app or secure-field exclusion; macOS Secure Input may still block it.
 
 Proof links:
 
@@ -532,7 +532,7 @@ Before production publishing:
 
 The marketing site is ready when:
 
-- a new visitor can explain that saved items are permanent, may behave as Saved text, Quick replacement, or Template, and that Recent clipboard entries are temporary;
+- a new visitor can explain that saved items are permanent content plus one or more exact tags, and that Recent clipboard entries are temporary;
 - the hero distinguishes Koru without claiming to invent prompts, snippets, or clipboard history;
 - every visible claim maps to shipped and tested behavior;
 - download links resolve to signed releases;
@@ -547,7 +547,7 @@ The marketing site is ready when:
 ## Explicit non-goals
 
 - a separate prompt marketplace;
-- template browsing or public user profiles;
+- public saved-item browsing or user profiles;
 - pricing and subscription pages;
 - a blog or changelog duplicated from GitHub;
 - interactive cloud accounts;

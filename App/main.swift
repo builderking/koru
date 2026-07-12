@@ -111,7 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     }
     func receive(_ input: SaveConfirmationInput) {
         pendingSave = input
-        productStore.presentDraft(.init(title: String(input.plainText.prefix(48)), behavior: .savedText, plainContent: input.plainText))
+        productStore.presentDraft(.init(title: "", behavior: .savedText, plainContent: input.plainText))
         pendingSave = nil
         openLibrary()
     }
@@ -136,8 +136,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         let assets = EncryptedAssetStore(directory: root.appendingPathComponent("Assets"), keyManager: keys); let search = InMemorySearchIndex(); let exclusions = ExclusionPolicy()
         let monitor = PasteboardMonitor(repository: repository, assets: assets, keys: keys, exclusions: exclusions)
         let controller = ClipboardHistoryController(monitor: monitor, repository: repository, search: search, exclusions: exclusions)
+        let contentResolver = ClipboardContentResolver(repository: repository, assets: assets)
         self.repository = repository; keyManager = keys; searchIndex = search; clipboardController = controller; clipboardMonitor = monitor
-        let runtime = RecallRuntime(index: search, repository: repository, exclusions: { Set(UserDefaults.standard.stringArray(forKey: "neverObserve") ?? []) })
+        let runtime = RecallRuntime(index: search, repository: repository, clipboardContentResolver: contentResolver)
         let events = TypedEventTapService(enabled: { UserDefaults.standard.bool(forKey: "typedMatchingEnabled") }) { [weak runtime] message in
             guard let runtime else { return false }
             if Thread.isMainThread { return MainActor.assumeIsolated { runtime.receive(message) } }
@@ -149,7 +150,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         productStore.onSettingsChanged = { [weak self] settings in
             if let data = try? JSONEncoder().encode(settings) { UserDefaults.standard.set(data, forKey: "settings") }
             UserDefaults.standard.set(settings.typedMatchingEnabled, forKey: "typedMatchingEnabled")
-            UserDefaults.standard.set(settings.neverObserve, forKey: "neverObserve")
             guard let self else { return }
             self.selectionAffordance?.setEnabled(settings.selectionIconEnabled)
             if (self.loginItem.state == .granted) != settings.launchAtLogin { try? self.loginItem.setEnabled(settings.launchAtLogin) }
@@ -202,7 +202,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         clipboardSettings.onRetentionChanged = { [weak self] days, count in Task { await self?.setRetention(days: days, count: count) } }
         clipboardSettings.onClear = { [weak self] in Task { await self?.clearClipboard() } }
         clipboardSettings.onExclusionsChanged = { [weak self] ids in Task { await self?.clipboardController?.setNeverSaveClipboardFrom(ids) } }
-        clipboardSettings.onObserveExclusionsChanged = { ids in UserDefaults.standard.set(Array(ids).sorted(), forKey: "neverObserve") }
         clipboardTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in Task { await self?.pollClipboard() } }
         Task { await openVaultSession() }
     }
@@ -215,13 +214,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     private func pollClipboard() async { let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier; if (try? await clipboardMonitor?.poll(frontmostBundleID: bundleID)) != nil { await refreshClipboardSettings() } }
     private func refreshClipboardSettings() async { guard let clipboardController else { return }; if let summary = try? await clipboardController.summary() { clipboardSettings.retainedCount = summary.retainedCount; clipboardSettings.encryptedBytes = summary.encryptedBytes }; clipboardSettings.accessDescription = String(describing: await clipboardController.accessState()).capitalized; clipboardSettings.isEnabled = retentionPolicy.clipboardHistoryEnabled; productStore.updatePasteboardHealth(await clipboardMonitor?.isEnabled() == true ? .healthy : .stopped) }
     private func refreshRuntimePermissions() {
+        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Koru", isDirectory: true)
         let snapshot = permissions.refresh()
         let eventHealth: ServiceHealth = typedEvents?.health == .running ? .healthy : (typedEvents?.health == .stopped ? .stopped : .unavailable)
         let recallHealth: ServiceHealth = recallRuntime?.health == .ready ? .healthy : (recallRuntime?.health == .stopped ? .stopped : .unavailable)
+        let diagnostics: [String: Any] = [
+            "counts": AXFocusResolver.snapshotCounts(),
+            "shapes": AXFocusResolver.snapshotShapes(),
+            "permissions": [
+                "accessibility": snapshot.accessibility.rawValue,
+                "inputListening": snapshot.inputListening.rawValue,
+                "eventPosting": snapshot.eventPosting.rawValue,
+            ],
+            "services": [
+                "eventTap": eventHealth.rawValue,
+                "observedEvents": typedEvents?.observedEventCount ?? 0,
+                "recall": recallHealth.rawValue,
+            ],
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: diagnostics) { try? data.write(to: root.appendingPathComponent("focus-diagnostics.json")) }
         productStore.updateRuntimeHealth(permissions: snapshot, eventTap: eventHealth, recall: recallHealth)
-        if snapshot.accessibility == .revoked { recallRuntime?.stopAndPurge(); typedEvents?.stopAndPurge(); selectionAffordance?.stopAndPurge() }
-        else if snapshot.inputListening == .revoked { typedEvents?.stopAndPurge(); recallRuntime?.start() }
-        else if lifecycle?.state == .active { recallRuntime?.start(); typedEvents?.start(); selectionAffordance?.start() }
+        if lifecycle?.state == .active { recallRuntime?.start() }
+        if snapshot.inputListening == .revoked { typedEvents?.stopAndPurge() }
+        else if lifecycle?.state == .active { typedEvents?.start() }
+        if snapshot.accessibility == .revoked { selectionAffordance?.stopAndPurge() }
+        else if lifecycle?.state == .active { selectionAffordance?.start() }
     }
 }
 

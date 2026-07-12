@@ -1,13 +1,13 @@
 ---
 export const questions = [
-  ['What is Koru?', 'Koru is a menu-bar app for macOS that acts as a writing memory. You save text you want to reuse — replies, snippets, prompts, commands, templates — and recall it from any fragment you remember, right where you are typing. It is free to download and use.'],
+  ['What is Koru?', 'Koru is a menu-bar app for macOS that acts as a writing memory. Save reusable text with one or more trigger tags, then type a complete tag anywhere you write to bring it back. It is free to download and use.'],
   ['Is Koru really free?', 'Yes. Koru is free to download and use. There is no account, subscription, or trial timer for the core app.'],
-  ['What does Koru store?', 'Only what you explicitly save. Clipboard history is a separate, opt-in layer with bounded retention. Koru never persists raw keystrokes, and typed matching keeps only the short current fragment in memory while you type.'],
+  ['What does Koru store?', 'Only the text and trigger tags you explicitly save. Clipboard history is a separate, opt-in layer with bounded retention. Koru never persists raw keystrokes, and typed matching keeps only a short bounded suffix in memory.'],
   ['Does Koru send my writing anywhere?', 'No. Saved items and clipboard history stay on your Mac, encrypted at rest. Koru requires no account and makes no background network requests — no analytics, no cloud sync, no remote processing.'],
-  ['How is Koru different from a text expander or clipboard manager?', 'Text expanders need you to remember an exact trigger; clipboard managers only keep what you copied recently. Koru is one recall surface for both: permanent saved writing and temporary clipboard history, found from any fragment you remember.'],
-  ['Which apps does Koru work in?', 'Koru works where you write — native apps, browsers, editors, and more. Where an app limits caret placement or direct insertion, Koru falls back safely to the global hotkey, a stable panel position, or copy-to-clipboard.'],
+  ['How is Koru different from a text expander or clipboard manager?', 'Each saved text can have several exact trigger tags, and Koru shows a choice before replacing the tag. The same recall surface also searches saved content and browses temporary clipboard history.'],
+  ['Which apps does Koru work in?', 'Koru works across native apps, browsers, editors, and more. Where an app or macOS Secure Input limits typed matching, caret placement, or direct insertion, Koru falls back to the global hotkey, a stable panel position, or copy-to-clipboard.'],
   ['Why does macOS ask for Accessibility or Input Monitoring?', 'Accessibility lets Koru position its panel at your caret, capture selections you save, and insert text where you are writing. Input Monitoring is needed only if you enable typed matching. You can run Koru in hotkey-only mode without it.'],
-  ['Can I exclude certain apps?', 'Yes. Secure password fields are always ignored, and you can add any app to visible exclusion lists so Koru never observes it or saves clipboard content from it.'],
+  ['Can I exclude certain apps?', 'Clipboard history has a visible Never Save Clipboard From list. Automatic typed recall has no Koru app or password-field exclusion, although macOS Secure Input can still make some fields unavailable.'],
   ['Can I export or delete my data?', 'Yes. Saved items support explicit export, and the app includes clear-history, delete-all-data, and full reset controls. Your data is yours, on your disk.'],
 ] as const;
 ---

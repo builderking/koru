@@ -7,7 +7,7 @@ Koru should feel like one writing memory with two clearly different sources:
 - **Saved** — permanent, intentional, user-managed;
 - **Clipboard** — temporary, automatic, retention-managed.
 
-The interface must not create separate top-level products for prompts, snippets, text replacements, and templates. Those labels describe use cases or saved-item behavior, not competing libraries.
+The interface must not create separate top-level products for prompts, snippets, or text replacements. Those labels describe use cases for the same content-plus-tags saved item, not competing libraries.
 
 ## 2. Primary surfaces
 
@@ -18,9 +18,9 @@ The recall panel is Koru's primary everyday surface.
 It contains:
 
 - current source: Saved, Clipboard, or All when manually invoked;
-- query or reflected initial fragment;
+- manual query or reflected exact matched tag;
 - compact ranked results;
-- result preview and type/behavior metadata;
+- result preview and source/type metadata;
 - insertion alternatives when relevant;
 - entry points to Save, Edit, Library, or Settings only when needed.
 
@@ -35,13 +35,9 @@ The save popover appears from:
 - Save action on a clipboard result;
 - Create Saved Item from the library.
 
-It contains only the fields needed for the selected behavior. Advanced metadata remains collapsed or in the library editor.
+It contains the reusable content and one or more exact word-or-phrase tags. No title, behavior picker, match-term mode, or template editor is part of the canonical save surface.
 
-### 2.3 Template completion surface
-
-This surface appears only after a Template result is explicitly chosen. It collects field values, previews rendered text, and confirms insertion. It does not edit the template definition unless the user explicitly enters Edit Template.
-
-### 2.4 Library window
+### 2.3 Library window
 
 The library is the deliberate management surface.
 
@@ -54,7 +50,7 @@ Recommended top-level destinations:
 
 Settings opens as a standard app settings window or settings destination, not as a content library.
 
-### 2.5 Menu-bar menu
+### 2.4 Menu-bar menu
 
 The menu-bar surface communicates state and gives direct access to:
 
@@ -69,12 +65,12 @@ The menu-bar surface communicates state and gives direct access to:
 
 The menu-bar icon must not become a live content browser.
 
-### 2.6 Settings
+### 2.5 Settings
 
 Recommended settings groups:
 
 - **General:** launch at login, appearance, default insertion mode;
-- **Recall:** manual shortcut, initial typed matching, per-app exclusions, result behavior;
+- **Recall:** manual shortcut, automatic exact-tag matching, and result behavior;
 - **Clipboard:** enablement, retention, storage, content limits, exclusions, clear actions;
 - **Privacy:** local-data location, diagnostics consent, sensitive-content behavior;
 - **Shortcuts:** configurable commands and conflict state;
@@ -102,7 +98,7 @@ Management path:
 Menu bar or panel -> Library -> Saved / Clipboard / Archive / Recently Deleted
 ```
 
-The recall panel should never require navigation through a folder tree. Search and ranking are primary; tags and archive are supporting organization.
+The recall panel should never require navigation through a folder tree. Exact tags drive automatic recall; fuzzy tag/content search drives manual recall; archive supports organization.
 
 ## 4. Permanent content model
 
@@ -114,14 +110,8 @@ The recall panel should never require navigation through a folder tree. Search a
 | --- | --- |
 | `id` | Stable local identifier. |
 | `schemaVersion` | Supports migrations and portable export. |
-| `title` | User-facing recall label. Required. |
-| `behavior` | `savedText`, `quickReplacement`, or `template`. |
-| `plainContent` | Canonical plain-text representation. Required when the item is textual. |
-| `richContent` | Optional supported attributed representation. |
-| `assetReferences` | Optional local references for supported saved assets. |
-| `matchTerms` | Optional explicit terms; at least one is required for Quick replacement. |
-| `tags` | Optional flat labels. |
-| `templateFields` | Ordered field definitions for Template behavior. |
+| `plainContent` | Canonical reusable text. Required. |
+| `triggerTags` | One or more exact word-or-phrase tags assigned to the content. Required. |
 | `pinned` | Promotes the item in recall ordering. |
 | `archivedAt` | Removes item from ordinary recall without deletion. |
 | `createdAt` | Local creation timestamp. |
@@ -131,48 +121,20 @@ The recall panel should never require navigation through a folder tree. Search a
 | `sourceContext` | Optional user-visible origin such as source app or “Saved from Clipboard.” |
 | `contentHash` | Keyed local digest that supports duplicate detection without persisting a raw content hash. |
 
-“Prompt” is not a `SavedItem` behavior. A prompt can be Saved text, Quick replacement, or Template depending on how it is reused.
+“Prompt,” “snippet,” and “replacement” are use cases, not `SavedItem` behaviors. A safe display title is derived at runtime from the first tag or first useful content line and is not a second user-authored field.
 
-### 4.2 Behavior semantics
+### 4.2 Saved-item semantics
 
-#### Saved text
+- Minimal permanent item: content plus tags.
+- Every tag is trimmed and compared case-, diacritic-, and width-insensitively for exact automatic matching.
+- Internal spaces are preserved so a tag can be a phrase.
+- Tags shorter than three user-perceived characters remain available to manual search but cannot open the automatic panel.
+- The reserved `clp` tag cannot be assigned to saved content.
+- Selecting a result is always required before any replacement.
 
-- Minimal permanent item.
-- Searchable by title, content, tags, and learned local recall signals.
-- Inserted only after explicit selection.
+### 4.3 `RecallSignal`
 
-#### Quick replacement
-
-- Adds one or more preferred initial match terms.
-- Receives stronger ranking when an initial fragment matches those terms.
-- Does not automatically replace the fragment; selection is still required.
-
-#### Template
-
-- Contains ordered fields.
-- Opens completion before insertion.
-- Stores the template definition, not completed values by default.
-
-Behavior is editable. Changing behavior does not create a separate item unless the user chooses Duplicate.
-
-### 4.3 `TemplateField`
-
-| Field | Purpose |
-| --- | --- |
-| `id` | Stable field identifier within the template. |
-| `token` | Placeholder token used in canonical content. |
-| `label` | Human-readable field name. |
-| `helpText` | Optional concise clarification. |
-| `required` | Whether insertion requires a value. |
-| `defaultValue` | Optional local default. |
-| `order` | Completion and keyboard-navigation order. |
-| `inputType` | Initial scope: single-line or multiline text. |
-
-The initial release should not add complex field logic, external data lookup, or executable expressions.
-
-### 4.4 `RecallSignal`
-
-This local-only supporting entity improves recall without requiring memorized aliases.
+This local-only supporting entity improves fuzzy manual recall without changing automatic exact-tag eligibility.
 
 | Field | Purpose |
 | --- | --- |
@@ -182,7 +144,7 @@ This local-only supporting entity improves recall without requiring memorized al
 | `lastSelectedAt` | Recency signal. |
 | `destinationAppID` | Optional local app context; never required for a match. |
 
-Recall signals are sensitive local usage metadata because a normalized query can reflect what the user typed. They are encrypted, do not leave the Mac, and can be reset independently. They influence ranking but never cause automatic insertion.
+Recall signals are sensitive local usage metadata because a normalized manual query can reflect what the user typed in Koru. They are encrypted, do not leave the Mac, and can be reset independently. They influence manual ranking but never cause an automatic panel or insertion.
 
 ## 5. Temporary clipboard content model
 
@@ -225,7 +187,7 @@ Saving a Clipboard entry creates a `SavedItem` through the normal save flow.
 The operation:
 
 - chooses an appropriate representation;
-- requires a title and behavior confirmation;
+- requires reusable text and one or more tags;
 - creates a new permanent identifier;
 - leaves the temporary entry under its existing retention rules;
 - records “Saved from Clipboard” only as optional origin context.
@@ -238,25 +200,30 @@ Clipboard entries do not become permanent through a generic Pin action.
 
 Searchable fields:
 
-- title;
-- explicit match terms;
-- tags;
+- trigger tags;
 - plain content;
-- template field labels;
 - locally learned query relationships.
 
-Recommended ranking order:
+Automatic matching is a separate deterministic path:
 
-1. exact explicit match term;
-2. prefix match on explicit match term;
-3. exact or prefix title-token match;
+1. inspect only the committed suffix immediately before the caret;
+2. require a complete exact tag of at least three characters at a left boundary;
+3. choose the longest matching tag when suffixes overlap;
+4. return every active saved item assigned that tag;
+5. never consult content, fuzzy distance, display title, or learned signals.
+
+Recommended manual-recall ranking order:
+
+1. exact tag;
+2. prefix or contained tag;
+3. exact or contained content;
 4. repeated local query-to-item selection;
 5. pinned state;
 6. previous use in the destination application;
 7. general recency and frequency;
-8. fuzzy title or content match.
+8. deterministic fuzzy tag or content match.
 
-Ranking is deterministic enough to explain. The panel may show “Matched title,” “Match term,” or “Recently used here” in details, but should not add copy to every row.
+Ranking is deterministic enough to explain. Manual recall may show “Matched tag,” “Matched content,” or “Recently used here” in details, but should not add copy to every row.
 
 ### 6.2 Clipboard search index
 
@@ -280,10 +247,8 @@ Cross-source ranking must not let a transient clipboard duplicate displace an ex
 
 Initial organization is deliberately flat:
 
-- title is required;
-- behavior describes insertion behavior;
-- match terms improve recall;
-- tags are optional and flat;
+- content is required;
+- one or more flat trigger tags are required;
 - pinning is a small favorite set;
 - archive removes inactive permanent items;
 - local usage improves ordering.
@@ -326,7 +291,7 @@ Observed -> Retained -> Expired or Cleared
 
 ## 9. Display-content rules
 
-- Prefer the user title for saved items.
+- Derive a compact saved-item label from the first tag or first useful content line.
 - When no safe clipboard title exists, use a compact type label and age, not invented meaning.
 - Truncate previews visually without modifying stored content.
 - Mask sensitive-looking previews only when the user enables such local masking; masking is not a substitute for secure-field exclusion.
@@ -343,14 +308,14 @@ Observed -> Retained -> Expired or Cleared
 - Temporary clipboard history requires a separate explicit export action.
 - Text metadata uses a documented human-inspectable format.
 - Assets are included in a documented sibling directory when selected.
-- Export includes schema version and behavior semantics.
+- Export includes schema version and trigger-tag semantics.
 - Local recall signals are excluded by default because they are incidental usage history.
 
 ### Import
 
 - Validate schema and content before writing.
-- Preview item count, behaviors, conflicts, and skipped assets.
-- Never overwrite by title alone.
+- Preview item count, tags, conflicts, and skipped assets.
+- Never overwrite by a derived display label alone.
 - Match stable IDs and hashes when available.
 - Offer Keep both, Update, or Skip for conflicts.
 
@@ -362,8 +327,8 @@ Observed -> Retained -> Expired or Cleared
 
 ## 11. Privacy boundaries in the IA
 
-- Secure/protected contexts do not enter any content model.
-- Clipboard changes observed while an excluded app is frontmost create no entry, and excluded apps create no initial-match recall signal. Koru does not claim authoritative clipboard-source attribution when macOS does not expose it.
+- Automatic matching retains only a bounded transient suffix and creates no content record merely because the target is secure or an app was formerly excluded. macOS Secure Input may suppress the events entirely.
+- Clipboard changes observed while a clipboard-excluded app is frontmost create no entry. Koru does not claim authoritative clipboard-source attribution when macOS does not expose it.
 - Diagnostic state is modeled separately from user content.
 - Clearing Clipboard does not delete Saved.
 - Resetting learned recall signals does not delete Saved or Clipboard.
@@ -373,7 +338,7 @@ Observed -> Retained -> Expired or Cleared
 ## 12. Information-architecture acceptance criteria
 
 - [ ] The top-level permanent object is always called a saved item.
-- [ ] Saved item behaviors are Saved text, Quick replacement, and Template.
+- [ ] A saved item requires reusable content and one or more exact trigger tags, with no user-authored title or behavior subtype.
 - [ ] Prompt is treated as a use case, not a destination or schema type.
 - [ ] Saved and Clipboard have distinct lifecycle, navigation, and source labels.
 - [ ] Everyday recall does not require opening Library or navigating folders.
