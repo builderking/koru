@@ -22,3 +22,7 @@ app="$products/Koru.app"
 codesign --verify --strict --verbose=2 "$app"
 codesign -dv "$app" 2>&1 | grep -E "Authority=Apple Development|TeamIdentifier"
 echo "signed local build at $app"
+
+# Keep the website's downloadable copy in sync with every build. The website
+# artifact is always a fresh universal Release build, not this Debug bundle.
+[[ "${KORU_SKIP_WEBSITE_PACKAGE:-0}" == "1" ]] || ./scripts/package-website-download.sh

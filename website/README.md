@@ -20,12 +20,14 @@ The site presents Koru as a free, downloadable, local-first macOS app. Two rules
 1. No open-source, repository, or license positioning — Koru is not open source.
 2. No absolute privacy overclaims ("100% private", "never lose anything").
 
-## Wiring the real download
+## Download artifact
 
-Download buttons currently point at `/download/`, and the button on that page uses a placeholder link. When a signed, notarized artifact exists:
+Download buttons point at `/download/`, and the button on that page links directly to `/downloads/Koru.zip` — an ad-hoc-signed universal Release build of the current alpha. `../scripts/package-website-download.sh` produces the zip, its `.sha256` checksum, and `src/content/download-artifact.ts` (version, build date, commit, and checksum rendered on `/download/`). Both app build scripts (`build-unsigned.sh`, `build-signed-local.sh`) run it automatically, so every app build refreshes the website copy; set `KORU_SKIP_WEBSITE_PACKAGE=1` to opt out. Commit the refreshed `public/downloads/` files and `download-artifact.ts` to publish the new build.
 
-1. Set `download.artifactUrl` in `src/content/site.ts` to the real artifact URL.
-2. Add the verified version, macOS range, and release notes to `/download/`.
+When a Developer ID-signed, notarized artifact exists:
+
+1. Point `scripts/package-website-download.sh` at the notarized bundle (or replace the ad-hoc seal step).
+2. Remove the alpha Gatekeeper notice on `/download/`.
 3. Confirm or change `https://koru-dc8.pages.dev` in `astro.config.mjs`, `src/content/site.ts`, and `public/robots.txt` once a custom production domain is attached.
 
 ## Assets

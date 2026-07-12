@@ -35,8 +35,8 @@ Validate the current repository with:
 - Feasibility: disposable native harness implemented; external application matrix still requires manual execution
 - Native app: locally buildable alpha; external TCC, compatibility, accessibility, and signed-release qualification remains
 - Marketing website: implemented and locally verified
-- Cloudflare Pages project: not created
-- Public release: not started
+- Cloudflare Pages project: created; Git integration deploys `website/dist` on push
+- Public release: downloadable unsigned alpha served from the website; signed, notarized release not started
 
 ## Open source
 

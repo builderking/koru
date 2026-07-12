@@ -8,6 +8,7 @@ const requiredFiles = [
   '404.html', 'robots.txt', 'sitemap-index.xml',
   '_headers', '_redirects', 'og.png', 'icons/favicon-32.png',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
+  'downloads/Koru.zip', 'downloads/Koru.zip.sha256',
 ];
 for (const file of requiredFiles) await access(join(root, file));
 
@@ -50,7 +51,7 @@ for (const file of htmlFiles) {
   for (const href of hrefs) {
     if (!href.startsWith('/') || href.startsWith('//') || href.startsWith('/_astro/') || href.includes('#')) continue;
     const path = new URL(href, 'https://koru-dc8.pages.dev').pathname;
-    if (/\.(png|ico|xml|txt)$/.test(path)) continue;
+    if (/\.(png|ico|xml|txt|zip|sha256)$/.test(path)) continue;
     if (!knownRoutes.has(path)) throw new Error(`${relative}: broken internal link ${href}`);
   }
 }

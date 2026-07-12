@@ -20,3 +20,6 @@ architectures="$(lipo -archs "$binary")"
   exit 4
 }
 echo "Unsigned universal Release app: $app ($architectures)"
+
+# Keep the website's downloadable copy in sync with every build.
+[[ "${KORU_SKIP_WEBSITE_PACKAGE:-0}" == "1" ]] || ./scripts/package-website-download.sh "$app"

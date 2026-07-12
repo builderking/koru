@@ -13,8 +13,9 @@ export const site = {
 export const download = {
   // Internal page every "Download" call to action points at.
   page: '/download/',
-  // TODO: replace with the real signed artifact URL when download functionality ships.
-  artifactUrl: '#',
+  // Refreshed by scripts/package-website-download.sh on every app build.
+  artifactUrl: '/downloads/Koru.zip',
+  checksumUrl: '/downloads/Koru.zip.sha256',
   requirement: 'macOS 13 or later',
   architectures: 'Apple Silicon & Intel',
   price: 'Free',

@@ -2,6 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import DownloadButton from '../components/DownloadButton.astro';
 import { site, download } from '../content/site';
+import { artifact } from '../content/download-artifact';
+
+const artifactSizeMB = (artifact.bytes / (1024 * 1024)).toFixed(1);
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -9,6 +12,7 @@ const structuredData = {
   name: 'Koru',
   applicationCategory: 'UtilitiesApplication',
   operatingSystem: 'macOS 13.0 or later',
+  softwareVersion: artifact.version,
   description: site.description,
   url: new URL('/download/', site.url).href,
   isAccessibleForFree: true,
@@ -33,15 +37,22 @@ const structuredData = {
       <li>{download.requirement}</li>
       <li>{download.architectures}</li>
       <li>No account required</li>
+      <li>Version {artifact.version} (alpha) · {artifact.builtAt} · {artifactSizeMB} MB</li>
     </ul>
   </header>
   <article class="prose text-shell">
     <h2>Install in three steps</h2>
     <ol>
-      <li>Open the downloaded disk image and drag <strong>Koru</strong> to your Applications folder.</li>
+      <li>Unzip the download and drag <strong>Koru</strong> to your Applications folder.</li>
       <li>Launch Koru from Applications. It appears in your menu bar — there's no dock icon to manage.</li>
       <li>Follow the short onboarding to pick Full mode or Hotkey-only mode, then save your first item.</li>
     </ol>
+    <div class="notice">
+      <strong>Alpha build.</strong> This early build is not yet notarized with Apple, so macOS asks before the
+      first launch. Right-click <strong>Koru</strong> in Applications and choose <strong>Open</strong>; on newer
+      macOS versions, also approve it under <strong>System Settings › Privacy &amp; Security › Open Anyway</strong>.
+      You can verify your download against its <a href={download.checksumUrl}>SHA-256 checksum</a>.
+    </div>
     <h2>Permissions, explained up front</h2>
     <p>Koru asks for the smallest set of permissions for the features you turn on — and explains each one before macOS shows a prompt.</p>
     <ul>
