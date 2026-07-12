@@ -173,8 +173,9 @@ public struct ProductStorePersistence: Sendable {
         diagnosticsSnapshot = DiagnosticsSnapshot(appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Development", osVersion: ProcessInfo.processInfo.operatingSystemVersionString, architecture: Self.architecture, permissions: permissions, eventTap: .stopped, accessibilityObserver: .stopped, pasteboardMonitor: .stopped, repository: .healthy, registeredHotKeys: [:], retainedClipboardCount: 0)
     }
     public func configurePersistence(_ persistence: ProductStorePersistence) {
+        // Loading is triggered by the owner once the vault session is open; loading eagerly here races
+        // the vault unlock and records a spurious repository.load_failed diagnostic on every launch.
         self.persistence = persistence
-        Task { await reloadFromPersistence() }
     }
     public func presentDraft(_ item: SavedItem) { pendingDraft = item }
     public func reloadFromPersistence() async {
@@ -221,6 +222,7 @@ public struct ProductStorePersistence: Sendable {
         diagnosticsSnapshot.eventTap = eventTap
         diagnosticsSnapshot.accessibilityObserver = recall
     }
+    public func updatePasteboardHealth(_ health: ServiceHealth) { diagnosticsSnapshot.pasteboardMonitor = health }
     public func request(_ permission: KoruPermission) { onPermissionRequested?(permission) }
     public func refreshPermissions() { onPermissionRefreshRequested?() }
     public func perform(_ action: RecoveryAction) async -> RecoveryOutcome {

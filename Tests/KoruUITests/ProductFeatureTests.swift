@@ -100,10 +100,11 @@ final class ProductFeatureTests: XCTestCase {
             load: { guard await gate.isOpen else { throw VaultUnavailable() }; return [persisted] },
             save: { _ in }, move: { _, _ in }, permanentlyDelete: { _ in }, reset: {}
         ))
-        // The initial load races the vault opening at launch and fails; the store must be reloadable
-        // once the vault session is available instead of presenting an empty library forever.
-        let deadline = Date().addingTimeInterval(2)
-        while store.diagnosticsSnapshot.repository != .degraded, Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        // Configuring persistence must not load eagerly: that races the vault unlock and records a
+        // spurious repository.load_failed on every launch. The owner reloads once the vault opens.
+        XCTAssertEqual(store.diagnosticsSnapshot.repository, .healthy)
+        XCTAssertTrue(store.items.isEmpty)
+        await store.reloadFromPersistence()
         XCTAssertEqual(store.diagnosticsSnapshot.repository, .degraded)
         XCTAssertTrue(store.items.isEmpty)
         await gate.open()

@@ -1,3 +1,4 @@
+import AppKit
 import ApplicationServices
 import CoreGraphics
 import Foundation
@@ -20,7 +21,17 @@ public struct SystemPermissionChecker: PermissionChecking {
     }
     public func inputListening(request: Bool) -> Bool { request ? CGRequestListenEventAccess() : CGPreflightListenEventAccess() }
     public func eventPosting(request: Bool) -> Bool { request ? CGRequestPostEventAccess() : CGPreflightPostEventAccess() }
-    public func pasteboard() -> PermissionState { .unavailable } // AccessBehavior is guarded in the clipboard integration on newer SDKs.
+    public func pasteboard() -> PermissionState {
+        if #available(macOS 15.4, *) {
+            switch NSPasteboard.general.accessBehavior {
+            case .alwaysDeny: return .denied
+            case .alwaysAllow: return .granted
+            case .ask, .default: return .unknown
+            @unknown default: return .unknown
+            }
+        }
+        return .granted
+    }
     public func loginItem() -> PermissionState {
         switch SMAppService.mainApp.status {
         case .enabled: .granted

@@ -22,6 +22,34 @@ final class FakePasteboard: PasteboardSnapshotSource, @unchecked Sendable {
     fake.count = 3; await monitor.suppressKoruOriginatedChange(3); #expect(try await monitor.poll(frontmostBundleID: "com.example.editor") == nil)
 }
 
+@Test func retentionInitializationEnablesCaptureAndSurvivesLockUnlock() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let fake = FakePasteboard(); let exclusions = ExclusionPolicy(); let search = InMemorySearchIndex()
+    var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
+    // The app constructs the monitor before stored settings are known; capture stays opted out until
+    // the effective retention policy is pushed at vault open (the launch initialization path).
+    let monitor = PasteboardMonitor(source: fake, repository: vault.repository, assets: vault.assets, keys: vault.keys, exclusions: exclusions)
+    let controller = ClipboardHistoryController(monitor: monitor, repository: vault.repository, search: search, exclusions: exclusions)
+    fake.groups = [[.init(contentType: .plainText, value: .data(Data("first copy".utf8)))]]
+    fake.count = 1
+    await #expect(throws: PasteboardDecodeError.disabled) { try await monitor.poll(frontmostBundleID: "com.example.editor") }
+    try await controller.updateRetention(policy)
+    #expect(try await monitor.poll(frontmostBundleID: "com.example.editor") != nil)
+    // Sleep or lock suspends the monitor; changes made while locked are intentionally skipped.
+    await monitor.suspend()
+    fake.groups = [[.init(contentType: .plainText, value: .data(Data("while locked".utf8)))]]
+    fake.count = 2
+    await #expect(throws: PasteboardDecodeError.disabled) { try await monitor.poll(frontmostBundleID: "com.example.editor") }
+    // Wake re-runs the same initialization and resumes; the next copy must be captured again.
+    try await controller.updateRetention(policy)
+    await monitor.resume()
+    fake.groups = [[.init(contentType: .plainText, value: .data(Data("after wake".utf8)))]]
+    fake.count = 3
+    #expect(try await monitor.poll(frontmostBundleID: "com.example.editor") != nil)
+    let texts = try await vault.repository.clipboardEvents().compactMap(\.searchableText).sorted()
+    #expect(texts == ["after wake", "first copy"])
+}
+
 @Test func pasteboardDeniedExcludedAndOversizedFailWithoutPersistence() async throws {
     let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
     let fake = FakePasteboard(); var policy = RetentionPolicy.v1Defaults; policy.clipboardHistoryEnabled = true
