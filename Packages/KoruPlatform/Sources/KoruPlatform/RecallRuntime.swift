@@ -12,6 +12,8 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     private let repository: EncryptedSQLiteRepository
     private let exclusions: @Sendable () -> Set<String>
     private let permission: @Sendable () -> Bool
+    private let pasteboard: NSPasteboard
+    private let pointer: () -> CGPoint
     private let panel = RecallPanelController()
     private var session = FreshInputSession()
     private var invocation: InvocationMode?
@@ -20,24 +22,34 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     private var query = ""
     private var generation = 0
     private var isAwaitingTypedCommit = false
+    private var manualScope: SearchScope = .saved
     private var contextTimer: Timer?
     public private(set) var health: RecallRuntimeHealth = .stopped
 
-    public init(inspector: AccessibilityInspecting = SystemAccessibilityInspector(), target: InsertionTargetAccessing = SystemInsertionTarget(), index: InMemorySearchIndex, repository: EncryptedSQLiteRepository, exclusions: @escaping @Sendable () -> Set<String> = { [] }, permission: @escaping @Sendable () -> Bool = { AXIsProcessTrusted() }) {
-        self.inspector = inspector; self.target = target; self.index = index; self.repository = repository; self.exclusions = exclusions; self.permission = permission
+    public init(inspector: AccessibilityInspecting = SystemAccessibilityInspector(), target: InsertionTargetAccessing = SystemInsertionTarget(), index: InMemorySearchIndex, repository: EncryptedSQLiteRepository, exclusions: @escaping @Sendable () -> Set<String> = { [] }, permission: @escaping @Sendable () -> Bool = { AXIsProcessTrusted() }, pasteboard: NSPasteboard = .general, pointer: @escaping () -> CGPoint = { NSEvent.mouseLocation }) {
+        self.inspector = inspector; self.target = target; self.index = index; self.repository = repository; self.exclusions = exclusions; self.permission = permission; self.pasteboard = pasteboard; self.pointer = pointer
         panel.onSelect = { [weak self] id in self?.select(id: id) }
+        panel.onCommand = { [weak self] message in self?.receive(message) ?? false }
     }
 
-    public func start() { health = permission() ? .ready : .permissionDenied; if !permission() { reset() }; if contextTimer == nil { contextTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.validateContext() } } } }
+    // A manual panel does not depend on accessibility state; a permission refresh must never dismiss it.
+    public func start() { health = permission() ? .ready : .permissionDenied; if !permission(), invocation != .manualRecall { reset() }; if contextTimer == nil { contextTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.validateContext() } } } }
     public func stopAndPurge() { contextTimer?.invalidate(); contextTimer = nil; reset(); health = .stopped }
 
     /// Returns true only for panel commands that must not reach the destination.
     public func receive(_ message: TypedInputMessage) -> Bool {
-        guard health == .ready else { return false }
+        guard health == .ready || panel.isVisible else { return false }
         switch message {
         case let .character(value):
-            guard invocation != .manualRecall else { return false }
+            if invocation == .manualRecall {
+                guard panel.isVisible, value.count == 1, let character = value.first else { return false }
+                query.append(character); generation += 1; search(scope: manualScope, showEmpty: true); return true
+            }
             beginOrContinueTyped(value); return false
+        case .backspace:
+            guard invocation == .manualRecall, panel.isVisible else { reset(); return false }
+            guard !query.isEmpty else { return true }
+            query.removeLast(); generation += 1; search(scope: manualScope, showEmpty: true); return true
         case let .navigation(delta):
             guard panel.isVisible else { reset(); return false }; panel.move(delta); return true
         case .confirm:
@@ -46,7 +58,14 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             let wasActive = panel.isVisible || invocation != nil; guard wasActive else { return false }; reset(); return wasActive
         case .tabTransfer:
             guard panel.isVisible else { return false }; session.handle(.tabTransfer); return true
-        case .reset: reset(); return false
+        case .pointerDown:
+            // Clicks inside the panel must reach its rows; clicks anywhere else dismiss the session.
+            if panel.isVisible, panel.frame.contains(pointer()) { return false }
+            reset(); return false
+        case .reset:
+            // Shortcut chords (including the hotkey that opened the panel) must not tear down a manual panel.
+            if invocation == .manualRecall, panel.isVisible { return false }
+            reset(); return false
         }
     }
 
@@ -56,6 +75,7 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             invocation = .manualRecall
             trackedTarget = nil
         }
+        manualScope = scope
         query = ""; search(scope: scope, showEmpty: true)
     }
 
@@ -70,8 +90,10 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
         generation += 1; let currentGeneration = generation; let expected = query
         isAwaitingTypedCommit = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            guard let self, self.generation == currentGeneration, let snapshot = self.target.currentSnapshot(), let tracked = self.trackedTarget,
-                  snapshot.processIdentifier == tracked.processIdentifier, snapshot.elementToken == tracked.elementToken else { self?.reset(); return }
+            // A newer keystroke owns the session now; burst typing must not tear the session down.
+            guard let self, self.generation == currentGeneration else { return }
+            guard let snapshot = self.target.currentSnapshot(), let tracked = self.trackedTarget,
+                  snapshot.processIdentifier == tracked.processIdentifier, snapshot.elementToken == tracked.elementToken else { self.reset(); return }
             guard snapshot.replacementLocation == expected.utf16.count, snapshot.replacementLength == 0 else { self.reset(); return }
             self.isAwaitingTypedCommit = false
             let clipboard = expected == KoruPolicy.reservedClipboardCommand
@@ -103,7 +125,8 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             guard showEmpty || !found.isEmpty || activeQuery == KoruPolicy.reservedClipboardCommand else { self.panel.dismiss(); return }
             let rows = found.map { RecallResult(id: Self.id($0.source), title: $0.title, preview: $0.preview ?? $0.reason) }
             let anchor = (try? self.focusSnapshot())?.bounds
-            self.panel.present(rows: rows, source: scope == .saved ? "Saved" : "Clipboard", query: activeQuery, caret: anchor)
+            let notice = self.permission() ? nil : "Accessibility is off, so the panel cannot follow your cursor and Return copies to the clipboard. Enable Koru in System Settings › Privacy & Security › Accessibility."
+            self.panel.present(rows: rows, source: scope == .saved ? "Saved" : "Clipboard", query: activeQuery, caret: anchor, notice: notice, keyboardFocus: self.invocation == .manualRecall && self.trackedTarget == nil)
         }
     }
 
@@ -115,13 +138,13 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             let text: String?
             let itemID: SavedItemID?
             switch result.source {
-            case let .saved(id): text = try? await repository.item(id: id)?.plainContent; itemID = id
-            case let .clipboard(id): text = try? await repository.clipboardEvents().first(where: { $0.event.id == id })?.searchableText; itemID = nil
+            case let .saved(id): text = (try? await repository.item(id: id)?.plainContent) ?? result.preview; itemID = id
+            case let .clipboard(id): text = (try? await repository.clipboardEvents().first(where: { $0.event.id == id })?.searchableText) ?? result.preview; itemID = nil
             }
             guard let text else { self.reset(); return }
             guard let original else {
-                NSPasteboard.general.clearContents()
-                _ = NSPasteboard.general.setString(text, forType: .string)
+                self.pasteboard.clearContents()
+                _ = self.pasteboard.setString(text, forType: .string)
                 self.reset()
                 return
             }
@@ -147,25 +170,36 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
         else { guard current.replacementLocation == query.utf16.count, current.replacementLength == 0, current.expectedValueDigest == SystemInsertionTarget.digest(query) else { reset(); return } }
     }
     private func reset() { generation += 1; isAwaitingTypedCommit = false; session = FreshInputSession(); invocation = nil; trackedTarget = nil; results = []; query.removeAll(keepingCapacity: false); panel.dismiss() }
+
+    // Internal observation hooks are intentionally unavailable to app clients and exist for deterministic tests.
+    var queryForTesting: String { query }
+    var resultTitlesForTesting: [String] { results.map(\.title) }
+    var panelIsVisibleForTesting: Bool { panel.isVisible }
+    var panelFrameForTesting: CGRect { panel.frame }
+    var panelSelectedIDForTesting: String? { panel.selectedID }
+    var panelAcceptsKeyboardForTesting: Bool { panel.acceptsKeyboard }
 }
 
 @MainActor private final class RecallPanelController {
     private let panel = KoruPanel(contentRect: .init(x: 0, y: 0, width: 390, height: 260))
     private var navigator = ResultNavigator()
     var onSelect: ((String) -> Void)?
-    private var source = "Saved"; private var query = ""
+    var onCommand: ((TypedInputMessage) -> Bool)?
+    private var source = "Saved"; private var query = ""; private var notice: String?
     var isVisible: Bool { panel.isVisible }
     var selectedID: String? { navigator.selectedID }
-    init() { panel.contentView = NSHostingView(rootView: AnyView(EmptyView())) }
-    func present(rows: [RecallResult], source: String, query: String, caret: CGRect?) { self.source = source; self.query = query; navigator.update(rows); render(source: source, query: query); let screen = NSScreen.screens.first(where: { $0.frame.contains(caret?.origin ?? .zero) }) ?? NSScreen.main; guard let screen else { return }; let placement = CaretPanelPlacer().place(panelSize: panel.frame.size, caretAX: caret, visibleFrame: screen.visibleFrame); panel.setFrameOrigin(placement.origin); panel.orderFrontRegardless() }
+    var frame: CGRect { panel.frame }
+    var acceptsKeyboard: Bool { panel.allowsKeyboardFocus }
+    init() { panel.contentView = FirstMouseHostingView(rootView: AnyView(EmptyView())); panel.onPanelCommand = { [weak self] message in self?.onCommand?(message) ?? false } }
+    func present(rows: [RecallResult], source: String, query: String, caret: CGRect?, notice: String? = nil, keyboardFocus: Bool = false) { self.source = source; self.query = query; self.notice = notice; navigator.update(rows); render(source: source, query: query); let caretAppKit = CaretPanelPlacer.appKitRect(fromAX: caret, primaryScreenHeight: NSScreen.screens.first?.frame.maxY ?? 0); let screen = NSScreen.screens.first(where: { screen in caretAppKit.map(screen.frame.intersects) ?? false }) ?? NSScreen.main; guard let screen else { return }; let placement = CaretPanelPlacer().place(panelSize: panel.frame.size, caret: caretAppKit, visibleFrame: screen.visibleFrame); panel.setFrameOrigin(placement.origin); panel.allowsKeyboardFocus = keyboardFocus; if keyboardFocus { panel.makeKeyAndOrderFront(nil) } else { panel.orderFrontRegardless() } }
     func move(_ delta: Int) { navigator.move(delta); render(source: source, query: query) }
-    func dismiss() { navigator.dismiss(); panel.orderOut(nil) }
-    private func render(source: String, query: String) { let selected = navigator.selectedID; let action = onSelect; panel.contentView = NSHostingView(rootView: AnyView(RecallPanelView(source: source, query: query, rows: navigator.results, selectedID: selected, select: { action?($0) }))) }
+    func dismiss() { navigator.dismiss(); panel.orderOut(nil); panel.allowsKeyboardFocus = false }
+    private func render(source: String, query: String) { let selected = navigator.selectedID; let action = onSelect; panel.contentView = FirstMouseHostingView(rootView: AnyView(RecallPanelView(source: source, query: query, rows: navigator.results, selectedID: selected, notice: notice, select: { action?($0) }))) }
 }
 
 private struct RecallPanelView: View {
-    let source: String; let query: String; let rows: [RecallResult]; let selectedID: String?; let select: (String) -> Void
-    var body: some View { VStack(alignment: .leading, spacing: 8) { HStack { Text(source).font(.headline); Spacer(); Text(query).font(.caption.monospaced()).foregroundStyle(.secondary) }; if rows.isEmpty { Text(source == "Clipboard" ? "Clipboard history is empty" : "No saved matches").foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity) } else { ForEach(rows) { row in Button { select(row.id) } label: { HStack { VStack(alignment: .leading, spacing: 2) { Text(row.title).lineLimit(1); Text(row.preview).font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(); if row.id == selectedID { Image(systemName: "return") } }.padding(7).background(row.id == selectedID ? Color.accentColor.opacity(0.18) : .clear).clipShape(RoundedRectangle(cornerRadius: 6)) }.buttonStyle(.plain).accessibilityLabel("\(row.title), \(row.preview)") } }; Text("↑↓ Navigate   Return Insert   Esc Dismiss").font(.caption2).foregroundStyle(.secondary) }.padding(12).frame(width: 390, height: 260).koruPanelSurface() }
+    let source: String; let query: String; let rows: [RecallResult]; let selectedID: String?; let notice: String?; let select: (String) -> Void
+    var body: some View { VStack(alignment: .leading, spacing: 8) { HStack { Text(source).font(.headline); Spacer(); Text(query).font(.caption.monospaced()).foregroundStyle(.secondary) }; if rows.isEmpty { Text(source == "Clipboard" ? "Clipboard history is empty" : "No saved matches").foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity) } else { ForEach(rows) { row in Button { select(row.id) } label: { HStack { VStack(alignment: .leading, spacing: 2) { Text(row.title).lineLimit(1); Text(row.preview).font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(); if row.id == selectedID { Image(systemName: "return") } }.padding(7).background(row.id == selectedID ? Color.accentColor.opacity(0.18) : .clear).clipShape(RoundedRectangle(cornerRadius: 6)) }.buttonStyle(.plain).accessibilityLabel("\(row.title), \(row.preview)") } }; if let notice { Label(notice, systemImage: "lock.shield").font(.caption2).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true) }; Text("↑↓ Navigate   Return Insert   Esc Dismiss").font(.caption2).foregroundStyle(.secondary) }.padding(12).frame(width: 390, height: 260).koruPanelSurface() }
 }
 
 private extension View { func koruPanelSurface() -> some View { background(.regularMaterial).clipShape(RoundedRectangle(cornerRadius: 12)) } }

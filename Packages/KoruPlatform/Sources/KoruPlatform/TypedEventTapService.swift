@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 
-public enum TypedInputMessage: Equatable, Sendable { case character(String), navigation(Int), confirm, dismiss, reset, tabTransfer }
+public enum TypedInputMessage: Equatable, Sendable { case character(String), backspace, navigation(Int), confirm, dismiss, reset, pointerDown, tabTransfer }
 public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable {
     private var tap: CFMachPort?; private var source: CFRunLoopSource?; private let queue = DispatchQueue(label: "dev.builderking.koru.typed-event-tap")
     private let permission: @Sendable () -> Bool
@@ -24,13 +24,13 @@ public final class TypedEventTapService: RuntimeIntegration, @unchecked Sendable
     fileprivate func handle(type: CGEventType, event: CGEvent) -> Bool {
         if type == .tapDisabledByTimeout { health = .disabledByTimeout; if permission(), let tap { CGEvent.tapEnable(tap: tap, enable: true) } }
         else if type == .tapDisabledByUserInput { health = .disabledByUserInput }
-        else if type == .leftMouseDown || type == .rightMouseDown { _ = receive(.reset) }
+        else if type == .leftMouseDown || type == .rightMouseDown { _ = receive(.pointerDown) }
         else if let message = Self.message(event) { return receive(message) }
         return false
     }
     static func message(_ event: CGEvent) -> TypedInputMessage? {
         let code = event.getIntegerValueField(.keyboardEventKeycode)
-        switch code { case 53: return .dismiss; case 36: return .confirm; case 48: return .tabTransfer; case 125: return .navigation(1); case 126: return .navigation(-1); case 123, 124, 115, 119, 116, 121: return .reset; default: break }
+        switch code { case 53: return .dismiss; case 36: return .confirm; case 48: return .tabTransfer; case 51: return .backspace; case 125: return .navigation(1); case 126: return .navigation(-1); case 123, 124, 115, 119, 116, 121: return .reset; default: break }
         guard event.flags.intersection([.maskCommand, .maskControl]).isEmpty else { return .reset }
         var length = 0; event.keyboardGetUnicodeString(maxStringLength: 0, actualStringLength: &length, unicodeString: nil); guard length > 0 && length <= 4 else { return nil }
         var chars = [UniChar](repeating: 0, count: length); event.keyboardGetUnicodeString(maxStringLength: length, actualStringLength: &length, unicodeString: &chars)

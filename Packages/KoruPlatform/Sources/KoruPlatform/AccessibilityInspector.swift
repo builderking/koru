@@ -40,12 +40,20 @@ public final class SystemAccessibilityInspector: AccessibilityInspecting, @unche
         let secure = subrole == (kAXSecureTextFieldSubrole as String) || boolAttribute("AXProtectedContent", element) == true
         let value = stringAttribute(kAXValueAttribute, element)
         let range = rangeAttribute(kAXSelectedTextRangeAttribute, element)
-        let editableRoles = [kAXTextFieldRole as String, kAXTextAreaRole as String, kAXComboBoxRole as String]
-        let editable = !secure && editableRoles.contains(role ?? "") && isSettable(kAXSelectedTextAttribute, element)
+        let editable = Self.editability(secure: secure, selectedTextSettable: isSettable(kAXSelectedTextAttribute, element))
+        // Prefer the selection rectangle (the caret rectangle when the selection is empty), then the
+        // caret at the selection end, then the element frame — apps that cannot answer bounds-for-range
+        // still get a usable anchor instead of falling to screen center.
         let rangeBounds: CGRect?
-        if let range { rangeBounds = bounds(for: range, element: element) } else { rangeBounds = nil }
+        if let range {
+            rangeBounds = bounds(for: range, element: element) ?? bounds(for: CFRange(location: range.location + range.length, length: 0), element: element) ?? rectAttribute("AXFrame", element)
+        } else { rangeBounds = rectAttribute("AXFrame", element) }
         return .success(.init(processIdentifier: pid, role: role, subrole: subrole, isEditable: editable, isSecure: secure, valueLength: value?.utf16.count, selectedRange: range, bounds: rangeBounds, value: value, elementToken: "\(pid):\(CFHash(element))"))
     }
+
+    /// Editability is a capability check: any nonsecure element whose selected text can be replaced is a
+    /// valid destination. Role allowlists exclude web and Electron editors that are otherwise writable.
+    static func editability(secure: Bool, selectedTextSettable: Bool) -> Bool { !secure && selectedTextSettable }
 
     private func stringAttribute(_ name: String, _ element: AXUIElement) -> String? {
         var value: CFTypeRef?
@@ -57,6 +65,14 @@ public final class SystemAccessibilityInspector: AccessibilityInspecting, @unche
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else { return nil }
         return value as? Bool
+    }
+
+    private func rectAttribute(_ name: String, _ element: AXUIElement) -> CGRect? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success,
+              let axValue = value as! AXValue?, AXValueGetType(axValue) == .cgRect else { return nil }
+        var rect = CGRect.zero
+        return AXValueGetValue(axValue, .cgRect, &rect) ? rect : nil
     }
 
     private func rangeAttribute(_ name: String, _ element: AXUIElement) -> CFRange? {

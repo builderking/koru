@@ -9,7 +9,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiving {
     private static let onboardingCompletedKey = "onboardingCompleted"
     private var statusItem: NSStatusItem!
-    private var windows: [String: NSWindow] = [:]
+    private let windows = WindowReuseCache()
     private let productStore = ProductStore()
     private let permissions = PermissionCoordinator()
     private var hotKeys: CarbonHotKeyRegistrar?
@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
     private var permissionTimer: Timer?
     private var recallRuntime: RecallRuntime?
     private var typedEvents: TypedEventTapService?
+    private var selectionAffordance: SelectionAffordanceMonitor?
     private var retentionPolicy = RetentionPolicy.v1Defaults
     func applicationDidFinishLaunching(_ notification: Notification) {
         if activateExistingInstanceAndTerminate() { return }
@@ -46,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         menu.addItem(item("Diagnostics", #selector(openDiagnostics)))
         menu.addItem(item("Settings…", #selector(openSettings), ","))
         menu.addItem(.separator())
-        menu.addItem(item("Quit Koru", #selector(NSApplication.terminate(_:)), "q"))
+        let quitItem = item("Quit Koru", #selector(NSApplication.terminate(_:)), "q"); quitItem.target = NSApp; menu.addItem(quitItem)
         statusItem.menu = menu
         NSApp.servicesProvider = self
         serviceProcessor = SelectionServiceProcessor(receiver: self)
@@ -95,7 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         case .pauseResume: togglePause()
         }
     }
-    private func show(_ key: String, title: String, size: NSSize, view: AnyView) { let window = windows[key] ?? { let w = NSWindow(contentRect: .init(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false); w.title = title; w.contentView = NSHostingView(rootView: view); w.center(); windows[key] = w; return w }(); NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil) }
+    private func show(_ key: String, title: String, size: NSSize, view: AnyView) { let window = windows.window(key: key, title: title, size: size, view: view); NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil) }
     private func activateExistingInstanceAndTerminate() -> Bool {
         guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return false }
         let currentPID = ProcessInfo.processInfo.processIdentifier
@@ -143,11 +144,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
             return DispatchQueue.main.sync { runtime.receive(message) }
         }
         recallRuntime = runtime; typedEvents = events
+        let affordance = SelectionAffordanceMonitor { [weak self] in self?.captureSelection() }
+        selectionAffordance = affordance
         productStore.onSettingsChanged = { [weak self] settings in
             if let data = try? JSONEncoder().encode(settings) { UserDefaults.standard.set(data, forKey: "settings") }
             UserDefaults.standard.set(settings.typedMatchingEnabled, forKey: "typedMatchingEnabled")
             UserDefaults.standard.set(settings.neverObserve, forKey: "neverObserve")
             guard let self else { return }
+            self.selectionAffordance?.setEnabled(settings.selectionIconEnabled)
             if (self.loginItem.state == .granted) != settings.launchAtLogin { try? self.loginItem.setEnabled(settings.launchAtLogin) }
             if settings.isPaused != (self.lifecycle?.isUserPaused == true) { self.togglePause() }
             if settings.typedMatchingEnabled && !settings.isPaused { self.typedEvents?.start() } else { self.typedEvents?.stopAndPurge() }
@@ -165,7 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
             self.refreshRuntimePermissions()
         }
         productStore.onPermissionRefreshRequested = { [weak self] in self?.refreshRuntimePermissions() }
-        lifecycle = IntegrationLifecycle(integrations: [runtime, events]); lifecycle?.install(); lifecycle?.transition(.active)
+        lifecycle = IntegrationLifecycle(integrations: [runtime, events, affordance]); lifecycle?.install(); lifecycle?.transition(.active)
         if let data = UserDefaults.standard.data(forKey: "settings"),
            var settings = try? JSONDecoder().decode(KoruSettingsSnapshot.self, from: data) {
             if settings.shortcuts == ["Recall": "⌥Space", "Clipboard": "⌥⇧Space", "Save Selection": "⌥⇧S"] {
@@ -180,13 +184,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in DispatchQueue.main.async { self?.refreshRuntimePermissions() } }
         productStore.configurePersistence(.init(
             load: { try await repository.savedItems(states: [.active, .archived, .recentlyDeleted]) },
-            save: { item in try await repository.save(item); await search.upsert(item) },
+            save: { item in await search.upsert(item); try await repository.save(item) },
             move: { id, collection in
+                if collection != .active { await search.remove(savedItemID: id) }
                 try await repository.move(id: id, to: collection)
                 if collection == .active, let item = try await repository.item(id: id) { await search.upsert(item) }
-                else { await search.remove(savedItemID: id) }
             },
-            permanentlyDelete: { id in try await repository.permanentlyDelete(id: id); await search.remove(savedItemID: id) },
+            permanentlyDelete: { id in await search.remove(savedItemID: id); try await repository.permanentlyDelete(id: id) },
             reset: {
                 try await repository.destroyFiles()
                 try await assets.removeAll()
@@ -202,7 +206,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         clipboardTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in Task { await self?.pollClipboard() } }
         Task { await openVaultSession() }
     }
-    private func openVaultSession() async { guard let repository, let searchIndex else { return }; do { try await repository.open(); await searchIndex.rebuild(savedItems: try await repository.savedItems(states: [.active]), clipboardEvents: try await repository.clipboardEvents()); await refreshClipboardSettings() } catch { clipboardSettings.accessDescription = "Vault unavailable" } }
+    private func openVaultSession() async { guard let repository, let searchIndex else { return }; do { try await repository.open(); await searchIndex.rebuild(savedItems: try await repository.savedItems(states: [.active]), clipboardEvents: try await repository.clipboardEvents()); await productStore.reloadFromPersistence(); await refreshClipboardSettings() } catch { clipboardSettings.accessDescription = "Vault unavailable" } }
     @objc private func lockVaultSession() { Task { if let clipboardMonitor { await clipboardMonitor.suspend() }; if let searchIndex { await searchIndex.purge() }; if let repository { await repository.close() } } }
     @objc private func unlockVaultSession() { guard lifecycle?.isUserPaused != true else { return }; Task { await openVaultSession(); if let clipboardMonitor { await clipboardMonitor.resume() } } }
     private func setClipboardEnabled(_ enabled: Bool) async { guard retentionPolicy.clipboardHistoryEnabled != enabled else { return }; retentionPolicy.clipboardHistoryEnabled = enabled; try? await clipboardController?.updateRetention(retentionPolicy); await refreshClipboardSettings() }
@@ -215,9 +219,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SaveConfirmationReceiv
         let eventHealth: ServiceHealth = typedEvents?.health == .running ? .healthy : (typedEvents?.health == .stopped ? .stopped : .unavailable)
         let recallHealth: ServiceHealth = recallRuntime?.health == .ready ? .healthy : (recallRuntime?.health == .stopped ? .stopped : .unavailable)
         productStore.updateRuntimeHealth(permissions: snapshot, eventTap: eventHealth, recall: recallHealth)
-        if snapshot.accessibility == .revoked { recallRuntime?.stopAndPurge(); typedEvents?.stopAndPurge() }
+        if snapshot.accessibility == .revoked { recallRuntime?.stopAndPurge(); typedEvents?.stopAndPurge(); selectionAffordance?.stopAndPurge() }
         else if snapshot.inputListening == .revoked { typedEvents?.stopAndPurge(); recallRuntime?.start() }
-        else if lifecycle?.state == .active { recallRuntime?.start(); typedEvents?.start() }
+        else if lifecycle?.state == .active { recallRuntime?.start(); typedEvents?.start(); selectionAffordance?.start() }
     }
 }
 

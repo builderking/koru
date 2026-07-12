@@ -35,9 +35,30 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
 
 @Test func placementClampsAndLabelsFallback() {
     let placer = CaretPanelPlacer(); let frame = CGRect(x: 0, y: 0, width: 1000, height: 700)
-    let placed = placer.place(panelSize: .init(width: 300, height: 180), caretAX: .init(x: 990, y: 690, width: 1, height: 18), visibleFrame: frame)
+    let caret = CaretPanelPlacer.appKitRect(fromAX: .init(x: 990, y: 690, width: 1, height: 18), primaryScreenHeight: 700)
+    let placed = placer.place(panelSize: .init(width: 300, height: 180), caret: caret, visibleFrame: frame)
     #expect(placed.anchor == .caret); #expect(placed.origin.x <= 700); #expect(placed.origin.y >= 0)
-    #expect(placer.place(panelSize: .init(width: 300, height: 180), caretAX: nil, visibleFrame: frame).anchor == .fallback)
+    #expect(placer.place(panelSize: .init(width: 300, height: 180), caret: nil, visibleFrame: frame).anchor == .fallback)
+}
+
+@Test func caretGeometryFlipsAgainstThePrimaryDisplayAndFollowsSecondaryScreens() {
+    // Regression: a display arranged above the primary yields negative AX coordinates. The flip must
+    // use the primary display height and the panel must land directly beneath the caret on that screen.
+    let axCaret = CGRect(x: -794, y: -1245, width: 1, height: 14)
+    let flipped = CaretPanelPlacer.appKitRect(fromAX: axCaret, primaryScreenHeight: 1329)
+    #expect(flipped == CGRect(x: -794, y: 2560, width: 1, height: 14))
+    let upperScreen = CGRect(x: -1384, y: 1329, width: 3440, height: 1440)
+    #expect(upperScreen.intersects(flipped!))
+    let placed = CaretPanelPlacer().place(panelSize: .init(width: 390, height: 260), caret: flipped, visibleFrame: upperScreen)
+    #expect(placed.anchor == .caret)
+    #expect(placed.origin == CGPoint(x: -794, y: 2560 - 260 - 6))
+    #expect(upperScreen.contains(CGRect(origin: placed.origin, size: .init(width: 390, height: 260))))
+}
+
+@Test func editabilityIsCapabilityBasedSoNonClassicRolesQualify() {
+    #expect(SystemAccessibilityInspector.editability(secure: false, selectedTextSettable: true))
+    #expect(!SystemAccessibilityInspector.editability(secure: true, selectedTextSettable: true))
+    #expect(!SystemAccessibilityInspector.editability(secure: false, selectedTextSettable: false))
 }
 
 @Test func resultIdentitySurvivesLiveUpdates() {
@@ -47,6 +68,34 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
 @Test func selectionIconRequiresExactFullSelectionAndBounds() {
     let policy = SelectionIconPolicy(); #expect(policy.shouldShow(.init(selectedRange: .init(location: 0, length: 5), valueUTF16Length: 5, bounds: .init(x: 1, y: 1, width: 10, height: 10), contextAllowed: true, notificationsSupported: true)))
     #expect(!policy.shouldShow(.init(selectedRange: .init(location: 1, length: 4), valueUTF16Length: 5, bounds: .init(x: 1, y: 1, width: 10, height: 10), contextAllowed: true, notificationsSupported: true)))
+}
+
+@Test func selectionIconFloatsAboveTheTrailingSelectionCorner() {
+    let origin = SelectionIconPlacement.origin(selectionAX: .init(x: 100, y: 200, width: 50, height: 20), primaryScreenHeight: 1000)
+    #expect(origin == CGPoint(x: 156, y: 804))
+}
+
+private final class ScriptedInspector: AccessibilityInspecting, @unchecked Sendable {
+    var snapshot: AXTargetSnapshot?
+    func focusedTarget() -> Result<AXTargetSnapshot, AXInspectionError> { snapshot.map(Result.success) ?? .failure(.noFocusedElement) }
+}
+
+@MainActor @Test func selectionAffordanceAppearsOnlyForFullEligibleSelections() {
+    // The classifier requires a resolvable bundle identifier; Finder is always present in a GUI session.
+    guard let pid = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first?.processIdentifier else { return }
+    let inspector = ScriptedInspector()
+    let monitor = SelectionAffordanceMonitor(inspector: inspector, permission: { true }, action: {})
+    monitor.notificationsSupportedForTesting = true
+    inspector.snapshot = AXTargetSnapshot(processIdentifier: pid, role: "AXTextArea", subrole: nil, isEditable: true, isSecure: false, valueLength: 12, selectedRange: CFRange(location: 0, length: 12), bounds: .init(x: 10, y: 10, width: 80, height: 16), value: "hello twelve", elementToken: "t")
+    monitor.evaluate()
+    #expect(monitor.iconIsVisibleForTesting)
+    inspector.snapshot?.selectedRange = CFRange(location: 0, length: 5)
+    monitor.evaluate()
+    #expect(!monitor.iconIsVisibleForTesting)
+    inspector.snapshot?.selectedRange = CFRange(location: 0, length: 12)
+    monitor.setEnabled(false)
+    monitor.evaluate()
+    #expect(!monitor.iconIsVisibleForTesting)
 }
 
 @MainActor @Test func serviceUsesItsPasteboardWithoutWritingGeneralClipboard() {
