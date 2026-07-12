@@ -34,6 +34,7 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     private var automaticProcessIdentifier: pid_t?
     private var automaticGeneration: Int?
     private var automaticElementToken: String?
+    private var automaticTargetIsSecure = false
     private var triggerCharacterCount = 0
     private var manualScope: SearchScope = .saved
     private var thumbnailCache: [ClipboardEventID: Data] = [:]
@@ -156,10 +157,12 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
         var candidates: [Candidate] = []
         var anchor: CGRect?
         var focusedElementToken: String?
+        var focusedTargetIsSecure = false
 
         if case let .success(snapshot) = inspector.focusedTarget(), snapshot.processIdentifier == pid {
             anchor = snapshot.bounds
             focusedElementToken = snapshot.elementToken
+            focusedTargetIsSecure = snapshot.isSecure
             if let value = snapshot.value, let range = snapshot.selectedRange,
                range.length == 0, range.location >= 0, range.location <= (value as NSString).length {
                 let accessibilityCandidate = Candidate(sourceText: value, caretUTF16: range.location, usedAccessibilityValue: true)
@@ -179,14 +182,14 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
                 if let clipboardRange = Self.exactSuffixRange(in: candidate.sourceText, caretUTF16: candidate.caretUTF16, trigger: KoruPolicy.reservedClipboardCommand) {
                     let found = await index.search("", scope: .clipboard, limit: 8, includeAllWhenEmpty: true)
                     guard self.generation == expectedGeneration, self.frontmostProcessIdentifier() == pid else { return }
-                    await self.activateAutomaticMatch(results: found, invocation: .clipboardCommand, sourceText: candidate.sourceText, matchedRange: clipboardRange, caretUTF16: candidate.caretUTF16, usedAccessibilityValue: candidate.usedAccessibilityValue, anchor: anchor, focusedElementToken: focusedElementToken, processIdentifier: pid, generation: expectedGeneration)
+                    await self.activateAutomaticMatch(results: found, invocation: .clipboardCommand, sourceText: candidate.sourceText, matchedRange: clipboardRange, caretUTF16: candidate.caretUTF16, usedAccessibilityValue: candidate.usedAccessibilityValue, anchor: anchor, focusedElementToken: focusedElementToken, focusedTargetIsSecure: focusedTargetIsSecure, processIdentifier: pid, generation: expectedGeneration)
                     return
                 }
 
                 let matches = await index.exactTriggerMatches(in: candidate.sourceText, caretUTF16: candidate.caretUTF16, limit: 8)
                 guard self.generation == expectedGeneration, self.frontmostProcessIdentifier() == pid else { return }
                 if let first = matches.first {
-                    await self.activateAutomaticMatch(results: matches.map(\.result), invocation: .initialTypedMatch, sourceText: candidate.sourceText, matchedRange: first.replacementRange, caretUTF16: candidate.caretUTF16, usedAccessibilityValue: candidate.usedAccessibilityValue, anchor: anchor, focusedElementToken: focusedElementToken, processIdentifier: pid, generation: expectedGeneration)
+                    await self.activateAutomaticMatch(results: matches.map(\.result), invocation: .initialTypedMatch, sourceText: candidate.sourceText, matchedRange: first.replacementRange, caretUTF16: candidate.caretUTF16, usedAccessibilityValue: candidate.usedAccessibilityValue, anchor: anchor, focusedElementToken: focusedElementToken, focusedTargetIsSecure: focusedTargetIsSecure, processIdentifier: pid, generation: expectedGeneration)
                     return
                 }
             }
@@ -194,7 +197,7 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
         }
     }
 
-    private func activateAutomaticMatch(results found: [SearchResult], invocation: InvocationMode, sourceText: String, matchedRange: NSRange, caretUTF16: Int, usedAccessibilityValue: Bool, anchor: CGRect?, focusedElementToken: String?, processIdentifier pid: pid_t, generation expectedGeneration: Int) async {
+    private func activateAutomaticMatch(results found: [SearchResult], invocation: InvocationMode, sourceText: String, matchedRange: NSRange, caretUTF16: Int, usedAccessibilityValue: Bool, anchor: CGRect?, focusedElementToken: String?, focusedTargetIsSecure: Bool, processIdentifier pid: pid_t, generation expectedGeneration: Int) async {
         guard matchedRange.location != NSNotFound, matchedRange.length > 0 else { return }
         let source = sourceText as NSString
         guard NSMaxRange(matchedRange) <= source.length else { return }
@@ -223,6 +226,7 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
         automaticProcessIdentifier = pid
         automaticGeneration = expectedGeneration
         automaticElementToken = focusedElementToken
+        automaticTargetIsSecure = focusedTargetIsSecure
         let notice: String?
         if replacementTarget != nil {
             notice = nil
@@ -287,6 +291,7 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
         let selectedGeneration = generation
         let selectedAutomaticGeneration = automaticGeneration
         let selectedElementToken = automaticElementToken
+        let selectedTargetIsSecure = automaticTargetIsSecure
         let selectedPID = automaticProcessIdentifier
         let selectedTriggerCharacters = triggerCharacterCount
         let selectedQuery = query
@@ -319,26 +324,41 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
                 return
             }
 
-            // Automatic text replacement is fundamentally a keyboard operation. Prefer the same
-            // guarded Backspace + paste sequence in every host instead of asking each editor's AX
-            // implementation to mutate text. WebKit/Chromium commonly acknowledge AXSelectedText
-            // writes without applying them, leaving the trigger selected and the paste undelivered.
+            if invocation == .manualRecall, var insertionTarget = original {
+                if let current = target.currentSnapshot() { insertionTarget = current }
+                let transaction = InsertionTransaction(invocation: invocation, target: insertionTarget, selectedItemID: itemID, requestedTier: .directAccessibility, explicitlyConfirmed: true)
+                let capability: CompatibilityCapability = AXIsProcessTrusted() ? .full : (CGPreflightPostEventAccess() ? .paste : .copyOnly)
+                _ = InsertionCoordinator(target: target, pasteboard: pasteboard).insert(text, transaction: transaction, capability: capability)
+                if let itemID { await index.recordSelection(query: selectedQuery, itemID: itemID, appBundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier) }
+                self.reset()
+                return
+            }
+
+            // A verified whole-value AX splice is the safest first choice for plain WebKit inputs:
+            // embedded hosts may have no Edit/Paste responder route at all. Rich or unreadable fields
+            // fall back to guarded Backspace + direct Unicode keyboard input, which does not require
+            // a Paste command and preserves surrounding editor structure.
             var insertedAutomatically = false
-            if invocation != .manualRecall,
+            var automaticContextIsSafe = true
+            if let original, !selectedTargetIsSecure {
+                let transaction = InsertionTransaction(invocation: invocation, target: original, selectedItemID: itemID, requestedTier: .directAccessibility, explicitlyConfirmed: true)
+                let outcome = InsertionCoordinator(target: target, pasteboard: pasteboard).insertDirectAccessibility(text, transaction: transaction)
+                if case .inserted = outcome { insertedAutomatically = true }
+                if case .cancelledTargetChanged = outcome { automaticContextIsSafe = false }
+            }
+            if !insertedAutomatically, automaticContextIsSafe,
                let pid = selectedPID, let matchGeneration = selectedAutomaticGeneration,
                selectedElementToken != nil,
                self.generation == matchGeneration, self.frontmostProcessIdentifier() == pid {
                 let request = SyntheticReplacementRequest(expectedProcessIdentifier: pid, expectedGeneration: matchGeneration, expectedElementToken: selectedElementToken, deletionCharacterCount: selectedTriggerCharacters, explicitlyConfirmed: true)
-                insertedAutomatically = self.performSyntheticReplacement(text, request: request) == .inserted
+                let outcome = self.performSyntheticReplacement(text, request: request)
+                insertedAutomatically = outcome == .inserted
+                if outcome == .cancelledContextChanged { automaticContextIsSafe = false }
             }
 
-            if !insertedAutomatically, var insertionTarget = original {
-                if invocation == .manualRecall, let current = target.currentSnapshot() { insertionTarget = current }
-                let transaction = InsertionTransaction(invocation: invocation, target: insertionTarget, selectedItemID: itemID, requestedTier: .directAccessibility, explicitlyConfirmed: true)
-                let capability: CompatibilityCapability = AXIsProcessTrusted() ? .full : (CGPreflightPostEventAccess() ? .paste : .copyOnly)
-                _ = InsertionCoordinator(target: target, pasteboard: pasteboard).insert(text, transaction: transaction, capability: capability)
-            }
-            else if original == nil, invocation != .manualRecall {
+            if !insertedAutomatically {
+                // Selection was explicit, so copying is useful recovery; no destructive input is
+                // posted after a context change or an unverifiable destination.
                 _ = KoruPasteboardOrigin.write(text, to: self.pasteboard)
             }
             if let itemID { await index.recordSelection(query: selectedQuery, itemID: itemID, appBundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier) }
@@ -432,10 +452,10 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
     private func clearAutomaticMatch(keepingRollingInput: Bool) {
         guard invocation != .manualRecall else { return }
         invocation = nil; trackedTarget = nil; results = []; query.removeAll(keepingCapacity: false)
-        triggerCharacterCount = 0; automaticGeneration = nil; automaticElementToken = nil; panel.dismiss()
+        triggerCharacterCount = 0; automaticGeneration = nil; automaticElementToken = nil; automaticTargetIsSecure = false; panel.dismiss()
         if !keepingRollingInput { rollingInput.removeAll(keepingCapacity: false); automaticProcessIdentifier = nil }
     }
-    private func reset() { generation += 1; invocation = nil; trackedTarget = nil; results = []; query.removeAll(keepingCapacity: false); rollingInput.removeAll(keepingCapacity: false); automaticProcessIdentifier = nil; automaticGeneration = nil; automaticElementToken = nil; triggerCharacterCount = 0; thumbnailCache.removeAll(keepingCapacity: false); thumbnailCacheBytes = 0; panel.dismiss() }
+    private func reset() { generation += 1; invocation = nil; trackedTarget = nil; results = []; query.removeAll(keepingCapacity: false); rollingInput.removeAll(keepingCapacity: false); automaticProcessIdentifier = nil; automaticGeneration = nil; automaticElementToken = nil; automaticTargetIsSecure = false; triggerCharacterCount = 0; thumbnailCache.removeAll(keepingCapacity: false); thumbnailCacheBytes = 0; panel.dismiss() }
 
     // Internal observation hooks are intentionally unavailable to app clients and exist for deterministic tests.
     var queryForTesting: String { query }

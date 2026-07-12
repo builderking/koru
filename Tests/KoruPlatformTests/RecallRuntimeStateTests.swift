@@ -207,6 +207,31 @@ private final class ScriptedFocusInspector: AccessibilityInspecting, @unchecked 
 
 private final class SyntheticRequestBox { var request: SyntheticReplacementRequest?; var text: String? }
 
+@MainActor @Test func readableAutomaticFieldUsesVerifiedDirectReplacementBeforeSyntheticInput() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let index = InMemorySearchIndex()
+    await index.rebuild(savedItems: [SavedItem(title: "Legacy", behavior: .savedText, plainContent: "signature", tags: ["dav"])], clipboardEvents: [])
+    let pid: pid_t = 4241
+    let token = "\(pid):web-input"
+    let inspector = ScriptedFocusInspector(snapshot: .init(processIdentifier: pid, role: "AXTextField", subrole: nil, isEditable: true, isSecure: false, valueLength: 3, selectedRange: CFRange(location: 3, length: 0), bounds: nil, value: "dav", elementToken: token))
+    let target = RuntimeTarget()
+    target.snapshot = .init(processIdentifier: pid, elementToken: token, replacementLocation: 3, replacementLength: 0, expectedValueDigest: SystemInsertionTarget.digest("dav"))
+    let synthetic = SyntheticRequestBox()
+    let runtime = RecallRuntime(inspector: inspector, target: target, index: index, repository: vault.repository, permission: { true }, frontmostProcessIdentifier: { pid }, allowsRollingFallback: { true }, syntheticReplace: { text, request in synthetic.text = text; synthetic.request = request; return .inserted })
+    runtime.start()
+
+    #expect(!runtime.receive(.character("d")))
+    #expect(!runtime.receive(.character("a")))
+    #expect(!runtime.receive(.character("v")))
+    try await waitUntil { runtime.panelIsVisibleForTesting }
+    #expect(runtime.receive(.confirm))
+    try await waitUntil { target.replacement != nil }
+    #expect(target.replacement?.0 == NSRange(location: 0, length: 3))
+    #expect(target.replacement?.1 == "signature")
+    #expect(synthetic.request == nil)
+    runtime.stopAndPurge()
+}
+
 @MainActor @Test func unresolvedFieldUsesRollingBufferButSelectionCopiesWithoutDeletingTheTag() async throws {
     let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
     let index = InMemorySearchIndex()

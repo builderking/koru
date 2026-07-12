@@ -107,12 +107,12 @@ private func stableFieldMatrixUsesOneHostIndependentGuardedReplacement(fixture: 
     #expect(outcome == .inserted)
     #expect(recorder.strokes.count == 8)
     #expect(Array(recorder.strokes.suffix(2)) == [
-        SyntheticKeyStroke(keyCode: 9, keyDown: true, flags: .maskCommand),
-        SyntheticKeyStroke(keyCode: 9, keyDown: false, flags: .maskCommand),
+        SyntheticKeyStroke(keyCode: 0, keyDown: true, unicodeText: "Replacement"),
+        SyntheticKeyStroke(keyCode: 0, keyDown: false, unicodeText: "Replacement"),
     ])
 }
 
-@Test func syntheticReplacementPostsOneBackspacePairPerTriggerCharacterThenCommandV() {
+@Test func syntheticReplacementPostsOneBackspacePairPerTriggerCharacterThenUnicodeText() {
     let pasteboard = replacementPasteboard("sequence")
     defer { pasteboard.clearContents() }
     let recorder = SyntheticStrokeRecorder()
@@ -131,10 +131,18 @@ private func stableFieldMatrixUsesOneHostIndependentGuardedReplacement(fixture: 
         #expect(strokes[index] == SyntheticKeyStroke(keyCode: 51, keyDown: true))
         #expect(strokes[index + 1] == SyntheticKeyStroke(keyCode: 51, keyDown: false))
     }
-    #expect(strokes[6] == SyntheticKeyStroke(keyCode: 9, keyDown: true, flags: .maskCommand))
-    #expect(strokes[7] == SyntheticKeyStroke(keyCode: 9, keyDown: false, flags: .maskCommand))
+    #expect(strokes[6] == SyntheticKeyStroke(keyCode: 0, keyDown: true, unicodeText: "Replacement paragraph"))
+    #expect(strokes[7] == SyntheticKeyStroke(keyCode: 0, keyDown: false, unicodeText: "Replacement paragraph"))
     #expect(pasteboard.string(forType: .string) == "Replacement paragraph")
     #expect(pasteboard.string(forType: .init("dev.builderking.koru.origin")) == "dev.builderking.koru")
+}
+
+@Test func unicodeFallbackChunksLongTextWithoutSplittingCharacters() {
+    let text = String(repeating: "abc", count: 20) + "👨‍👩‍👧‍👦" + String(repeating: "z", count: 40)
+    let chunks = SyntheticReplacementCoordinator.unicodeChunks(text, maximumUTF16Count: 32)
+    #expect(chunks.joined() == text)
+    #expect(chunks.allSatisfy { !$0.isEmpty })
+    #expect(chunks.dropLast().allSatisfy { $0.utf16.count <= 32 })
 }
 
 @Test func syntheticReplacementCanPasteAnAlreadyPreparedImageWithoutOverwritingItAsText() {

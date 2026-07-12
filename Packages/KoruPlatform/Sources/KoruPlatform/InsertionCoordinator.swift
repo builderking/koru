@@ -12,6 +12,24 @@ public protocol InsertionTargetAccessing: Sendable {
 public final class InsertionCoordinator: @unchecked Sendable {
     private let target: InsertionTargetAccessing; private let pasteboard: NSPasteboard; private let postPaste: @Sendable () -> Bool
     public init(target: InsertionTargetAccessing, pasteboard: NSPasteboard = .general, postPaste: @escaping @Sendable () -> Bool = InsertionCoordinator.systemPaste) { self.target = target; self.pasteboard = pasteboard; self.postPaste = postPaste }
+    /// Attempts only a revalidated, verifiable Accessibility mutation. Automatic recall uses this
+    /// before keyboard synthesis so WebKit inputs do not depend on an Edit/Paste responder route.
+    public func insertDirectAccessibility(_ text: String, transaction: InsertionTransaction) -> InsertionOutcome {
+        guard transaction.explicitlyConfirmed else { return .cancelledUnconfirmed }
+        guard matches(target.currentSnapshot(), transaction.target, invocation: transaction.invocation) else { return .cancelledTargetChanged }
+        let range = NSRange(location: transaction.target.replacementLocation, length: transaction.target.replacementLength)
+        guard target.replace(range: range, with: text) else {
+            restoreCaretAfterFailedPaste(range: range, expected: transaction.target)
+            return .failedSafely
+        }
+        if replacementApplied(range: range, text: text, originalDigest: transaction.target.expectedValueDigest) {
+            return .inserted(.directAccessibility)
+        }
+        let current = target.currentSnapshot()
+        if current?.expectedValueDigest != transaction.target.expectedValueDigest { return .cancelledTargetChanged }
+        restoreCaretAfterFailedPaste(range: range, expected: transaction.target)
+        return .failedSafely
+    }
     public func insert(_ text: String, transaction: InsertionTransaction, capability: CompatibilityCapability) -> InsertionOutcome {
         guard transaction.explicitlyConfirmed else { return .cancelledUnconfirmed }
         guard matches(target.currentSnapshot(), transaction.target, invocation: transaction.invocation) else { return .cancelledTargetChanged }
@@ -20,7 +38,9 @@ public final class InsertionCoordinator: @unchecked Sendable {
         case .full:
             // Chromium and Electron web content acknowledge kAXSelectedText writes without applying
             // them; trust direct replacement only when the caret proves the text actually landed.
-            if target.replace(range: range, with: text), replacementApplied(range: range, text: text, originalDigest: transaction.target.expectedValueDigest) { return .inserted(.directAccessibility) }
+            let direct = insertDirectAccessibility(text, transaction: transaction)
+            if case .inserted = direct { return direct }
+            if case .cancelledTargetChanged = direct { return direct }
             return pasteOrCopy(text, range: range, expected: transaction.target)
         case .paste:
             return pasteOrCopy(text, range: range, expected: transaction.target)

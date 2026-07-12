@@ -69,6 +69,22 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
     #expect(target.selected)
 }
 
+@Test func wholeValueSpliceUsesUTF16RangesAndPreservesSurroundingText() throws {
+    let plain = try #require(SystemInsertionTarget.splicing("predavpost", range: NSRange(location: 3, length: 3), replacement: "REPLACED"))
+    #expect(plain.value == "preREPLACEDpost")
+    #expect(plain.caret == NSRange(location: 11, length: 0))
+
+    let source = "👋 dav after"
+    let trigger = (source as NSString).range(of: "dav")
+    let emoji = try #require(SystemInsertionTarget.splicing(source, range: trigger, replacement: "Hello 🌿"))
+    #expect(emoji.value == "👋 Hello 🌿 after")
+    #expect(emoji.caret.location == trigger.location + ("Hello 🌿" as NSString).length)
+}
+
+@Test func wholeValueSpliceRejectsOutOfBoundsRanges() {
+    #expect(SystemInsertionTarget.splicing("dav", range: NSRange(location: 2, length: 3), replacement: "x") == nil)
+}
+
 @Test func preparedImagePasteRevalidatesTheTargetWithoutOverwritingThePasteboard() {
     let target = FakeTarget()
     let expected = TargetSnapshot(processIdentifier: 7, elementToken: "composer", replacementLocation: 3, replacementLength: 0, expectedValueDigest: Data([1]))
