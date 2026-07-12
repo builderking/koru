@@ -111,6 +111,9 @@ public final class AccessibilityObserverService: RuntimeIntegration, @unchecked 
         guard AXIsProcessTrusted(), observer == nil else { return }; let context = Unmanaged.passUnretained(self).toOpaque(); var created: AXObserver?
         guard AXObserverCreate(pid, { _, _, notification, context in guard let context else { return }; let service = Unmanaged<AccessibilityObserverService>.fromOpaque(context).takeUnretainedValue(); let name = notification as String; if name == kAXFocusedUIElementChangedNotification { service.receive(.focusedElement) } else if name == kAXValueChangedNotification { service.receive(.value) } else if name == kAXSelectedTextChangedNotification { service.receive(.selection) } }, &created) == .success, let created else { return }
         let app = AXUIElementCreateApplication(pid); AXUIElementSetMessagingTimeout(app, 0.25)
+        // Electron hosts build their accessibility tree lazily and never wake on their own; setting
+        // AXManualAccessibility opts them in. Native apps report the attribute as unsupported — harmless.
+        _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
         [kAXFocusedUIElementChangedNotification, kAXValueChangedNotification, kAXSelectedTextChangedNotification].forEach { _ = AXObserverAddNotification(created, app, $0 as CFString, context) }
         observer = created; application = app; CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(created), .commonModes)
     }

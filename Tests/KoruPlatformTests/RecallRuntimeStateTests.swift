@@ -11,7 +11,7 @@ private final class RuntimeTarget: InsertionTargetAccessing, @unchecked Sendable
     var replacement: (NSRange, String)?
     var allowsDirectReplacement = true
     func currentSnapshot() -> TargetSnapshot? { snapshot }
-    func replace(range: NSRange, with text: String) -> Bool { guard allowsDirectReplacement else { return false }; replacement = (range, text); return true }
+    func replace(range: NSRange, with text: String) -> Bool { guard allowsDirectReplacement else { return false }; replacement = (range, text); snapshot?.replacementLocation = range.location + text.utf16.count; snapshot?.replacementLength = 0; return true }
     func select(range: NSRange) -> Bool { snapshot?.replacementLocation = range.location; snapshot?.replacementLength = range.length; return true }
 }
 
@@ -115,6 +115,28 @@ private final class ScriptedFocusInspector: AccessibilityInspecting, @unchecked 
     var snapshot: AXTargetSnapshot
     init(snapshot: AXTargetSnapshot) { self.snapshot = snapshot }
     func focusedTarget() -> Result<AXTargetSnapshot, AXInspectionError> { .success(snapshot) }
+}
+
+@MainActor @Test func typedMatchingBeginsInAProseMirrorStyleComposerWhoseEmptyValueIsANewline() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let index = InMemorySearchIndex()
+    await index.rebuild(savedItems: [SavedItem(title: "Github", behavior: .quickReplacement, plainContent: "Push this code to Github", matchTerms: [.init(value: "github")])], clipboardEvents: [])
+    guard let pid = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first?.processIdentifier else { return }
+    // The Claude desktop composer (tiptap/ProseMirror contenteditable): role AXTextArea, settable
+    // selected text, and an "empty" value that Chromium serializes as a bare newline.
+    let inspector = ScriptedFocusInspector(snapshot: .init(processIdentifier: pid, role: "AXTextArea", subrole: nil, isEditable: true, isSecure: false, valueLength: 1, selectedRange: CFRange(location: 0, length: 0), bounds: nil, value: "\n", elementToken: "\(pid):composer"))
+    let target = RuntimeTarget()
+    target.snapshot = TargetSnapshot(processIdentifier: pid, elementToken: "\(pid):composer", replacementLocation: 0, replacementLength: 0, expectedValueDigest: SystemInsertionTarget.digest("\n"))
+    let runtime = RecallRuntime(inspector: inspector, target: target, index: index, repository: vault.repository, permission: { true })
+    runtime.start()
+    #expect(!runtime.receive(.character("g")))
+    // The typed character lands and the placeholder newline disappears, as observed live in Chromium.
+    target.snapshot = TargetSnapshot(processIdentifier: pid, elementToken: "\(pid):composer", replacementLocation: 1, replacementLength: 0, expectedValueDigest: SystemInsertionTarget.digest("g"))
+    try await waitUntil { runtime.panelIsVisibleForTesting }
+    #expect(runtime.panelIsVisibleForTesting)
+    #expect(runtime.queryForTesting == "g")
+    #expect(runtime.resultTitlesForTesting == ["Github"])
+    runtime.stopAndPurge()
 }
 
 @MainActor @Test func burstTypedCharactersWithinTheCommitWindowStillOpenThePanel() async throws {

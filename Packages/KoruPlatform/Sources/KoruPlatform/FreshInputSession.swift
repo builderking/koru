@@ -15,7 +15,12 @@ public struct FreshInputSession: Sendable {
     public mutating func handle(_ event: FreshInputEvent) {
         switch event {
         case let .focus(value, location, length, editable, secure, excluded):
-            state = editable && !secure && !excluded && value == "" && location == 0 && length == 0 ? .eligibleEmptyStart : .ineligibleUntilFocusChanges
+            // Some hosts report no AXValue at all for an empty field, and Chromium serializes an empty
+            // rich-text block (ProseMirror/tiptap chat composers render <p><br></p>) as a bare newline.
+            // A collapsed selection at position zero in such a field is still a verified fresh empty
+            // start; the per-character commit validation catches any field that was not truly empty.
+            let verifiedEmpty = (value ?? "").allSatisfy(\.isNewline)
+            state = editable && !secure && !excluded && verifiedEmpty && location == 0 && length == 0 ? .eligibleEmptyStart : .ineligibleUntilFocusChanges
         case let .committedCharacter(character, match):
             guard !character.isWhitespace else { state = .ineligibleUntilFocusChanges; return }
             let prefix: String

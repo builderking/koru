@@ -13,7 +13,11 @@ private final class Receiver: SaveConfirmationReceiving { var input: SaveConfirm
 private struct Reader: SelectedTextReading { var result: Result<String, AXInspectionError>; func selectedText() -> Result<String, AXInspectionError> { result } }
 private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
     var snapshot: TargetSnapshot?; var replaced = false; var selected = false
-    func currentSnapshot() -> TargetSnapshot? { snapshot }; func replace(range: NSRange, with text: String) -> Bool { replaced = true; return true }; func select(range: NSRange) -> Bool { selected = true; return true }
+    /// Chromium-style hosts acknowledge replacement without applying it; honest hosts move the caret.
+    var appliesReplacements = true
+    func currentSnapshot() -> TargetSnapshot? { snapshot }
+    func replace(range: NSRange, with text: String) -> Bool { replaced = true; if appliesReplacements { snapshot?.replacementLocation = range.location + text.utf16.count; snapshot?.replacementLength = 0 }; return true }
+    func select(range: NSRange) -> Bool { selected = true; snapshot?.replacementLocation = range.location; snapshot?.replacementLength = range.length; return true }
 }
 
 @Test func permissionRevocationIsExplicit() {
@@ -32,6 +36,20 @@ private final class FakeTarget: InsertionTargetAccessing, @unchecked Sendable {
     SecurityContext(bundleIdentifier: "example", role: "AXTextField", subrole: "AXSecureTextField", protectedContent: false, editable: true),
     SecurityContext(bundleIdentifier: "example", role: nil, subrole: nil, protectedContent: nil, editable: nil),
 ]) func classifierFailsClosed(context: SecurityContext) { guard case .blocked = SecurityContextClassifier().classify(context) else { Issue.record("unsafe context was allowed"); return } }
+
+@Test func acknowledgedButUnappliedDirectReplacementFallsToThePasteTier() {
+    // Chromium/Electron web content returns success for kAXSelectedText writes without applying them.
+    let target = FakeTarget(); target.appliesReplacements = false
+    let digest = SystemInsertionTarget.digest("g")
+    target.snapshot = TargetSnapshot(processIdentifier: 7, elementToken: "composer", replacementLocation: 1, replacementLength: 0, expectedValueDigest: digest)
+    let expected = TargetSnapshot(processIdentifier: 7, elementToken: "composer", replacementLocation: 0, replacementLength: 1, expectedValueDigest: digest)
+    let transaction = InsertionTransaction(invocation: .initialTypedMatch, target: expected, requestedTier: .directAccessibility, explicitlyConfirmed: true)
+    let board = NSPasteboard(name: .init("koru-lying-host")); board.clearContents()
+    let outcome = InsertionCoordinator(target: target, pasteboard: board, postPaste: { true }).insert("Push this code to Github", transaction: transaction, capability: .full)
+    #expect(outcome == .inserted(.pasteboardAndPaste))
+    #expect(board.string(forType: .string) == "Push this code to Github")
+    #expect(target.selected)
+}
 
 @Test func placementClampsAndLabelsFallback() {
     let placer = CaretPanelPlacer(); let frame = CGRect(x: 0, y: 0, width: 1000, height: 700)
