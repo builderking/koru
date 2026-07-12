@@ -33,55 +33,56 @@ const longText =
                 </div>
                 <span class="shot-label">Screenshot · inserted from clipboard</span>
               </div>
-            </div>
-          </div>
-        </div>
-        <div class="panel-slot" aria-hidden="true">
-          <div class="recall-panel panel-saved visible">
-            <div class="search-row"><span>⌕&nbsp; “foll”</span><span class="count">3 matches</span></div>
-            <div class="result selected">
-              <span class="result-icon">S</span>
-              <span><strong>Follow-up after intro call</strong><small>Saved text</small></span>
-              <span class="key" data-key="↵">↵</span>
-            </div>
-            <div class="result">
-              <span class="result-icon">T</span>
-              <span><strong>Client follow-up template</strong><small>Template · 3 fields</small></span>
-              <span class="key" data-key="2">2</span>
-            </div>
-            <div class="result">
-              <span class="result-icon">C</span>
-              <span><strong>Recent clipboard</strong><small>Type clp to browse copies</small></span>
-              <span class="key" data-key="3">3</span>
-            </div>
-          </div>
-          <div class="recall-panel panel-clip">
-            <div class="search-row"><span>⌕&nbsp; clp</span><span class="count">Recent clipboard</span></div>
-            <div class="result selected">
-              <span class="result-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
-              </span>
-              <span><strong>Q3 numbers summary</strong><small>Copied text · 2 min ago</small></span>
-              <span class="key" data-key="↵">↵</span>
-            </div>
-            <div class="result">
-              <span class="result-icon thumb">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m5 18 5-5 3 3 3.5-3.5L21 17" /></svg>
-              </span>
-              <span><strong>Screenshot</strong><small>Image · 5 min ago</small></span>
-              <span class="key" data-key="2">2</span>
-            </div>
-            <div class="result">
-              <span class="result-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.6l-1.2 1.2" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.6l1.2-1.2" /></svg>
-              </span>
-              <span><strong>Copied link</strong><small>Link · 14 min ago</small></span>
-              <span class="key" data-key="3">3</span>
+              <!-- Floats caret-relative: anchored to the start of the typed fragment. -->
+              <div class="panel-slot">
+                <div class="recall-panel panel-saved visible">
+                  <div class="search-row"><span>⌕&nbsp; “foll”</span><span class="count">3 matches</span></div>
+                  <div class="result selected">
+                    <span class="result-icon">S</span>
+                    <span><strong>Follow-up after intro call</strong><small>Saved text</small></span>
+                    <span class="key" data-key="↵">↵</span>
+                  </div>
+                  <div class="result">
+                    <span class="result-icon">T</span>
+                    <span><strong>Client follow-up template</strong><small>Template · 3 fields</small></span>
+                    <span class="key" data-key="2">2</span>
+                  </div>
+                  <div class="result">
+                    <span class="result-icon">C</span>
+                    <span><strong>Recent clipboard</strong><small>Type clp to browse copies</small></span>
+                    <span class="key" data-key="3">3</span>
+                  </div>
+                </div>
+                <div class="recall-panel panel-clip">
+                  <div class="search-row"><span>⌕&nbsp; clp</span><span class="count">Recent clipboard</span></div>
+                  <div class="result selected">
+                    <span class="result-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
+                    </span>
+                    <span><strong>Q3 numbers summary</strong><small>Copied text · 2 min ago</small></span>
+                    <span class="key" data-key="↵">↵</span>
+                  </div>
+                  <div class="result">
+                    <span class="result-icon thumb">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m5 18 5-5 3 3 3.5-3.5L21 17" /></svg>
+                    </span>
+                    <span><strong>Screenshot</strong><small>Image · 5 min ago</small></span>
+                    <span class="key" data-key="2">2</span>
+                  </div>
+                  <div class="result">
+                    <span class="result-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.6l-1.2 1.2" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.6l1.2-1.2" /></svg>
+                    </span>
+                    <span><strong>Copied link</strong><small>Link · 14 min ago</small></span>
+                    <span class="key" data-key="3">3</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         <figcaption class="demo-caption" id="demo-caption">
-          Type a fragment you remember — or <code>clp</code> for recent copies. Koru shows matches beside the caret; nothing is inserted until you choose.
+          <span class="caption-text">Type a fragment you remember — or <code>clp</code> for recent copies. Koru shows matches beside the caret; nothing is inserted until you choose.</span>
         </figcaption>
       </figure>
     </div>
@@ -99,11 +100,12 @@ const longText =
   const insertedText = demo?.querySelector<HTMLElement>('.inserted-text');
   const liveText = demo?.querySelector<HTMLElement>('.live-text');
   const insertedImage = demo?.querySelector<HTMLElement>('.inserted-image');
+  const captionText = demo?.querySelector<HTMLElement>('.caption-text');
   const longText = demo?.querySelector<HTMLElement>('.sizer')?.textContent ?? '';
 
   if (
     demo && typedRow && typedText && panelSaved && panelClip &&
-    insertedText && liveText && insertedImage && longText &&
+    insertedText && liveText && insertedImage && captionText && longText &&
     !window.matchMedia('(prefers-reduced-motion: reduce)').matches
   ) {
     const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -145,6 +147,14 @@ const longText =
       key?.classList.remove('pressed');
     };
 
+    // Captions are fixed strings authored here; safe to render as HTML.
+    const setCaption = async (html: string) => {
+      captionText.classList.add('fading');
+      await wait(220);
+      captionText.innerHTML = html;
+      captionText.classList.remove('fading');
+    };
+
     const type = async (text: string) => {
       let buffer = '';
       for (const char of text) {
@@ -179,14 +189,15 @@ const longText =
     };
 
     const sceneSavedText = async () => {
+      await setCaption('Start typing something you’ve saved — Koru’s recall menu appears right at your caret.');
       await type('foll');
       await wait(280);
       panelSaved.classList.add('visible');
-      await wait(1200);
+      await wait(1400);
       await pressEnter(panelSaved);
       panelSaved.classList.remove('visible');
       typedRow.classList.add('hidden');
-      await wait(180);
+      await setCaption('Hit Return and the whole saved text drops in, exactly where you were typing.');
       insertedText.classList.add('visible');
       await streamLongText();
       await wait(2400);
@@ -195,19 +206,20 @@ const longText =
     };
 
     const sceneClipboardImage = async () => {
+      await setCaption('<code>clp</code> is the shortcut to your recent clipboard — text, links, and screenshots.');
       clearField();
       await wait(500);
       await type('clp');
       await wait(280);
       panelClip.classList.add('visible');
-      await wait(1000);
+      await wait(1200);
       const imageRow = panelClip.querySelectorAll<HTMLElement>('.result')[1];
       if (imageRow) select(panelClip, imageRow);
       await wait(750);
       await pressEnter(panelClip);
       panelClip.classList.remove('visible');
       typedRow.classList.add('hidden');
-      await wait(180);
+      await setCaption('Pick a copy to insert it — even an image. Everything stays on your Mac.');
       insertedImage.classList.add('visible');
       await wait(2400);
       insertedImage.classList.remove('visible');
