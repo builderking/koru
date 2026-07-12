@@ -99,14 +99,29 @@ public final class SystemAccessibilityInspector: AccessibilityInspecting, @unche
         let range = rangeAttribute(kAXSelectedTextRangeAttribute, element)
         let editable = Self.editability(secure: secure, selectedTextSettable: isSettable(kAXSelectedTextAttribute, element))
         // Prefer the selection rectangle (the caret rectangle when the selection is empty), then the
-        // caret at the selection end, then the element frame — apps that cannot answer bounds-for-range
-        // still get a usable anchor instead of falling to screen center.
+        // caret at the selection end, then the character just before the caret — Chromium and Electron
+        // hosts (Claude, Codex, VS Code) answer bounds-for-range for a collapsed selection with a
+        // degenerate all-zero rect, and the preceding character is the closest honest anchor — then
+        // the element frame, so apps that cannot answer bounds-for-range at all still get a usable
+        // anchor instead of falling to screen center.
         let rangeBounds: CGRect?
         if let range {
-            rangeBounds = bounds(for: range, element: element) ?? bounds(for: CFRange(location: range.location + range.length, length: 0), element: element) ?? rectAttribute("AXFrame", element)
+            let caret = CFRange(location: range.location + range.length, length: 0)
+            rangeBounds = Self.usableAnchor(bounds(for: range, element: element))
+                ?? Self.usableAnchor(bounds(for: caret, element: element))
+                ?? Self.usableAnchor(caret.location > 0 ? bounds(for: CFRange(location: caret.location - 1, length: 1), element: element) : nil)
+                ?? rectAttribute("AXFrame", element)
         } else { rangeBounds = rectAttribute("AXFrame", element) }
         AXFocusResolver.recordShape(bundleID: NSRunningApplication(processIdentifier: pid)?.bundleIdentifier, role: role, editable: editable, emptyish: (value ?? "").allSatisfy(\.isNewline), caret: range?.location)
         return .success(.init(processIdentifier: pid, role: role, subrole: subrole, isEditable: editable, isSecure: secure, valueLength: value?.utf16.count, selectedRange: range, bounds: rangeBounds, value: value, elementToken: "\(pid):\(CFHash(element))"))
+    }
+
+    /// Chromium reports success for bounds-for-range on a collapsed selection while answering an
+    /// all-zero rect; treating that as a real anchor pins the panel to a screen corner. A zero-width
+    /// caret rectangle at a real position remains a valid anchor.
+    static func usableAnchor(_ rect: CGRect?) -> CGRect? {
+        guard let rect, rect.width.isFinite, rect.height.isFinite, !rect.isNull, rect != .zero else { return nil }
+        return rect
     }
 
     /// Editability describes the AX element's write capability only. Secure status remains separate

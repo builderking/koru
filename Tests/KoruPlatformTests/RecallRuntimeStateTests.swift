@@ -446,18 +446,93 @@ private final class SyntheticRequestBox { var request: SyntheticReplacementReque
     #expect(board.string(forType: .string) == "beta body")
 }
 
+@MainActor @Test func controlReturnCopiesTheTypedMatchWithoutInsertingOrDeletingTheTag() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let index = InMemorySearchIndex()
+    await index.rebuild(savedItems: [SavedItem(title: "Legacy", behavior: .savedText, plainContent: "signature", tags: ["dav"])], clipboardEvents: [])
+    let pid: pid_t = 4248
+    let token = "\(pid):web-input"
+    let inspector = ScriptedFocusInspector(snapshot: .init(processIdentifier: pid, role: "AXTextField", subrole: nil, isEditable: true, isSecure: false, valueLength: 3, selectedRange: CFRange(location: 3, length: 0), bounds: nil, value: "dav", elementToken: token))
+    let target = RuntimeTarget()
+    target.snapshot = .init(processIdentifier: pid, elementToken: token, replacementLocation: 3, replacementLength: 0, expectedValueDigest: SystemInsertionTarget.digest("dav"))
+    let synthetic = SyntheticRequestBox()
+    let board = NSPasteboard(name: .init("koru-control-return-typed")); board.clearContents()
+    let runtime = RecallRuntime(inspector: inspector, target: target, index: index, repository: vault.repository, permission: { true }, pasteboard: board, frontmostProcessIdentifier: { pid }, allowsRollingFallback: { true }, syntheticReplace: { text, request in synthetic.text = text; synthetic.request = request; return .inserted })
+    runtime.start()
+
+    #expect(!runtime.receive(.character("d")))
+    #expect(!runtime.receive(.character("a")))
+    #expect(!runtime.receive(.character("v")))
+    try await waitUntil { runtime.panelIsVisibleForTesting }
+    #expect(runtime.receive(.copyConfirm))
+    try await waitUntil { board.string(forType: .string) == "signature" }
+    // Copy must leave the destination untouched: no direct replacement and no synthetic input.
+    #expect(target.replacement == nil)
+    #expect(synthetic.request == nil)
+    #expect(board.string(forType: KoruPasteboardOrigin.type) == KoruPasteboardOrigin.value)
+    try await waitUntil { !runtime.panelIsVisibleForTesting }
+    runtime.stopAndPurge()
+}
+
+@MainActor @Test func controlReturnCopiesFromTheManualPanelInsteadOfInserting() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let index = InMemorySearchIndex()
+    await index.rebuild(savedItems: [
+        SavedItem(title: "Alpha one", behavior: .savedText, plainContent: "alpha body", updatedAt: Date(timeIntervalSince1970: 90_000)),
+        SavedItem(title: "Beta two", behavior: .savedText, plainContent: "beta body", updatedAt: Date(timeIntervalSince1970: 1)),
+    ], clipboardEvents: [])
+    let target = RuntimeTarget()
+    target.snapshot = .init(processIdentifier: 4249, elementToken: "4249:manual-field", replacementLocation: 0, replacementLength: 0, expectedValueDigest: SystemInsertionTarget.digest(""))
+    let board = NSPasteboard(name: .init("koru-control-return-manual")); board.clearContents()
+    let runtime = RecallRuntime(inspector: NoFocusInspector(), target: target, index: index, repository: vault.repository, permission: { true }, pasteboard: board)
+    runtime.openManual(scope: .saved)
+    try await waitUntil { runtime.resultTitlesForTesting.count == 2 }
+    #expect(runtime.receive(.navigation(1)))
+    #expect(runtime.receive(.copyConfirm))
+    try await waitUntil { board.string(forType: .string) == "beta body" }
+    // Even with a live insertion target, Control-Return only copies.
+    #expect(target.replacement == nil)
+    try await waitUntil { !runtime.panelIsVisibleForTesting }
+}
+
+@MainActor @Test func controlReturnCopiesTheOriginalClipboardImage() async throws {
+    let vault = try await TestVault.make(); defer { Task { await vault.cleanup() } }
+    let event = ClipboardEvent(expiresAt: .now.addingTimeInterval(100), representations: [.init(contentType: .image)])
+    let index = InMemorySearchIndex(); await index.rebuild(savedItems: [], clipboardEvents: [.init(event: event, keyedContentDigest: Data([6]))])
+    let image = onePixelClipboardImage(); let resolver = FakeClipboardContentResolver(content: image)
+    let board = NSPasteboard(name: .init("koru-control-return-image")); board.clearContents()
+    let runtime = RecallRuntime(inspector: NoFocusInspector(), target: RuntimeTarget(), index: index, repository: vault.repository, permission: { false }, pasteboard: board, clipboardContentResolver: resolver)
+    runtime.openManual(scope: .clipboard)
+    try await waitUntil { !runtime.panelRowsForTesting.isEmpty }
+    #expect(runtime.receive(.copyConfirm))
+    try await waitUntil { board.data(forType: .png) == image.originalData }
+    try await waitUntil { !runtime.panelIsVisibleForTesting }
+}
+
+@Test func degenerateZeroCaretRectsAreRejectedAsAnchors() {
+    // Chromium/Electron hosts answer bounds-for-range for a collapsed selection with an all-zero
+    // rect; it must not be treated as a caret at the screen origin.
+    #expect(SystemAccessibilityInspector.usableAnchor(.zero) == nil)
+    #expect(SystemAccessibilityInspector.usableAnchor(nil) == nil)
+    #expect(SystemAccessibilityInspector.usableAnchor(.init(x: 0, y: 0, width: CGFloat.nan, height: 10)) == nil)
+    // A zero-width caret rectangle at a real position stays valid.
+    #expect(SystemAccessibilityInspector.usableAnchor(.init(x: 40, y: 60, width: 0, height: 16)) == CGRect(x: 40, y: 60, width: 0, height: 16))
+    #expect(CaretPanelPlacer.appKitRect(fromAX: .zero, primaryScreenHeight: 900) == nil)
+}
+
 @MainActor @Test func keyboardFocusedPanelRoutesKeyEventsAsPanelCommands() {
     let panel = KoruPanel(contentRect: .init(x: 0, y: 0, width: 100, height: 100))
     var received: [TypedInputMessage] = []
     panel.onPanelCommand = { message in received.append(message); return true }
-    func keyEvent(_ keyCode: UInt16, characters: String = "") -> NSEvent {
-        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode)!
+    func keyEvent(_ keyCode: UInt16, characters: String = "", modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0, windowNumber: 0, context: nil, characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode)!
     }
     panel.sendEvent(keyEvent(125))
     panel.sendEvent(keyEvent(36, characters: "\r"))
+    panel.sendEvent(keyEvent(36, characters: "\r", modifiers: [.control]))
     panel.sendEvent(keyEvent(53, characters: "\u{1B}"))
     panel.sendEvent(keyEvent(11, characters: "b"))
-    #expect(received == [.navigation(1), .confirm, .dismiss, .character("b")])
+    #expect(received == [.navigation(1), .confirm, .copyConfirm, .dismiss, .character("b")])
 }
 
 @MainActor @Test func panelContentAcceptsFirstMouseSoRowsAreClickableWithoutKeyStatus() {
@@ -471,6 +546,8 @@ private final class SyntheticRequestBox { var request: SyntheticReplacementReque
         return event
     }
     #expect(TypedEventTapService.message(event(36)) == .confirm)
+    let controlReturn = event(36); controlReturn.flags = .maskControl
+    #expect(TypedEventTapService.message(controlReturn) == .copyConfirm)
     #expect(TypedEventTapService.message(event(53)) == .dismiss)
     #expect(TypedEventTapService.message(event(51)) == .backspace)
     #expect(TypedEventTapService.message(event(125)) == .navigation(1))

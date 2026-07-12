@@ -91,6 +91,10 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
             guard panel.isVisible else { reset(); return false }
             guard panel.selectedID != nil else { return false }
             select(id: panel.selectedID!); return true
+        case .copyConfirm:
+            guard panel.isVisible else { reset(); return false }
+            guard let selectedID = panel.selectedID else { return false }
+            copySelected(id: selectedID); return true
         case .dismiss:
             let wasActive = panel.isVisible || invocation != nil
             reset(); return wasActive
@@ -361,6 +365,36 @@ public final class RecallRuntime: @preconcurrency RuntimeIntegration {
                 // posted after a context change or an unverifiable destination.
                 _ = KoruPasteboardOrigin.write(text, to: self.pasteboard)
             }
+            if let itemID { await index.recordSelection(query: selectedQuery, itemID: itemID, appBundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier) }
+            self.reset()
+        }
+    }
+
+    /// Control-Return copies the highlighted result to the clipboard and closes the panel without
+    /// touching the destination field: the typed tag stays in place and nothing is inserted.
+    private func copySelected(id: String) {
+        guard let result = results.first(where: { Self.id($0.source) == id }), invocation != nil else { reset(); return }
+        let selectedGeneration = generation
+        let selectedQuery = query
+        Task { [weak self] in
+            guard let self else { return }
+            if result.contentType == .image, case let .clipboard(eventID) = result.source {
+                if let resolver = self.clipboardContentResolver,
+                   let content = try? await resolver.image(eventID: eventID),
+                   self.generation == selectedGeneration {
+                    _ = KoruPasteboardOrigin.writeImage(content, to: self.pasteboard)
+                }
+                self.reset()
+                return
+            }
+            let text: String?
+            let itemID: SavedItemID?
+            switch result.source {
+            case let .saved(id): text = (try? await repository.item(id: id)?.plainContent) ?? result.preview; itemID = id
+            case let .clipboard(id): text = (try? await repository.clipboardEvents().first(where: { $0.event.id == id })?.searchableText) ?? result.preview; itemID = nil
+            }
+            guard let text, self.generation == selectedGeneration else { self.reset(); return }
+            _ = KoruPasteboardOrigin.write(text, to: self.pasteboard)
             if let itemID { await index.recordSelection(query: selectedQuery, itemID: itemID, appBundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier) }
             self.reset()
         }

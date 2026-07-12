@@ -21,7 +21,8 @@ public struct CaretPanelPlacer: Sendable {
     /// AX geometry is global with a top-left origin on the primary display; AppKit is bottom-left.
     /// The flip must use the primary display height — other screens' frames are unrelated to the origin.
     public static func appKitRect(fromAX rect: CGRect?, primaryScreenHeight: CGFloat) -> CGRect? {
-        guard let rect, rect.width.isFinite, rect.height.isFinite, !rect.isNull else { return nil }
+        // An all-zero rect is Chromium's "cannot answer" shape, not a caret at the screen origin.
+        guard let rect, rect.width.isFinite, rect.height.isFinite, !rect.isNull, rect != .zero else { return nil }
         return CGRect(x: rect.minX, y: primaryScreenHeight - rect.maxY, width: rect.width, height: rect.height)
     }
     public func place(panelSize: CGSize, caret: CGRect?, visibleFrame: CGRect) -> PanelPlacement {
@@ -48,7 +49,7 @@ public final class KoruPanel: NSPanel {
 
     /// Mirrors TypedEventTapService.message for keys delivered straight to the key panel.
     static func message(_ event: NSEvent) -> TypedInputMessage? {
-        switch event.keyCode { case 53: return .dismiss; case 36: return .confirm; case 48: return .tabTransfer; case 51: return .backspace; case 125: return .navigation(1); case 126: return .navigation(-1); case 123, 124, 115, 119, 116, 121: return .reset; default: break }
+        switch event.keyCode { case 53: return .dismiss; case 36: return event.modifierFlags.contains(.control) ? .copyConfirm : .confirm; case 48: return .tabTransfer; case 51: return .backspace; case 125: return .navigation(1); case 126: return .navigation(-1); case 123, 124, 115, 119, 116, 121: return .reset; default: break }
         guard event.modifierFlags.intersection([.command, .control]).isEmpty else { return .reset }
         guard let value = event.characters, !value.isEmpty, value.utf16.count <= 4 else { return nil }
         return value.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) } ? .character(value) : .reset
