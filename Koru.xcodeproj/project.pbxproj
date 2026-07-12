@@ -7,135 +7,116 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		06C38D87E135E1A65402B3E9 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 492DF9B80C7A280F5EA2A7D1 /* Cocoa.framework */; };
-		10AD5FA8EEC79841627F6633 /* KoruPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = EC92EB6E0B85D280DA020CF5 /* KoruPlatform */; };
-		1498E6C80173B291CBFA4A4B /* KoruUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4C3CFBCE34BA2B5A0749FFB0 /* KoruUI */; };
-		7789B22AD1C1079DACFF5CE0 /* KoruDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 45C936D56B7182A0FE560FE4 /* KoruDomain */; };
-		97096350246A99E8FC326A20 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD22FC74EF1458E7CA76076 /* main.swift */; };
-		9861949F94F80DB66CFC6E52 /* KoruUI in Frameworks */ = {isa = PBXBuildFile; productRef = 79E2AF6E8E745AC8AA376578 /* KoruUI */; };
-		A188572C5C34F5EF8328C59A /* KoruPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 37BDFB89A3AF6FDD85420904 /* KoruPlatform */; };
-		C994FE5E3C0692D5B9940F00 /* KoruDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 79E28CFA9CC682F65D9FA0A9 /* KoruDomain */; };
-		D70C3CBE2B48D3B94031BB7E /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFEAC346734103ACC9C3717A /* main.swift */; };
-		F4992011E0D3F534ED2BB4E3 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 492DF9B80C7A280F5EA2A7D1 /* Cocoa.framework */; };
+		6985E4B3EAD18E7B9DEE70B6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E014A3ED30B565CF236FDA5 /* Cocoa.framework */; };
+		6EB589D6FC08F34DFDAFCEDD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2F67E481940D76DB47F651 /* main.swift */; };
+		796A51C083041911B185575E /* KoruPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 1C94AE2E930D0DA9C154391E /* KoruPlatform */; };
+		7A58AF1B815E916DEE39B29D /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E014A3ED30B565CF236FDA5 /* Cocoa.framework */; };
+		9348C37212196CF4158D5ED9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362150353300AD817D67F849 /* main.swift */; };
+		976510962671A0E9AFBADCF6 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 30207374E086F613906302B7 /* AppIcon.icns */; };
+		9855419D9A9CAD9F36A47AC9 /* KoruDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 80CC356CC7C8AD65695F9712 /* KoruDomain */; };
+		9E5439CCED12988EAA78694C /* KoruUI in Frameworks */ = {isa = PBXBuildFile; productRef = F301957862113C1CB913EFF1 /* KoruUI */; };
+		E707EED5D00AC9E3928A014F /* KoruPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = FDB374AA54343E37A2AEE6D6 /* KoruPlatform */; };
+		F64A28372AAC520317A35BBF /* KoruDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA9336BD18BDF2E4BE68AC7 /* KoruDomain */; };
+		FC181E3BB0A2C9995C3A523D /* KoruUI in Frameworks */ = {isa = PBXBuildFile; productRef = A6134CAFA32353924B7CD9C9 /* KoruUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3FD22FC74EF1458E7CA76076 /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = main.swift; path = App/main.swift; sourceTree = "<group>"; };
-		492DF9B80C7A280F5EA2A7D1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
-		8CAE2120F2FD4E3E2AD530C2 /* KoruIntegrationHarness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoruIntegrationHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B7265E6FA100A5400AD15854 /* Koru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Koru.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		DFEAC346734103ACC9C3717A /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = main.swift; path = Harness/main.swift; sourceTree = "<group>"; };
+		0E2F67E481940D76DB47F651 /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = main.swift; path = Harness/main.swift; sourceTree = "<group>"; };
+		2BEB52F10535FB3C73A4F06C /* Koru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Koru.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E014A3ED30B565CF236FDA5 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		30207374E086F613906302B7 /* AppIcon.icns */ = {isa = PBXFileReference; includeInIndex = 1; name = AppIcon.icns; path = App/Resources/AppIcon.icns; sourceTree = "<group>"; };
+		362150353300AD817D67F849 /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = main.swift; path = App/main.swift; sourceTree = "<group>"; };
+		715C2CFB3BF55B2C9A3992B7 /* KoruIntegrationHarness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoruIntegrationHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		0B040DDD6815733759A2F1DC /* Frameworks */ = {
+		000075A63D6676FD96E8A9F0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				06C38D87E135E1A65402B3E9 /* Cocoa.framework in Frameworks */,
-				C994FE5E3C0692D5B9940F00 /* KoruDomain in Frameworks */,
-				A188572C5C34F5EF8328C59A /* KoruPlatform in Frameworks */,
-				9861949F94F80DB66CFC6E52 /* KoruUI in Frameworks */,
+				6985E4B3EAD18E7B9DEE70B6 /* Cocoa.framework in Frameworks */,
+				9855419D9A9CAD9F36A47AC9 /* KoruDomain in Frameworks */,
+				E707EED5D00AC9E3928A014F /* KoruPlatform in Frameworks */,
+				9E5439CCED12988EAA78694C /* KoruUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		62B989C31E30E39C86541273 /* Frameworks */ = {
+		8F91340620F6DF66490EEC39 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F4992011E0D3F534ED2BB4E3 /* Cocoa.framework in Frameworks */,
-				7789B22AD1C1079DACFF5CE0 /* KoruDomain in Frameworks */,
-				10AD5FA8EEC79841627F6633 /* KoruPlatform in Frameworks */,
-				1498E6C80173B291CBFA4A4B /* KoruUI in Frameworks */,
+				7A58AF1B815E916DEE39B29D /* Cocoa.framework in Frameworks */,
+				F64A28372AAC520317A35BBF /* KoruDomain in Frameworks */,
+				796A51C083041911B185575E /* KoruPlatform in Frameworks */,
+				FC181E3BB0A2C9995C3A523D /* KoruUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13FA64D2763BCF9F416E0DB2 /* Products */ = {
+		01F583EE6C270D89C1966D64 = {
 			isa = PBXGroup;
 			children = (
-				B7265E6FA100A5400AD15854 /* Koru.app */,
-				8CAE2120F2FD4E3E2AD530C2 /* KoruIntegrationHarness.app */,
+				CB5D9367BD707707B23D3E94 /* Products */,
+				800AB9EA840460CE42FFEF13 /* Frameworks */,
+				37D4CDDBF20B892DEBBF995D /* Koru */,
+				63BF0252B401DFF52FB8C17D /* KoruIntegrationHarness */,
 			);
-			name = Products;
 			sourceTree = "<group>";
 		};
-		6405003B0FA3E23651429693 /* OS X */ = {
+		37D4CDDBF20B892DEBBF995D /* Koru */ = {
 			isa = PBXGroup;
 			children = (
-				492DF9B80C7A280F5EA2A7D1 /* Cocoa.framework */,
-			);
-			name = "OS X";
-			sourceTree = "<group>";
-		};
-		8E6E7183BA1412104A3477E7 /* Koru */ = {
-			isa = PBXGroup;
-			children = (
-				3FD22FC74EF1458E7CA76076 /* main.swift */,
+				362150353300AD817D67F849 /* main.swift */,
+				30207374E086F613906302B7 /* AppIcon.icns */,
 			);
 			name = Koru;
 			sourceTree = "<group>";
 		};
-		8E8F255FE45BBEE265020269 /* Frameworks */ = {
+		63BF0252B401DFF52FB8C17D /* KoruIntegrationHarness */ = {
 			isa = PBXGroup;
 			children = (
-				6405003B0FA3E23651429693 /* OS X */,
+				0E2F67E481940D76DB47F651 /* main.swift */,
+			);
+			name = KoruIntegrationHarness;
+			sourceTree = "<group>";
+		};
+		800AB9EA840460CE42FFEF13 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C92D0B80FD464F8E75EDA094 /* OS X */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		F223A2869201B11481BFD14B = {
+		C92D0B80FD464F8E75EDA094 /* OS X */ = {
 			isa = PBXGroup;
 			children = (
-				13FA64D2763BCF9F416E0DB2 /* Products */,
-				8E8F255FE45BBEE265020269 /* Frameworks */,
-				8E6E7183BA1412104A3477E7 /* Koru */,
-				F747627352A8B74A230859CB /* KoruIntegrationHarness */,
+				2E014A3ED30B565CF236FDA5 /* Cocoa.framework */,
 			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
-		F747627352A8B74A230859CB /* KoruIntegrationHarness */ = {
+		CB5D9367BD707707B23D3E94 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DFEAC346734103ACC9C3717A /* main.swift */,
+				2BEB52F10535FB3C73A4F06C /* Koru.app */,
+				715C2CFB3BF55B2C9A3992B7 /* KoruIntegrationHarness.app */,
 			);
-			name = KoruIntegrationHarness;
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0FE4068CA83C30AD54911579 /* Koru */ = {
+		854CE7C71A5DE3A27267F367 /* KoruIntegrationHarness */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FA799A3198F0A355DE3C0AD1 /* Build configuration list for PBXNativeTarget "Koru" */;
+			buildConfigurationList = 0559584E3504A92375B70183 /* Build configuration list for PBXNativeTarget "KoruIntegrationHarness" */;
 			buildPhases = (
-				238F2FBF01E9C5CFD65B987F /* Sources */,
-				62B989C31E30E39C86541273 /* Frameworks */,
-				E8D98C0969FCBBEA427F2DDB /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = Koru;
-			packageProductDependencies = (
-				45C936D56B7182A0FE560FE4 /* KoruDomain */,
-				EC92EB6E0B85D280DA020CF5 /* KoruPlatform */,
-				4C3CFBCE34BA2B5A0749FFB0 /* KoruUI */,
-			);
-			productName = Koru;
-			productReference = B7265E6FA100A5400AD15854 /* Koru.app */;
-			productType = "com.apple.product-type.application";
-		};
-		E144A7B896BD98AFD29CBA76 /* KoruIntegrationHarness */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A4DB891AFE2F34468A22BE6B /* Build configuration list for PBXNativeTarget "KoruIntegrationHarness" */;
-			buildPhases = (
-				F34C593F8EB996AC0559A1D3 /* Sources */,
-				0B040DDD6815733759A2F1DC /* Frameworks */,
-				20B95100DB5318FE833336ED /* Resources */,
+				892627894D7E8BC8187D4B0D /* Sources */,
+				8F91340620F6DF66490EEC39 /* Frameworks */,
+				98C01B2F1CE00E7458D426F8 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -143,25 +124,47 @@
 			);
 			name = KoruIntegrationHarness;
 			packageProductDependencies = (
-				79E28CFA9CC682F65D9FA0A9 /* KoruDomain */,
-				37BDFB89A3AF6FDD85420904 /* KoruPlatform */,
-				79E2AF6E8E745AC8AA376578 /* KoruUI */,
+				0EA9336BD18BDF2E4BE68AC7 /* KoruDomain */,
+				1C94AE2E930D0DA9C154391E /* KoruPlatform */,
+				A6134CAFA32353924B7CD9C9 /* KoruUI */,
 			);
 			productName = KoruIntegrationHarness;
-			productReference = 8CAE2120F2FD4E3E2AD530C2 /* KoruIntegrationHarness.app */;
+			productReference = 715C2CFB3BF55B2C9A3992B7 /* KoruIntegrationHarness.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B69C0705D62E14FD36D2533D /* Koru */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6E7B9D2C854D49D366DB92E /* Build configuration list for PBXNativeTarget "Koru" */;
+			buildPhases = (
+				2DE169EF134BF12E39E1C9A2 /* Sources */,
+				000075A63D6676FD96E8A9F0 /* Frameworks */,
+				42261A54E8B2A6592C5912DB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Koru;
+			packageProductDependencies = (
+				80CC356CC7C8AD65695F9712 /* KoruDomain */,
+				FDB374AA54343E37A2AEE6D6 /* KoruPlatform */,
+				F301957862113C1CB913EFF1 /* KoruUI */,
+			);
+			productName = Koru;
+			productReference = 2BEB52F10535FB3C73A4F06C /* Koru.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		0E87579D20FE5489B350B8B9 /* Project object */ = {
+		3B9BB91B170FEBF15074FA74 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 			};
-			buildConfigurationList = 1C56E52674E81C27EFAAEEC3 /* Build configuration list for PBXProject "Koru" */;
+			buildConfigurationList = FEE24431DD09F8EBC07F5B09 /* Build configuration list for PBXProject "Koru" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -169,31 +172,32 @@
 				en,
 				Base,
 			);
-			mainGroup = F223A2869201B11481BFD14B;
+			mainGroup = 01F583EE6C270D89C1966D64;
 			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
-				7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */,
+				534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 13FA64D2763BCF9F416E0DB2 /* Products */;
+			productRefGroup = CB5D9367BD707707B23D3E94 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0FE4068CA83C30AD54911579 /* Koru */,
-				E144A7B896BD98AFD29CBA76 /* KoruIntegrationHarness */,
+				B69C0705D62E14FD36D2533D /* Koru */,
+				854CE7C71A5DE3A27267F367 /* KoruIntegrationHarness */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		20B95100DB5318FE833336ED /* Resources */ = {
+		42261A54E8B2A6592C5912DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				976510962671A0E9AFBADCF6 /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E8D98C0969FCBBEA427F2DDB /* Resources */ = {
+		98C01B2F1CE00E7458D426F8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -203,48 +207,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		238F2FBF01E9C5CFD65B987F /* Sources */ = {
+		2DE169EF134BF12E39E1C9A2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97096350246A99E8FC326A20 /* main.swift in Sources */,
+				9348C37212196CF4158D5ED9 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F34C593F8EB996AC0559A1D3 /* Sources */ = {
+		892627894D7E8BC8187D4B0D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D70C3CBE2B48D3B94031BB7E /* main.swift in Sources */,
+				6EB589D6FC08F34DFDAFCEDD /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		2E3177A808A66DB2E74C7B7E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = (
-					arm64,
-					x86_64,
-				);
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = "Config/Koru-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru;
-				SDKROOT = macosx;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Debug;
-		};
-		3178B7590D451FABD0E34661 /* Release */ = {
+		25497F5523792216F784E884 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = (
@@ -266,51 +248,7 @@
 			};
 			name = Release;
 		};
-		7E0B9D9CCED149AA0C4A8449 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = (
-					arm64,
-					x86_64,
-				);
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = "Config/Harness-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru.harness;
-				SDKROOT = macosx;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Release;
-		};
-		BAA319EDC28B77A0007B9D43 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = (
-					arm64,
-					x86_64,
-				);
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = "Config/Harness-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru.harness;
-				SDKROOT = macosx;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Debug;
-		};
-		D4A12324080F81424632E633 /* Release */ = {
+		44FB09B7A129A416891998F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -364,7 +302,29 @@
 			};
 			name = Release;
 		};
-		F6263C91D71CFC25B90C53F9 /* Debug */ = {
+		544D9C4E13ED1B21DA42BFAA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Harness-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru.harness;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		60E83D81CEA148C62E082CEB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -425,32 +385,76 @@
 			};
 			name = Debug;
 		};
+		972FE44A757608456A1CFD6F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Harness-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru.harness;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		E8525852909C9712E58C9437 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Koru-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.builderking.koru;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1C56E52674E81C27EFAAEEC3 /* Build configuration list for PBXProject "Koru" */ = {
+		0559584E3504A92375B70183 /* Build configuration list for PBXNativeTarget "KoruIntegrationHarness" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F6263C91D71CFC25B90C53F9 /* Debug */,
-				D4A12324080F81424632E633 /* Release */,
+				544D9C4E13ED1B21DA42BFAA /* Release */,
+				972FE44A757608456A1CFD6F /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A4DB891AFE2F34468A22BE6B /* Build configuration list for PBXNativeTarget "KoruIntegrationHarness" */ = {
+		C6E7B9D2C854D49D366DB92E /* Build configuration list for PBXNativeTarget "Koru" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7E0B9D9CCED149AA0C4A8449 /* Release */,
-				BAA319EDC28B77A0007B9D43 /* Debug */,
+				25497F5523792216F784E884 /* Release */,
+				E8525852909C9712E58C9437 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FA799A3198F0A355DE3C0AD1 /* Build configuration list for PBXNativeTarget "Koru" */ = {
+		FEE24431DD09F8EBC07F5B09 /* Build configuration list for PBXProject "Koru" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3178B7590D451FABD0E34661 /* Release */,
-				2E3177A808A66DB2E74C7B7E /* Debug */,
+				60E83D81CEA148C62E082CEB /* Debug */,
+				44FB09B7A129A416891998F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -458,44 +462,44 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */ = {
+		534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = .;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		37BDFB89A3AF6FDD85420904 /* KoruPlatform */ = {
+		0EA9336BD18BDF2E4BE68AC7 /* KoruDomain */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */;
+			package = 534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */;
+			productName = KoruDomain;
+		};
+		1C94AE2E930D0DA9C154391E /* KoruPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */;
 			productName = KoruPlatform;
 		};
-		45C936D56B7182A0FE560FE4 /* KoruDomain */ = {
+		80CC356CC7C8AD65695F9712 /* KoruDomain */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */;
+			package = 534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */;
 			productName = KoruDomain;
 		};
-		4C3CFBCE34BA2B5A0749FFB0 /* KoruUI */ = {
+		A6134CAFA32353924B7CD9C9 /* KoruUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */;
+			package = 534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */;
 			productName = KoruUI;
 		};
-		79E28CFA9CC682F65D9FA0A9 /* KoruDomain */ = {
+		F301957862113C1CB913EFF1 /* KoruUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */;
-			productName = KoruDomain;
-		};
-		79E2AF6E8E745AC8AA376578 /* KoruUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */;
+			package = 534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */;
 			productName = KoruUI;
 		};
-		EC92EB6E0B85D280DA020CF5 /* KoruPlatform */ = {
+		FDB374AA54343E37A2AEE6D6 /* KoruPlatform */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7B29C174DA121A4032F7C861 /* XCLocalSwiftPackageReference "." */;
+			package = 534C488BC732C867473EC243 /* XCLocalSwiftPackageReference "." */;
 			productName = KoruPlatform;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 0E87579D20FE5489B350B8B9 /* Project object */;
+	rootObject = 3B9BB91B170FEBF15074FA74 /* Project object */;
 }

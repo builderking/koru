@@ -10,12 +10,16 @@ package = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)
 package.relative_path = "."
 project.root_object.package_references << package
 
-def add_app(project, package, name, sources, products, plist, bundle_id)
+def add_app(project, package, name, sources, products, plist, bundle_id, resources: [])
   target = project.new_target(:application, name, :osx, "13.0")
   group = project.main_group.new_group(name)
   sources.each do |path|
     ref = group.new_file(path)
     target.source_build_phase.add_file_reference(ref) if path.end_with?(".swift")
+  end
+  resources.each do |path|
+    ref = group.new_file(path)
+    target.resources_build_phase.add_file_reference(ref)
   end
   products.each do |product_name|
     dependency = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
@@ -39,6 +43,6 @@ def add_app(project, package, name, sources, products, plist, bundle_id)
   target
 end
 
-add_app(project, package, "Koru", ["App/main.swift"], ["KoruDomain", "KoruPlatform", "KoruUI"], "Config/Koru-Info.plist", "dev.builderking.koru")
+add_app(project, package, "Koru", ["App/main.swift"], ["KoruDomain", "KoruPlatform", "KoruUI"], "Config/Koru-Info.plist", "dev.builderking.koru", resources: ["App/Resources/AppIcon.icns"])
 add_app(project, package, "KoruIntegrationHarness", ["Harness/main.swift"], ["KoruDomain", "KoruPlatform", "KoruUI"], "Config/Harness-Info.plist", "dev.builderking.koru.harness")
 project.save
