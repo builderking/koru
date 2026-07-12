@@ -20,39 +20,58 @@ public struct DataProtectionKeychainStore: VaultKeyStore {
     public init() {}
 
     public func read(service: String, account: String) throws -> Data? {
-        var query = baseQuery(service: service, account: account)
+        if let data = try copyMatching(service: service, account: account, dataProtection: true) { return data }
+        // Builds without an application-identifier entitlement (ad-hoc or unsigned development builds)
+        // cannot see the data-protection keychain, so also consult the file-based keychain before
+        // concluding no key exists — otherwise an existing vault key would be reported missing.
+        return try copyMatching(service: service, account: account, dataProtection: false)
+    }
+
+    public func write(_ data: Data, service: String, account: String) throws {
+        var query = baseQuery(service: service, account: account, dataProtection: true)
+        query[kSecValueData as String] = data
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecSuccess { return }
+        // errSecMissingEntitlement: the data-protection keychain rejects unentitled builds. Fail over to
+        // the file-based keychain so the vault key is still persisted instead of bricking persistence.
+        guard status == errSecMissingEntitlement else { throw VaultKeyError.keychainFailure(status) }
+        var legacy = baseQuery(service: service, account: account, dataProtection: false)
+        legacy[kSecValueData as String] = data
+        legacy[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        let legacyStatus = SecItemAdd(legacy as CFDictionary, nil)
+        guard legacyStatus == errSecSuccess else { throw VaultKeyError.keychainFailure(legacyStatus) }
+    }
+
+    public func delete(service: String, account: String) throws {
+        for dataProtection in [true, false] {
+            let status = SecItemDelete(baseQuery(service: service, account: account, dataProtection: dataProtection) as CFDictionary)
+            guard status == errSecSuccess || status == errSecItemNotFound || status == errSecMissingEntitlement else {
+                throw VaultKeyError.keychainFailure(status)
+            }
+        }
+    }
+
+    private func copyMatching(service: String, account: String, dataProtection: Bool) throws -> Data? {
+        var query = baseQuery(service: service, account: account, dataProtection: dataProtection)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        if status == errSecItemNotFound { return nil }
+        if status == errSecItemNotFound || status == errSecMissingEntitlement { return nil }
         guard status == errSecSuccess else { throw VaultKeyError.keychainFailure(status) }
         return result as? Data
     }
 
-    public func write(_ data: Data, service: String, account: String) throws {
-        var query = baseQuery(service: service, account: account)
-        query[kSecValueData as String] = data
-        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else { throw VaultKeyError.keychainFailure(status) }
-    }
-
-    public func delete(service: String, account: String) throws {
-        let status = SecItemDelete(baseQuery(service: service, account: account) as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw VaultKeyError.keychainFailure(status)
-        }
-    }
-
-    private func baseQuery(service: String, account: String) -> [String: Any] {
-        [
+    private func baseQuery(service: String, account: String, dataProtection: Bool) -> [String: Any] {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecAttrSynchronizable as String: kCFBooleanFalse as Any,
-            kSecUseDataProtectionKeychain as String: true,
         ]
+        if dataProtection { query[kSecUseDataProtectionKeychain as String] = true }
+        return query
     }
 }
 

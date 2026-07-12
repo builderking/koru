@@ -1,6 +1,7 @@
 import Foundation
 import KoruDomain
 @testable import KoruUI
+import SwiftUI
 import XCTest
 
 final class ProductFeatureTests: XCTestCase {
@@ -70,6 +71,45 @@ final class ProductFeatureTests: XCTestCase {
 
         store.refreshPermissions()
         XCTAssertTrue(refreshed)
+    }
+
+    @MainActor func testWindowReuseCacheSurvivesTheUserClosingAndReopeningAWindow() {
+        let cache = WindowReuseCache()
+        let size = NSSize(width: 320, height: 200)
+        let first = cache.window(key: "library", title: "Koru Library", size: size, view: AnyView(Text("Library")))
+        // isReleasedWhenClosed must stay false: the cache keeps a strong reference, and AppKit
+        // deallocating a closed window behind the cache's back is a use-after-free on next access.
+        XCTAssertFalse(first.isReleasedWhenClosed)
+        first.close()
+        let second = cache.window(key: "library", title: "Koru Library", size: size, view: AnyView(Text("Library")))
+        XCTAssertTrue(first === second)
+        XCTAssertEqual(second.title, "Koru Library")
+        XCTAssertFalse(cache.window(key: "settings", title: "Koru Settings", size: size, view: AnyView(Text("Settings"))) === first)
+    }
+
+    @MainActor func testReloadFromPersistenceRecoversTheLibraryOnceTheVaultOpens() async throws {
+        actor VaultGate {
+            var isOpen = false
+            func open() { isOpen = true }
+        }
+        struct VaultUnavailable: Error {}
+        let gate = VaultGate()
+        let persisted = SavedItem(title: "Persisted", behavior: .savedText, plainContent: "Body")
+        let store = ProductStore()
+        store.configurePersistence(.init(
+            load: { guard await gate.isOpen else { throw VaultUnavailable() }; return [persisted] },
+            save: { _ in }, move: { _, _ in }, permanentlyDelete: { _ in }, reset: {}
+        ))
+        // The initial load races the vault opening at launch and fails; the store must be reloadable
+        // once the vault session is available instead of presenting an empty library forever.
+        let deadline = Date().addingTimeInterval(2)
+        while store.diagnosticsSnapshot.repository != .degraded, Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(store.diagnosticsSnapshot.repository, .degraded)
+        XCTAssertTrue(store.items.isEmpty)
+        await gate.open()
+        await store.reloadFromPersistence()
+        XCTAssertEqual(store.items.map(\.title), ["Persisted"])
+        XCTAssertEqual(store.diagnosticsSnapshot.repository, .healthy)
     }
 
     func testSupportBundleContainsNoSavedOrClipboardContentFields() throws {

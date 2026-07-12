@@ -72,10 +72,28 @@ struct TestVault {
 
 @Test func repositoryFailsClosedAfterKeyLoss() async throws {
     let vault = try await TestVault.make(); try await vault.repository.save(.init(title: "secret", behavior: .savedText, plainContent: "secret")); await vault.repository.close()
+    let databaseURL = vault.root.appendingPathComponent("vault.sqlite")
+    let bytesBeforeFailure = try Data(contentsOf: databaseURL)
     try await vault.keys.removeKey()
     await #expect(throws: VaultKeyError.keyMissingForExistingVault) { try await vault.repository.open() }
     #expect(vault.store.snapshot == nil)
+    // A failed unlock must never mutate or destroy the encrypted vault on disk.
+    #expect(try Data(contentsOf: databaseURL) == bytesBeforeFailure)
     try? FileManager.default.removeItem(at: vault.root)
+}
+
+@Test func unentitledProcessesStillPersistTheVaultKeyThroughTheKeychainFallback() throws {
+    // Ad-hoc and unsigned builds (the shipped app is built with CODE_SIGNING_ALLOWED=NO) get
+    // errSecMissingEntitlement from the data-protection keychain; the store must fail over to the
+    // file-based keychain instead of leaving the vault permanently unopenable.
+    let store = DataProtectionKeychainStore()
+    let service = "io.builderking.koru.tests.\(UUID().uuidString)"
+    defer { try? store.delete(service: service, account: "master-v1") }
+    let key = Data((0..<32).map { _ in UInt8.random(in: .min ... .max) })
+    try store.write(key, service: service, account: "master-v1")
+    #expect(try store.read(service: service, account: "master-v1") == key)
+    try store.delete(service: service, account: "master-v1")
+    #expect(try store.read(service: service, account: "master-v1") == nil)
 }
 
 @Test func assetStoreRejectsOversizeAndAuthenticatesOpaqueFiles() async throws {
@@ -121,6 +139,8 @@ final actor StopRecorder: VaultIntegrationStopper { private(set) var stopped = f
     let corrupt = try await TestVault.make(); try await corrupt.repository.save(.init(title: "safe", behavior: .savedText, plainContent: "safe")); await corrupt.repository.close()
     try Data(repeating: 0xFF, count: 512).write(to: corrupt.root.appendingPathComponent("vault.sqlite"))
     await #expect(throws: (any Error).self) { try await corrupt.repository.open() }
+    // Detecting corruption must fail closed without destroying the store the user could still recover.
+    #expect(try Data(contentsOf: corrupt.root.appendingPathComponent("vault.sqlite")) == Data(repeating: 0xFF, count: 512))
     try? FileManager.default.removeItem(at: corrupt.root)
 }
 
