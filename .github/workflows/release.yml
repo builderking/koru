@@ -28,7 +28,7 @@ jobs:
     outputs:
       commit: ${{ steps.ref.outputs.commit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {fetch-depth: 0, persist-credentials: false}
       - id: ref
         env: {RELEASE_TAG: "${{ inputs.tag }}"}
@@ -45,7 +45,7 @@ jobs:
     runs-on: macos-15
     permissions: {contents: read}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.preflight.outputs.commit }}
           persist-credentials: false
@@ -64,7 +64,7 @@ jobs:
           APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
           APPLE_NOTARY_PRIVATE_KEY: ${{ secrets.APPLE_NOTARY_PRIVATE_KEY }}
         run: ./scripts/sign-and-notarize.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-candidate-${{ inputs.tag }}
           path: dist/
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {contents: write}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: {name: "release-candidate-${{ inputs.tag }}", path: dist}
       - name: Create draft only
         env:

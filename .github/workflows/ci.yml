@@ -18,18 +18,18 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {persist-credentials: false}
       - name: Validate repository scaffolding
         run: ./scripts/validate-repository.sh
       - name: Lint Markdown
-        uses: DavidAnson/markdownlint-cli2-action@v20
+        uses: DavidAnson/markdownlint-cli2-action@v24
         with:
           globs: |
             **/*.md
             #build plan/**
       - name: Scan committed content for secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -38,7 +38,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {persist-credentials: false}
       - name: Select strict Swift settings
         run: echo 'SWIFT_STRICT_CONCURRENCY=complete' >> "$GITHUB_ENV"
@@ -55,9 +55,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {persist-credentials: false}
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
           license-check: true
